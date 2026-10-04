@@ -1894,7 +1894,7 @@ body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row{mar
     </div>
     <div class="ai-analyst-body" id="aiAnalystBody"></div>
     <div class="ai-chat-input-row">
-      <input id="aiChatInput" type="text" placeholder="พิมพ์คุยต่อได้เลย..." autocomplete="off" />
+      <textarea id="aiChatInput" rows="1" placeholder="พิมพ์คุยต่อได้เลย..." autocomplete="off" enterkeyhint="enter"></textarea>
       <button id="aiChatSendBtn" type="button">ส่ง</button>
     </div>
     <div class="ai-input-error" id="aiChatError"></div>
@@ -6242,6 +6242,8 @@ document.getElementById("aiChatInput").addEventListener("input", () => {
 });
 document.getElementById("aiChatInput").addEventListener("keydown", (e) => {
   if(e.key === "Enter"){
+    const touchDevice = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    if(touchDevice || e.shiftKey || e.isComposing) return; // มือถือ: Enter = ขึ้นบรรทัดใหม่ ส่งด้วยปุ่มลูกศร
     e.preventDefault();
     document.getElementById("aiChatSendBtn").click();
   }
@@ -7941,16 +7943,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     new MutationObserver(sync).observe(nb,{attributes:true,childList:true,subtree:true});
   }
 
-  // Keep the swipe gesture only for the visible primary destinations.
-  const order=['home','plan','brain','chat','more']; let sx=0,sy=0;
-  page.addEventListener('touchstart',e=>{sx=e.changedTouches[0].clientX;sy=e.changedTouches[0].clientY},{passive:true});
-  page.addEventListener('touchend',e=>{
-    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
-    if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.25)return;
-    const cur=order.findIndex(x=>views[x].classList.contains('active')); if(cur<0)return;
-    const next=dx<0?Math.min(order.length-1,cur+1):Math.max(0,cur-1);
-    if(next!==cur)go(order[next]);
-  },{passive:true});
+  // Swipe-to-switch-page removed: change page only via bottom nav.
 
   const hash=location.hash.slice(1);
   go(views[hash]?hash:'home');
@@ -9369,5 +9362,79 @@ function renderSpendCard(){
 (function(){const _r=render;render=function(){_r();try{renderSpendCard()}catch(e){console.error(e)}};setTimeout(()=>{try{renderSpendCard()}catch(e){console.error(e)}},600);})();
 </script>
 <script>try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorage.removeItem("vaultet_restored"); setTimeout(()=>{ try{ showToast(__m); }catch(e){} },700); }}catch(e){}</script>
+
+<style id="vaultet-user-fixes-2026-10">
+/* ช่องแชทหลายบรรทัด: textarea ขยายตามข้อความ */
+body #aiAnalystOverlay .ai-chat-input-row,
+body.ux-chat-active .ai-chat-input-row,
+body.ux-chat-active .ux-chat-panel .ai-chat-input-row{
+  align-items:flex-end!important;
+  border-radius:24px!important;
+}
+body #aiAnalystOverlay #aiChatInput,
+body.ux-chat-active #aiChatInput,
+#aiChatInput{
+  display:block!important;
+  resize:none!important;
+  overflow-y:auto!important;
+  height:auto;
+  min-height:24px!important;
+  max-height:168px!important;
+  line-height:1.45!important;
+  padding:11px 4px!important;
+  margin:0!important;
+  font-family:inherit!important;
+  box-sizing:border-box!important;
+  white-space:pre-wrap!important;
+  word-break:break-word!important;
+  -webkit-appearance:none;
+}
+body #aiAnalystOverlay #aiChatSendBtn,
+body.ux-chat-active #aiChatSendBtn,
+#aiAnalystOverlay #aiChatSendBtn{
+  align-self:flex-end!important;
+  margin-bottom:2px!important;
+}
+</style>
+<script id="vaultet-user-fixes-2026-10-js">
+(function(){
+  /* --- ช่องแชท auto-grow --- */
+  const el=document.getElementById('aiChatInput');
+  if(el){
+    const grow=()=>{ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,168)+'px'; };
+    try{
+      const d=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+      Object.defineProperty(el,'value',{
+        configurable:true,
+        get(){ return d.get.call(this); },
+        set(v){ d.set.call(this,v); grow(); }
+      });
+    }catch(_){}
+    el.addEventListener('input',grow);
+    el.addEventListener('focus',grow);
+    window.addEventListener('resize',grow,{passive:true});
+    grow();
+  }
+
+  /* --- ขอ token Drive ให้เองตอนแตะครั้งแรกหลังเปิดแอป --- */
+  let tried=false;
+  function onFirstTap(e){
+    if(tried) return;
+    try{
+      if(e.target && e.target.closest && e.target.closest('#gdriveConnectBtn,#gdriveDisconnectBtn,#gdriveClientIdInput,#saveGDriveClientIdBtn')) return;
+      if(localStorage.getItem(GDRIVE_AUTOSYNC_KEY)!=='1') return;
+      if(!localStorage.getItem(GDRIVE_CLIENT_ID_KEY) || !localStorage.getItem(GDRIVE_FILE_ID_KEY)) return;
+      if(gdriveAccessToken && Date.now()<gdriveAccessTokenExpiry){ tried=true; return; }
+      if(typeof google==='undefined' || !google.accounts || !google.accounts.oauth2) return; // ยังโหลดไม่เสร็จ ลองใหม่ตอนแตะรอบหน้า
+      tried=true;
+      requestGDriveToken('').then(()=>{
+        try{ scheduleGDriveAutoSync(); }catch(_){}
+        try{ refreshGDriveStatus(); }catch(_){}
+      }).catch(()=>{ /* เงียบ ๆ ถ้าไม่สำเร็จ ผู้ใช้ยังกดเชื่อมต่อเองได้ */ });
+    }catch(_){}
+  }
+  document.addEventListener('pointerup',onFirstTap,true);
+})();
+</script>
 </body>
 </html>
