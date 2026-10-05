@@ -1445,13 +1445,14 @@ body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row{mar
   <div class="hero-cards">
     <div class="networth-card">
       <div class="networth-top">
-        <span class="networth-label">เงินสดรวม (บัญชี + เงินออม)</span>
+        <span class="networth-label">สินทรัพย์รวม</span>
         <span class="mono networth-num" id="totalMoneyNum">฿0</span>
       </div>
-      <div class="networth-sub"><span>ในบัญชี</span><span class="mono" id="inAccountsNum">฿0</span></div>
-      <div class="networth-sub"><span>กันไว้</span><span class="mono" id="reservedNum">฿0</span></div>
-      <div class="networth-sub"><span>ใช้ได้จริง</span><span class="mono real" id="availableNum">฿0</span></div>
+      <div class="networth-sub"><span id="inAccLabel">ในบัญชี</span><span class="mono" id="inAccountsNum">฿0</span></div>
+      <div class="networth-sub" id="reservedRow"><span>กันไว้</span><span class="mono" id="reservedNum">฿0</span></div>
+      <div class="networth-sub" id="availRow"><span>ใช้ได้จริง</span><span class="mono real" id="availableNum">฿0</span></div>
       <div class="networth-sub"><span>เงินสำรองฉุกเฉิน (ออมไว้)</span><span class="mono" id="emergencySavedNum">฿0</span></div>
+      <div class="networth-sub" id="stockRow" style="display:none"><span>พอร์ตหุ้น (มูลค่าตลาด)</span><span class="mono" id="stockNum">฿0</span></div>
       <div class="networth-sub" id="otherSavedRow"><span>ออม/ลงทุนอื่นๆ</span><span class="mono" id="otherSavedNum">฿0</span></div>
       <div class="networth-sub"><span>คนอื่นติดเงิน</span><span class="mono" id="receivablesNum">฿0</span></div>
       <div class="networth-sub"><span>หนี้สินรวม</span><span class="mono" id="totalDebtsNum" style="color:var(--expense)">฿0</span></div>
@@ -1693,6 +1694,14 @@ body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row{mar
       <div class="ai-key-actions">
         <button id="saveApiKeyBtn" style="background:var(--accent1); color:#fff; border:none; border-radius:12px; padding:10px 0; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">เพิ่มคีย์</button>
       </div>
+    </div>
+
+    <div class="settings-card">
+      <div class="settings-card-title">📈 ราคาหุ้น (Twelve Data)</div>
+      <div class="ai-status-row" style="margin-top:10px;"><span class="ai-status-label">API Key</span><span class="ai-status-value" id="pfKeyStatus2">ยังไม่ได้ตั้งค่า</span></div>
+      <p class="ai-hint">สมัครฟรีที่ twelvedata.com → API keys แล้วก๊อปมาวาง เก็บในเครื่องนี้เท่านั้น ไม่รวมในไฟล์สำรอง</p>
+      <input class="text-input" id="pfKeyInput2" type="password" placeholder="วาง Twelve Data API Key" autocomplete="off" />
+      <div class="ai-key-actions" style="display:flex;gap:8px"><button id="pfKeySave2" style="flex:1;background:var(--accent1);color:#fff;border:none;border-radius:12px;padding:10px 0;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">บันทึก key</button><button id="pfKeyDel2" style="background:transparent;color:var(--faint);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-family:inherit;font-size:13px;cursor:pointer;">ลบ</button></div>
     </div>
 
     <div class="settings-card">
@@ -3481,19 +3490,28 @@ function getByCategory(type, totals){
     .map(c => ({ ...c, pct: totalForType ? Math.round((c.amount/totalForType)*100) : 0 }));
 }
 
+function vaultetAssets(){
+  const total=getTotalMoneyAllAccounts(), em=getEmergencySaved(), other=Math.max(0,getTotalSaved()-em);
+  let pf={value:0,cost:0}; try{ pf=(window.vaultetPortfolioSummary&&window.vaultetPortfolioSummary())||pf; }catch(e){}
+  const rest=Math.max(0,other-pf.cost);
+  return {total,em,stock:pf.value,rest,assets:total+em+rest+pf.value};
+}
 function renderAccountsSummary(){
   const total = getTotalMoneyAllAccounts();
   const reserved = getTotalReserved();
-  document.getElementById("totalMoneyNum").textContent = "฿" + fmt(total + getTotalSaved());
-  const inAccEl = document.getElementById("inAccountsNum"); if(inAccEl) inAccEl.textContent = "฿" + fmt(total);
+  const A = vaultetAssets(), vis=(id,on)=>{ const el=document.getElementById(id); const r=el&&(el.classList.contains("networth-sub")?el:el.parentElement); if(r) r.style.display=on?"":"none"; };
+  document.getElementById("totalMoneyNum").textContent = "฿" + fmt(A.assets);
+  document.getElementById("inAccountsNum").textContent = "฿" + fmt(total);
+  document.getElementById("inAccLabel").textContent = reserved > 0 ? "ในบัญชี" : "ในบัญชี (ใช้ได้จริง)";
   document.getElementById("reservedNum").textContent = "฿" + fmt(reserved);
   document.getElementById("availableNum").textContent = "฿" + fmt(total - reserved);
-  const emSaved = getEmergencySaved(), otherSaved = getTotalSaved() - emSaved;
-  document.getElementById("emergencySavedNum").textContent = "฿" + fmt(emSaved);
-  document.getElementById("otherSavedNum").textContent = "฿" + fmt(otherSaved);
-  document.getElementById("otherSavedRow").style.display = otherSaved > 0 ? "" : "none";
-  document.getElementById("receivablesNum").textContent = "฿" + fmt(getTotalReceivablesOutstanding());
-  document.getElementById("totalDebtsNum").textContent = "฿" + fmt(getTotalDebts());
+  vis("reservedRow", reserved > 0); vis("availRow", reserved > 0);
+  document.getElementById("emergencySavedNum").textContent = "฿" + fmt(A.em); vis("emergencySavedNum", A.em > 0);
+  document.getElementById("stockNum").textContent = "฿" + fmt(A.stock); vis("stockRow", A.stock > 0);
+  document.getElementById("otherSavedNum").textContent = "฿" + fmt(A.rest); vis("otherSavedRow", A.rest > 0);
+  const rc = getTotalReceivablesOutstanding(), db = getTotalDebts();
+  document.getElementById("receivablesNum").textContent = "฿" + fmt(rc); vis("receivablesNum", rc > 0);
+  document.getElementById("totalDebtsNum").textContent = "฿" + fmt(db); vis("totalDebtsNum", db > 0);
   const listEl = document.getElementById("accountsList");
   listEl.innerHTML = accounts.map(a => `
     <div class="account-row"><span class="acc-name">${escapeHtml(a.name)}</span><span class="mono">฿${fmt(computeAccountBalance(a.id))}</span></div>
@@ -3524,9 +3542,9 @@ function render(){
   document.getElementById("carryNum").textContent = beforeStart ? "ยังไม่ได้เริ่มใช้งานในเดือนนี้" : (monthKey(firstDate) === selectedMonth ? "ยอดตั้งต้นบัญชี " : "ยกมาจากเดือนก่อน ") + (carry<0?"-":"") + "฿" + fmt(Math.abs(carry)) + (loanOut>0 ? " · ให้ยืมไป ฿" + fmt(loanOut) : "");
   // มูลค่าสุทธิที่แท้จริง = เงินรวมทุกบัญชี (นับรวมเงินออม/เงินลงทุนที่อยู่ในบัญชีอยู่แล้ว) + เงินที่คนอื่นติดค้างเรา − หนี้สินรวม (Milestone 5)
   // ไม่ใช่รายรับลบรายจ่ายของเดือนนี้ ซึ่งเป็นคนละความหมายกัน (นั่นคือกระแสเงินสดของเดือน ไม่ใช่มูลค่าสุทธิสะสม)
-  const netWorth = getTotalMoneyAllAccounts() + getTotalSaved() + getTotalReceivablesOutstanding() - getTotalDebts();
+  const netWorth = getTotalMoneyAllAccounts() + (vaultetAssets().assets-getTotalMoneyAllAccounts()) + getTotalReceivablesOutstanding() - getTotalDebts();
   document.getElementById("netWorthNum").textContent =
-    "มูลค่าสุทธิรวม (เงินสดรวม + เงินให้ยืม − หนี้สิน): " + (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
+    "มูลค่าสุทธิรวม (สินทรัพย์รวม + เงินให้ยืม − หนี้สิน): " + (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
   document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
@@ -9619,6 +9637,7 @@ body.ux-chat-active #aiChatSendBtn,
   const PF_APIKEY_KEY='finance_tracker_twelvedata_key_v1';
   const DIRTY_DAY_KEY='vaultet_dirty_notice_day_v1';
   const SYNCED_HASH_KEY='vaultet_drive_synced_hash_v1';
+  const PF_SELL_KEY='vaultet_portfolio_sells_v1';
   try{ [PF_PRICE_KEY,PF_APIKEY_KEY,DIRTY_DAY_KEY,SYNCED_HASH_KEY].forEach(k=>VAULTET_BACKUP_EXCLUDED_KEYS.add(k)); }catch(_){}
 
   const lsGet=k=>{try{return localStorage.getItem(k);}catch(_){return null;}};
@@ -9670,19 +9689,28 @@ body.ux-chat-active #aiChatSendBtn,
 
   /* ---------- ข้อมูล ---------- */
   function getOpen(){ try{ const a=JSON.parse(lsGet(PF_OPEN_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(_){ return []; } }
-  function setOpen(a){ lsSet(PF_OPEN_KEY,JSON.stringify(a)); }
+  function setOpen(a){ lsSet(PF_OPEN_KEY,JSON.stringify(a)); try{ renderAccountsSummary(); }catch(_){} }
+  function getSells(){ try{ const a=JSON.parse(lsGet(PF_SELL_KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(_){ return []; } }
+  function setSells(a){ lsSet(PF_SELL_KEY,JSON.stringify(a)); }
   function lotsByTicker(){
     const m={}; const add=(t,l)=>{ (m[t]=m[t]||[]).push(l); };
     getOpen().forEach(o=>{ if(o&&o.ticker&&Number(o.shares)>0) add(String(o.ticker).toUpperCase(),{kind:'open',id:o.id,date:o.date||'',shares:Number(o.shares),cost:Number(o.cost)||0}); });
     entries.forEach(e=>{ if(e.type==='saving'&&e.ticker&&Number(e.shares)>0) add(String(e.ticker).toUpperCase(),{kind:'buy',id:e.id,date:e.date,shares:Number(e.shares),cost:Number(e.amount)||0}); });
+    getSells().forEach(x=>{ const t=String(x.ticker||'').toUpperCase(); if(m[t]) m[t].push({kind:'sell',id:x.id,date:x.date||'',shares:-Number(x.shares),cost:-Number(x.cost)||0,proceeds:Number(x.proceeds)||0}); });
+    Object.keys(m).forEach(t=>{ if(m[t].reduce((q,l)=>q+l.shares,0)<=1e-7) delete m[t]; });
     return m;
   }
+  window.vaultetPortfolioSummary=function(){
+    const c=readCache(), fx=c.fx?c.fx.rate:null, r=pfComputeHoldings(lotsByTicker(),c.quotes,fx);
+    return {value:r.rows.reduce((q,x)=>q+(x.valueTHB!==null?x.valueTHB:x.cost),0),cost:r.total.costAll};
+  };
+  function realized(){ return getSells().reduce((q,x)=>q+(Number(x.proceeds)||0)-(Number(x.cost)||0),0); }
   function untagged(){
     const list=entries.filter(e=>e.type==='saving'&&e.category===INVEST_CAT&&!(e.ticker&&Number(e.shares)>0));
     return {count:list.length,total:list.reduce((s,e)=>s+(Number(e.amount)||0),0)};
   }
   function readCache(){ try{ const c=JSON.parse(lsGet(PF_PRICE_KEY)||'{}'); return {fx:c.fx||null,quotes:c.quotes||{},fetchedAt:c.fetchedAt||0,error:c.error||''}; }catch(_){ return {fx:null,quotes:{},fetchedAt:0,error:''}; } }
-  function writeCache(c){ lsSet(PF_PRICE_KEY,JSON.stringify(c)); }
+  function writeCache(c){ lsSet(PF_PRICE_KEY,JSON.stringify(c)); try{ renderAccountsSummary(); }catch(_){} }
   const fmtTime=ms=>{ try{ return new Date(ms).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } };
 
   /* ---------- ดึงราคา ---------- */
@@ -9741,6 +9769,7 @@ body.ux-chat-active #aiChatSendBtn,
       h+=`<div class="pf-sum-line"><span class="mut">ต้นทุนรวม</span><b>฿${pfFmtMoney(total.costAll)}</b></div>`;
       h+=`<div class="pf-sum-line"><span class="mut">% เปลี่ยนแปลงจากวันก่อน</span><b class="${cls(total.dayPct)}">${total.dayPct!==null?pfSign(total.dayPct)+pfFmtMoney(Math.abs(total.dayPct),2)+'%':'—'}</b></div>`;
       h+=`<div class="pf-sum-line"><span class="mut">กำไร/ขาดทุนที่ยังไม่ขาย</span><b class="${cls(total.pl)}">${total.plPct!==null?pfSign(total.pl)+pfFmtMoney(Math.abs(total.plPct),2)+'% ('+pfSign(total.pl)+'฿'+pfFmtMoney(Math.abs(total.pl))+')':'—'}</b></div></div>`;
+      if(getSells().length){ const rz=realized(); h+=`<div class="pf-sum-line"><span class="mut">กำไร/ขาดทุนที่ขายแล้ว</span><b class="${cls(rz)}">${pfSign(rz)}฿${pfFmtMoney(Math.abs(rz))}</b></div>`; }
       if(total.unpriced.length) h+=`<div class="pf-warn">ยังไม่มีราคาของ ${esc(total.unpriced.join(', '))} ${key?'· กด ↻ ดึงราคาใหม่ หรือแตะหุ้นแล้วใส่ราคาเอง':'· ใส่ API key ด้านล่างเพื่อให้ดึงราคาอัตโนมัติ'}</div>`;
       const sorted=[...rows].sort((a,b)=>{
         if(sortBy==='plpct') return (b.plPct??-1e9)-(a.plPct??-1e9);
@@ -9752,14 +9781,14 @@ body.ux-chat-active #aiChatSendBtn,
         const open=expanded.has(r.ticker);
         h+=`<div class="pf-row" data-t="${esc(r.ticker)}"><div class="pf-badge" style="background:${colorFor(r.ticker)}">${esc(r.ticker.slice(0,3))}</div><div><div class="pf-t">${esc(r.ticker)}</div><div class="pf-alloc">${r.alloc!==null?'◔ '+pfFmtMoney(r.alloc,2)+'%':'ยังไม่มีราคา'}</div></div><div class="pf-r"><div class="pf-v">${r.valueTHB!==null?'฿'+pfFmtMoney(r.valueTHB):'—'}</div><div class="pf-vs">${r.valueUSD!==null?'≈ $'+pfFmtMoney(r.valueUSD,2):''}</div>${r.plPct!==null?`<div class="pf-vs ${cls(r.plTHB)}">${pfSign(r.plTHB)}${pfFmtMoney(Math.abs(r.plPct),2)}% (${pfSign(r.plTHB)}฿${pfFmtMoney(Math.abs(r.plTHB))})</div>`:''}</div></div>`;
         h+=`<div class="pf-detail${open?' open':''}" data-d="${esc(r.ticker)}"><div class="pf-grid"><div><div class="pf-k">จำนวนหุ้นคงเหลือ</div><div class="pf-kv">${pfFmtShares(r.shares)}</div></div><div><div class="pf-k">ราคา (USD)${r.manual?' · ใส่เอง':''}</div><div class="pf-kv">${r.price!==null?pfFmtMoney(r.price,2):'—'}</div>${r.pct!==null?`<div class="${cls(r.pct)}" style="font-size:13px">${pfSign(r.pct)}${pfFmtMoney(Math.abs(r.pct),2)}% วันนี้</div>`:''}</div><div><div class="pf-k">ต้นทุนเฉลี่ยต่อหุ้น (฿)</div><div class="pf-kv">${pfFmtMoney(r.avgCost,2)}</div></div><div><div class="pf-k">ต้นทุนรวม (฿)</div><div class="pf-kv">${pfFmtMoney(r.cost)}</div></div></div>`;
-        h+=`<div class="pf-lots"><div class="pf-k" style="margin-bottom:2px">ประวัติการซื้อ</div>${[...r.lots].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(l=>`<div class="pf-lot"><span>${esc(l.date||'—')} · ${l.kind==='open'?'ยอดยกมา':'ซื้อ'}</span><span>${pfFmtShares(l.shares)} หุ้น · ฿${pfFmtMoney(l.cost)}</span><button type="button" data-lot="${l.kind}" data-id="${esc(l.id)}">${l.kind==='open'?'ลบ':'แก้ไข'}</button></div>`).join('')}</div>`;
-        h+=`<div class="pf-actions"><button type="button" data-manual="${esc(r.ticker)}">ใส่ราคาเอง</button><button type="button" data-buy="${esc(r.ticker)}">+ ซื้อเพิ่ม</button></div></div>`;
+        h+=`<div class="pf-lots"><div class="pf-k" style="margin-bottom:2px">ประวัติการซื้อ</div>${[...r.lots].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(l=>`<div class="pf-lot"><span>${esc(l.date||'—')} · ${l.kind==='open'?'ยอดยกมา':(l.kind==='sell'?'ขาย':'ซื้อ')}</span><span>${pfFmtShares(l.shares)} หุ้น · ฿${pfFmtMoney(l.cost)}</span><button type="button" data-lot="${l.kind}" data-id="${esc(l.id)}">${l.kind==='open'?'ลบ':(l.kind==='sell'?'ลบ':'แก้ไข')}</button></div>`).join('')}</div>`;
+        h+=`<div class="pf-actions"><button type="button" data-manual="${esc(r.ticker)}">ใส่ราคาเอง</button><button type="button" data-sell="${esc(r.ticker)}">ขาย</button><button type="button" data-buy="${esc(r.ticker)}">+ ซื้อเพิ่ม</button></div></div>`;
       });
     }
     if(un.count>0) h+=`<div class="pf-note">มีรายการหมวด “ลงทุน” ที่ยังไม่ระบุหุ้น ${un.count} รายการ (รวม ฿${pfFmtMoney(un.total)}) ยังไม่นับในพอร์ต ใช้ปุ่ม <b>ยอดยกมา</b> ใส่ทีเดียวแทนการแก้ทีละรายการ ถ้าใส่แล้วยอดเงินออมในหน้าแรกไม่เปลี่ยน เพราะพอร์ตนี้เป็นมุมมองแยก</div>`;
-    h+=`<div class="pf-note">ราคามาจาก Twelve Data (ฟรี) อาจดีเลย์ 1–15 นาที ไม่ใช่เรียลไทม์ · ยังไม่รองรับการขายหุ้น · ตัวเลขอาจคลาดจากแอปโบรกเกอร์เล็กน้อยเพราะค่าธรรมเนียมและเรต</div>`;
+    h+=`<div class="pf-note">ราคามาจาก Twelve Data (ฟรี) อาจดีเลย์ 1–15 นาที ไม่ใช่เรียลไทม์ · ตัวเลขอาจคลาดจากแอปโบรกเกอร์เล็กน้อยเพราะค่าธรรมเนียมและเรต</div>`;
     if(cache.error) h+=`<div class="pf-warn">ดึงราคาไม่สำเร็จบางส่วน: ${esc(cache.error)}</div>`;
-    h+=`<details class="pf-key"${key?'':' open'}><summary>🔑 API key ดึงราคาอัตโนมัติ${key?' (ตั้งค่าแล้ว)':''}</summary><div class="pf-note" style="margin-top:8px">สมัครฟรีที่ twelvedata.com → เมนู API keys → ก๊อป key มาวาง key เก็บในเครื่องนี้เท่านั้น ไม่ขึ้น Drive และไม่อยู่ในไฟล์สำรอง</div><input id="pfKeyInput" type="text" placeholder="วาง API key ที่นี่" autocomplete="off" autocapitalize="off"><button type="button" id="pfKeySave">บันทึกและดึงราคา</button></details>`;
+    if(!key) h+=`<div class="pf-note">ใส่ Twelve Data API key ได้ที่ ตั้งค่า → ราคาหุ้น เพื่อให้ดึงราคาอัตโนมัติ</div>`;
     body().innerHTML=h;
   }
 
@@ -9800,7 +9829,7 @@ body.ux-chat-active #aiChatSendBtn,
     const buy=t.closest('[data-buy]'); if(buy) return startBuy(buy.dataset.buy);
     const lot=t.closest('[data-lot]');
     if(lot){
-      if(lot.dataset.lot==='open'){ if(confirm('ลบยอดยกมานี้ใช่ไหม?')){ setOpen(getOpen().filter(o=>o.id!==lot.dataset.id)); render(); } }
+      if(lot.dataset.lot==='sell'){ delSell(lot.dataset.id); } else if(lot.dataset.lot==='open'){ if(confirm('ลบยอดยกมานี้ใช่ไหม?')){ setOpen(getOpen().filter(o=>o.id!==lot.dataset.id)); render(); } }
       else{ const en=entries.find(x=>x.id===lot.dataset.id); if(en) openForm(en); }
       return;
     }
@@ -9809,6 +9838,36 @@ body.ux-chat-active #aiChatSendBtn,
   });
   overlay.addEventListener('change',e=>{ if(e.target&&e.target.id==='pfSort'){ sortBy=e.target.value; render(); } });
 
+  const keyIn=document.getElementById('pfKeyInput2'), keySt=document.getElementById('pfKeyStatus2');
+  const updKeySt=()=>{ if(keySt) keySt.textContent=lsGet(PF_APIKEY_KEY)?'ตั้งค่าแล้ว':'ยังไม่ได้ตั้งค่า'; }; updKeySt();
+  document.getElementById('pfKeySave2')?.addEventListener('click',()=>{ const v=(keyIn.value||'').trim(); if(!v){ showToast('วาง API key ก่อน'); return; } lsSet(PF_APIKEY_KEY,v); keyIn.value=''; updKeySt(); showToast('บันทึก key แล้ว'); if(Object.keys(lotsByTicker()).length) refreshPrices(); });
+  document.getElementById('pfKeyDel2')?.addEventListener('click',()=>{ try{ localStorage.removeItem(PF_APIKEY_KEY); }catch(_){} updKeySt(); showToast('ลบ key แล้ว'); });
+  /* ---- ขายหุ้น ---- */
+  const sell=document.createElement('div'); sell.id='pfSellSheet';
+  sell.innerHTML='<div class="pf-sell-card"><div class="pf-sell-h" id="pfSellH">ขายหุ้น</div><label>จำนวนหุ้นที่ขาย</label><input id="pfSellSh" type="number" inputmode="decimal" step="any"><label>เงินบาทที่ได้รับ</label><input id="pfSellAmt" type="number" inputmode="decimal" step="any"><label>เข้าบัญชี</label><select id="pfSellAcc"></select><div class="pf-sell-act"><button type="button" id="pfSellCancel">ยกเลิก</button><button type="button" id="pfSellOk">บันทึกขาย</button></div></div>';
+  overlay.appendChild(sell); let sellT='';
+  function openSell(t){ const L=lotsByTicker()[t]; if(!L) return; sellT=t; const sh=L.reduce((q,l)=>q+l.shares,0);
+    document.getElementById('pfSellH').textContent='ขาย '+t+' (ถืออยู่ '+pfFmtShares(sh)+' หุ้น)';
+    document.getElementById('pfSellSh').value=''; document.getElementById('pfSellAmt').value='';
+    document.getElementById('pfSellAcc').innerHTML=accounts.map(a=>'<option value="'+esc(a.id)+'">'+esc(a.name)+'</option>').join('');
+    sell.classList.add('open'); }
+  function delSell(id){ if(!confirm('ลบรายการขายนี้? รายรับที่เกี่ยวข้องจะถูกลบด้วย')) return; const a=getSells(), x=a.find(q=>q.id===id); setSells(a.filter(q=>q.id!==id));
+    if(x&&x.entryId){ const i=entries.findIndex(e=>e.id===x.entryId); if(i>-1){ entries.splice(i,1); saveEntries(); } }
+    render(); try{ renderAccountsSummary(); }catch(_){} }
+  overlay.addEventListener('click',e=>{
+    const b=e.target.closest('[data-sell]'); if(b) return openSell(b.dataset.sell);
+    if(e.target.closest('#pfSellCancel')) return sell.classList.remove('open');
+    if(!e.target.closest('#pfSellOk')) return;
+    const L=lotsByTicker()[sellT]; if(!L) return; const sh=L.reduce((q,l)=>q+l.shares,0), cost=L.reduce((q,l)=>q+l.cost,0);
+    const n=pfNum(document.getElementById('pfSellSh').value), amt=pfNum(document.getElementById('pfSellAmt').value), acc=document.getElementById('pfSellAcc').value;
+    if(!(n>0)||n>sh+1e-9||!(amt>0)||!acc){ showToast('กรอกจำนวนหุ้น (ไม่เกินที่ถือ) เงินที่ได้ และบัญชีให้ครบ'); return; }
+    const red=Math.round(cost*Math.min(1,n/sh)*100)/100;
+    const res=commitEntry({type:'income',category:WITHDRAW_CAT,amount:amt,date:todayISO(),note:'ขายหุ้น '+sellT,accountId:acc});
+    if(!res||!res.ok){ showToast('บันทึกไม่สำเร็จ: '+((res&&res.error)||'')); return; }
+    res.entry.fromCat=INVEST_CAT; res.entry.costBasis=red; res.entry.sellTicker=sellT; saveEntries();
+    const a=getSells(); a.push({id:makeId(),ticker:sellT,date:todayISO(),shares:n,proceeds:amt,cost:red,entryId:res.entry.id}); setSells(a);
+    sell.classList.remove('open'); render(); try{ renderAccountsSummary(); }catch(_){} showToast('บันทึกการขายแล้ว ✓');
+  });
   function startBuy(ticker){
     openForm(null);
     try{ setFormType('saving'); selectedCategory=INVEST_CAT; orphanCategory=null; renderCatGrid(); }catch(_){}
@@ -9869,7 +9928,7 @@ body.ux-chat-active #aiChatSendBtn,
 
   /* ---------- เตือนเมื่อมีข้อมูลที่ยังไม่ได้สำรองขึ้น Drive ---------- */
   function coreHash(){
-    const o={entries,categories:CATS_BY_TYPE,accounts,reservedItems,loans,recurringExpenses,debts,budgets,emergencyFundConfig,pf:lsGet(PF_OPEN_KEY)||''};
+    const o={entries,categories:CATS_BY_TYPE,accounts,reservedItems,loans,recurringExpenses,debts,budgets,emergencyFundConfig,pf:(lsGet(PF_OPEN_KEY)||'')+(lsGet(PF_SELL_KEY)||'')};
     return vaultetSha256(JSON.stringify(o));
   }
   const _up=gdriveUploadBackup;
@@ -9913,6 +9972,135 @@ body.ux-chat-active #aiChatSendBtn,
   }catch(_){}
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') later(1500); });
   later(2500);
+})();
+</script>
+
+<style id="vaultet-pf-round4">
+#pfOverlay .pf-iconbtn{padding:0;line-height:1;font-size:0;}
+#pfOverlay .pf-iconbtn svg{width:19px;height:19px;display:block;}
+#pfOverlay .pf-tools label{display:flex;align-items:center;gap:8px;}
+#pfOverlay .pf-tools select{min-width:104px;height:38px;padding:0 14px;text-align:center;text-align-last:center;-webkit-appearance:none;appearance:none;line-height:38px;}
+#pfOverlay .pf-actions{display:flex;gap:8px;}#pfOverlay .pf-actions button{flex:1;}
+#pfSellSheet{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.6);display:none;align-items:flex-end;}
+#pfSellSheet.open{display:flex;}
+#pfSellSheet .pf-sell-card{width:100%;box-sizing:border-box;background:#18181B;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));color:#F5F5F7;}
+#pfSellSheet .pf-sell-h{font-size:18px;font-weight:800;margin-bottom:6px;}
+#pfSellSheet label{display:block;font-size:12px;color:#8E8E93;margin:12px 0 5px;}
+#pfSellSheet input,#pfSellSheet select{width:100%;box-sizing:border-box;height:46px;border-radius:12px;border:1px solid #2A2A2E;background:#1C1C1F;color:#F5F5F7;padding:0 12px;font-family:inherit;font-size:16px;}
+#pfSellSheet .pf-sell-act{display:flex;gap:10px;margin-top:18px;}
+#pfSellSheet .pf-sell-act button{flex:1;height:46px;border:none;border-radius:14px;font-family:inherit;font-size:15px;font-weight:700;background:#2A2A2E;color:#F5F5F7;}
+#pfSellSheet .pf-sell-act #pfSellOk{background:var(--accent1,#58B662);color:#fff;}
+</style>
+<script id="vaultet-pf-round4-js">
+(function(){
+  const cb=document.getElementById('pfClose');
+  if(cb) cb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const b=document.getElementById('pfRefresh');
+  if(b) b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+  /* การขายหุ้นหักจากหมวดลงทุนด้วยต้นทุน ไม่ไปหักเงินสำรองฉุกเฉิน */
+  getSavedByCategory=function(){
+    const m={}, tg={}; let w=0;
+    entries.forEach(e=>{
+      if(e.type==='saving'){ const c=e.category||'อื่นๆ'; m[c]=(m[c]||0)+toCents(e.amount); }
+      else if(e.type==='income'&&e.category===WITHDRAW_CAT){
+        if(e.fromCat&&e.costBasis!=null) tg[e.fromCat]=(tg[e.fromCat]||0)+toCents(e.costBasis); else w+=toCents(e.amount);
+      }
+    });
+    Object.keys(tg).forEach(k=>{ if(m[k]!=null) m[k]=Math.max(0,m[k]-tg[k]); });
+    Object.keys(m).sort((a,b)=>(b.includes('สำรอง')?1:0)-(a.includes('สำรอง')?1:0)).forEach(k=>{ const d=Math.min(m[k],w); m[k]-=d; w-=d; });
+    Object.keys(m).forEach(k=>m[k]/=100);
+    return m;
+  };
+  try{ renderAccountsSummary(); }catch(_){}
+})();
+</script>
+
+<style id="vaultet-r5-style">
+#vaultRestoreBar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:99990;background:#18181B;border:1px solid rgba(88,182,98,.5);border-radius:16px;padding:12px 14px;color:#F5F5F7;font-size:14px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 28px rgba(0,0,0,.5);}
+#vaultRestoreBar span{flex:1;line-height:1.4;}
+#vaultRestoreBar button{border:none;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;background:#2A2A2E;color:#F5F5F7;}
+#vaultRestoreBar button.go{background:var(--accent1,#58B662);color:#fff;}
+#pfBody .pf-dca{margin:10px 0 2px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.04);font-size:13.5px;display:flex;justify-content:space-between;gap:10px;}
+#pfBody .pf-dca .mut{color:#8E8E93;}
+</style>
+<script id="vaultet-r5-js">
+(function(){
+  const J=(k,d)=>{try{const x=JSON.parse(localStorage.getItem(k)||'');return x==null?d:x;}catch(_){return d;}};
+  const r2=n=>Math.round((Number(n)||0)*100)/100;
+  const ym=d=>String(d||'').slice(0,7);
+  function pfData(){
+    const lots={}, add=(t,sh,c)=>{const l=lots[t]=lots[t]||{shares:0,cost:0};l.shares+=sh;l.cost+=c;};
+    J('vaultet_portfolio_open_v1',[]).forEach(o=>{if(o&&o.ticker&&+o.shares>0)add(String(o.ticker).toUpperCase(),+o.shares,+o.cost||0);});
+    const buys=entries.filter(e=>e.type==='saving'&&e.ticker&&+e.shares>0);
+    buys.forEach(e=>add(String(e.ticker).toUpperCase(),+e.shares,+e.amount||0));
+    let realized=0;
+    J('vaultet_portfolio_sells_v1',[]).forEach(x=>{const t=String(x.ticker||'').toUpperCase(); if(lots[t]){lots[t].shares-=+x.shares;lots[t].cost-=+x.cost||0;} realized+=(+x.proceeds||0)-(+x.cost||0);});
+    const pc=J('vaultet_pf_prices_v1',{}), fx=pc.fx&&pc.fx.rate>0?pc.fx.rate:null, q=pc.quotes||{};
+    const hs=[]; let val=0,cost=0;
+    Object.keys(lots).forEach(t=>{const L=lots[t]; if(L.shares<=1e-7)return; const p=q[t]&&q[t].price; const v=(p&&fx)?L.shares*p*fx:null;
+      hs.push({ticker:t,shares:r2(L.shares*1e4)/1e4,costTHB:r2(L.cost),avgCostTHB:r2(L.cost/L.shares),priceUSD:p||null,valueTHB:v==null?null:r2(v),plTHB:v==null?null:r2(v-L.cost),plPct:(v!=null&&L.cost>0)?r2((v-L.cost)/L.cost*100):null}); cost+=L.cost; if(v!=null)val+=v;});
+    hs.forEach(h=>{h.allocPct=(val>0&&h.valueTHB!=null)?r2(h.valueTHB/val*100):null;});
+    const m={}; buys.forEach(e=>{const k=ym(e.date); m[k]=m[k]||{month:k,count:0,amountTHB:0}; m[k].count++; m[k].amountTHB+=+e.amount||0;});
+    const months=Object.values(m).sort((a,b)=>a.month<b.month?1:-1).slice(0,6);
+    const nowM=ym(todayISO());
+    return {hs,val,cost,realized,fx,asOf:pc.fetchedAt?new Date(pc.fetchedAt).toISOString().slice(0,16).replace('T',' '):null,months,thisMonth:m[nowM]||{month:nowM,count:0,amountTHB:0}};
+  }
+  /* ---------- AI: ใส่พอร์ต + รายการล่าสุดเข้า context ---------- */
+  const origPrompt=buildFinancialAnalystSystemPrompt;
+  buildFinancialAnalystSystemPrompt=function(snapshot,profile){
+    let base=origPrompt(snapshot,profile), extra='';
+    try{
+      const d=pfData();
+      const acc=id=>(accounts.find(a=>a.id===id)||{}).name||'';
+      const recent=entries.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,60).map(e=>({d:e.date,t:e.type,c:e.category||'',a:+e.amount||0,n:e.note||'',acc:acc(e.accountId)}));
+      extra='\n\nข้อมูลเพิ่มเติมจากแอป (ใช้อ้างอิงได้ตามจริง ห้ามเดาเกินจากนี้):\n'
+       +'พอร์ตหุ้น (หน่วยบาท ต้นทุนคือเงินบาทที่จ่ายจริงตามที่ผู้ใช้บันทึก ราคาเป็น USD): '+JSON.stringify({fxUSDTHB:d.fx,priceAsOf:d.asOf,holdings:d.hs,totalValueTHB:r2(d.val),totalCostTHB:r2(d.cost),unrealizedPLTHB:r2(d.val-d.cost),realizedPLTHB:r2(d.realized),dcaThisMonth:d.thisMonth,dcaLast6Months:d.months})+'\n'
+       +'รายการล่าสุด 60 รายการ (d=วันที่ t=ประเภท c=หมวด a=จำนวนเงิน n=โน้ต acc=บัญชี): '+JSON.stringify(recent)+'\n'
+       +'แนวทางเมื่อคุยเรื่องหุ้น/การลงทุน: ใช้ตัวเลขพอร์ตจริงของผู้ใช้ คุยเรื่องวินัย DCA การกระจายความเสี่ยง (เช่น สัดส่วนหุ้นตัวเดียว ความผันผวน) ผลของค่าเงินบาท/ดอลลาร์ และเทียบกับเงินสำรองฉุกเฉิน หนี้ และกระแสเงินสดของผู้ใช้ ห้ามทำนายราคา ห้ามฟันธงให้ซื้อหรือขายหุ้นตัวใดตัวหนึ่ง ไม่มีข่าวหรือราคาเรียลไทม์ ถ้าราคาในข้อมูลเก่าให้บอกวันที่ และตัวเลขกำไรอาจคลาดจากแอปโบรกเกอร์เล็กน้อย ถ้าอ้างความรู้ทั่วไปเกี่ยวกับตัวหุ้น/กองทุน ให้บอกว่าเป็นความรู้ทั่วไป อาจไม่เป็นปัจจุบัน';
+    }catch(e){}
+    return base+extra;
+  };
+  /* ---------- DCA เดือนนี้ ในหน้าพอร์ต ---------- */
+  function injectDca(){
+    const body=document.getElementById('pfBody'); if(!body||body.querySelector('.pf-dca'))return;
+    const tools=body.querySelector('.pf-tools'); if(!tools)return;
+    const t=pfData().thisMonth, prev=pfData().months.find(x=>x.month!==t.month);
+    const d=document.createElement('div'); d.className='pf-dca';
+    d.innerHTML='<span>DCA เดือนนี้</span><span><b>'+t.count+' ครั้ง · ฿'+Math.round(t.amountTHB).toLocaleString('en-US')+'</b>'+(prev?' <span class="mut">(เดือนก่อน '+prev.count+' ครั้ง · ฿'+Math.round(prev.amountTHB).toLocaleString('en-US')+')</span>':'')+'</span>';
+    tools.parentNode.insertBefore(d,tools);
+  }
+  new MutationObserver(()=>injectDca()).observe(document.body,{childList:true,subtree:true});
+  /* ---------- กู้ข้อมูลจาก Drive ตอนแอปว่าง ---------- */
+  async function findBackup(){
+    const token=await requestGDriveToken('');
+    const q=encodeURIComponent("name='"+GDRIVE_BACKUP_FILENAME+"' and trashed=false");
+    const r=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,modifiedTime,size)&pageSize=20',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok)throw new Error('list_'+r.status);
+    const fs=(await r.json()).files||[]; if(!fs.length)return null;
+    fs.sort((a,b)=>(+b.size||0)-(+a.size||0)); const f=fs[0];
+    const d=await fetch('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media',{headers:{Authorization:'Bearer '+token}});
+    if(!d.ok)throw new Error('dl_'+d.status);
+    return {id:f.id,data:await d.json(),n:fs.length};
+  }
+  function showRestoreBar(){
+    if(document.getElementById('vaultRestoreBar'))return;
+    const b=document.createElement('div'); b.id='vaultRestoreBar';
+    b.innerHTML='<span>ข้อมูลในแอปว่างอยู่ — กู้คืนจาก Google Drive ไหม?</span><button class="go" type="button">กู้คืน</button><button class="x" type="button">✕</button>';
+    b.querySelector('.x').onclick=()=>{b.remove();try{sessionStorage.setItem('vaultet_restore_bar_x','1');}catch(_){}};
+    b.querySelector('.go').onclick=async()=>{
+      try{
+        const r=await findBackup();
+        if(!r){showToast('ไม่พบไฟล์สำรองใน Drive');return;}
+        localStorage.setItem(GDRIVE_FILE_ID_KEY,r.id); b.remove();
+        promptRestore(r.data,'Google Drive');
+      }catch(e){showToast('กู้คืนจาก Drive ไม่สำเร็จ');}
+    };
+    document.body.appendChild(b);
+  }
+  setTimeout(()=>{try{
+    if(sessionStorage.getItem('vaultet_restore_bar_x'))return;
+    if(entries.length===0&&accounts.filter(a=>a.name!=='ไม่ระบุบัญชี').length===0&&localStorage.getItem(GDRIVE_CLIENT_ID_KEY))showRestoreBar();
+  }catch(_){}},1600);
 })();
 </script>
 </body>
