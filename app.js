@@ -319,6 +319,7 @@ let compareCategorySort = "changed"; // changed | increase | decrease | total
 let compareDetailExpanded = false;
 let selectedMonth = "";
 let typeFilter = "all";
+let txVisibleLimit = 20;
 let searchQuery = "";
 let formType = "expense";
 let selectedCategory = "";
@@ -1507,8 +1508,9 @@ function render(){
   if(me.length===0){
     listContainer.innerHTML = `<div class="empty-state">ยังไม่มีรายการในเดือนนี้ — กดปุ่ม + เพื่อเริ่มจด</div>`;
   }else{
+    const meVisible = me.slice(0, txVisibleLimit);
     listContainer.innerHTML = `<ul class="list">
-      ${me.map(e => {
+      ${meVisible.map(e => {
         if(e.type === "transfer"){
           const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
           const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
@@ -1546,7 +1548,16 @@ function render(){
           </div>
         </li>`;
       }).join("")}
-    </ul>`;
+    </ul>` + (me.length > txVisibleLimit
+      ? `<button type="button" class="manage-accounts-btn" id="loadMoreTxBtn" style="width:100%;margin-top:10px;">ดูเพิ่มเติม (เหลืออีก ${me.length - txVisibleLimit} รายการ)</button>`
+      : "");
+    const loadMoreTxBtn = document.getElementById("loadMoreTxBtn");
+    if(loadMoreTxBtn){
+      loadMoreTxBtn.addEventListener("click", () => {
+        txVisibleLimit += 20;
+        render();
+      });
+    }
     listContainer.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -1745,10 +1756,12 @@ document.getElementById("quickAmountClear").addEventListener("click", () => {
 });
 document.getElementById("monthSelect").addEventListener("change", (e) => {
   selectedMonth = e.target.value;
+  txVisibleLimit = 20;
   render();
 });
 document.getElementById("typeFilter").addEventListener("change", (e) => {
   typeFilter = e.target.value;
+  txVisibleLimit = 20;
   render();
 });
 // ===== AI Layer integration point: pure data-in commit function =====
@@ -1861,6 +1874,7 @@ document.getElementById("submitBtn").addEventListener("click", () => {
 
 document.getElementById("searchInput").addEventListener("input", (e) => {
   searchQuery = e.target.value;
+  txVisibleLimit = 20;
   render();
 });
 document.getElementById("backupNowBtn").addEventListener("click", () => {
@@ -3871,17 +3885,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     return ['aiAdvisorSettingsBtn','aiChatHistoryBtn','clearAiChatBtn'].every(id=>!!document.getElementById(id)?.closest('#uxChatTopActions'));
   }
 
-  function prepareFreshChatForSession(){
-    if(window.__vaultetAiChatEntryPrepared) return;
-    window.__vaultetAiChatEntryPrepared=true;
-    try{
-      if(typeof loadAllChats!=='function' || typeof createNewChat!=='function') return;
-      const data=loadAllChats();
-      const active=data?.chats?.find(c=>c.id===data.activeId);
-      if(active && Array.isArray(active.messages) && active.messages.length) createNewChat();
-    }catch(e){}
-  }
-
   function refreshChatPage(){
     moveAiHeaderActions();
     if(typeof renderAiChatBubbles==='function') renderAiChatBubbles();
@@ -3893,7 +3896,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     if(typeof window.bancheeOpenChatPage==='function' && !window.__vaultetAiChatEntryPatched){
       const original=window.bancheeOpenChatPage;
       window.bancheeOpenChatPage=function(){
-        prepareFreshChatForSession();
         const result=original.apply(this,arguments);
         moveAiHeaderActions();
         return result;
@@ -3906,7 +3908,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     moveAiHeaderActions();
     patchChatEntry();
     if(location.hash==='#chat'){
-      prepareFreshChatForSession();
       refreshChatPage();
     }
     const observer=new MutationObserver(()=>{

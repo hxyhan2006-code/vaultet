@@ -223,9 +223,28 @@ function renderAIMemoryList(){
         <div class="memory-row-text">${escapeHtml(m.text)}</div>
         <div class="memory-row-meta">${m.createdAt ? chatTimeLabel(m.createdAt) : ""}</div>
       </div>
-      <button class="icon-btn ai-icon-btn delete-ai-memory-btn" data-id="${m.id}" aria-label="ลบความจำนี้"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 10v8M12 10v8M16 10v8M6 7l1 14h10l-1-14"/></svg></button>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button class="icon-btn ai-icon-btn edit-ai-memory-btn" data-id="${m.id}" aria-label="แก้ไขความจำนี้">✏️</button>
+        <button class="icon-btn ai-icon-btn delete-ai-memory-btn" data-id="${m.id}" aria-label="ลบความจำนี้"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 10v8M12 10v8M16 10v8M6 7l1 14h10l-1-14"/></svg></button>
+      </div>
     </div>
   `).join("");
+  el.querySelectorAll(".edit-ai-memory-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const list = loadAIMemory();
+      const target = list.find(m => m.id === btn.dataset.id);
+      if(!target){ showToast("ไม่พบความจำนี้แล้ว"); return; }
+      const next = prompt("แก้ไขความจำของ AI", target.text);
+      if(next === null) return;
+      const t = next.trim();
+      if(!t){ showToast("ข้อความความจำต้องไม่ว่าง"); return; }
+      if(t === target.text) return;
+      target.text = t;
+      saveAIMemory(list);
+      renderAIMemoryList();
+      showToast("แก้ไขความจำแล้ว");
+    });
+  });
   el.querySelectorAll(".delete-ai-memory-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       deleteMemoryEntry(btn.dataset.id);
@@ -563,7 +582,17 @@ function buildBudgetSummaryBothSides(){
   try { savingRaw = computeBudgetSummary(mk, "saving"); } catch(e) { savingRaw = null; }
   const expense = summarizeBudgetSide(expenseRaw);
   const saving = summarizeBudgetSide(savingRaw);
+  const pickSide = s => ({ target: s.target, actual: s.actual, remaining: s.remaining, pct: s.pct, count: s.count });
+  const savingSentence = saving.target > 0
+    ? `งบรายออม (เป้าออมรายเดือน) เดือนนี้: เป้า ฿${saving.target} ออมไปแล้ว ฿${saving.actual} (${saving.pct}%) เหลืออีก ฿${Math.max(0, saving.remaining)}`
+    : "งบรายออม (เป้าออมรายเดือน) เดือนนี้: ผู้ใช้ยังไม่ได้ตั้งเป้า";
+  const expenseSentence = expense.target > 0
+    ? `งบรายจ่ายเดือนนี้: งบ ฿${expense.target} ใช้ไปแล้ว ฿${expense.actual} (${expense.pct}%) เหลือ ฿${Math.max(0, expense.remaining)}`
+    : "งบรายจ่ายเดือนนี้: ผู้ใช้ยังไม่ได้ตั้งงบ";
   return {
+    budgetOverview: `${savingSentence} | ${expenseSentence}`,
+    expenseBudget: pickSide(expense),
+    savingBudget: pickSide(saving),
     ...legacy,
     month: mk,
     expense: { ...expense, label: "งบรายจ่าย (เดือนนี้)" },
@@ -597,8 +626,12 @@ function buildFinancialSnapshot(){
   const forecast30d = computeForecast(30);
 
   const cashByAccount = accounts.map(a => ({ id:a.id, name:a.name, balance:computeAccountBalance(a.id) }));
+  const budgetBoth = buildBudgetSummaryBothSides();
   const snapshot = {
     generatedAt: today,
+    budgetOverview: budgetBoth.budgetOverview,
+    expenseBudget: budgetBoth.expenseBudget,
+    savingBudget: budgetBoth.savingBudget,
     netWorth: {
       totalMoneyAllAccounts: totalMoney,
       reserved: reserved,
@@ -665,7 +698,7 @@ function buildFinancialSnapshot(){
       totalDebt: getTotalDebts(),
       list: debts.map(d => ({ name: d.name, outstandingBalance: d.outstandingBalance, gracePeriod: !!d.gracePeriod })),
     },
-    budgetSummary: buildBudgetSummaryBothSides(),
+    budgetSummary: budgetBoth,
     emergencyFund: computeEmergencyFund(),
     recurringExpenses: { monthlyEstimated:computeMonthlyRecurringCost(), upcoming:getUpcomingSummary() },
     goals: typeof goals!=='undefined' ? goals : [],
@@ -898,6 +931,8 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
     `- เดือนปัจจุบัน ${monthKey(todayISO())}; categories ต้องเป็นชื่อหมวดรายจ่ายที่มีจริงเท่านั้น: ${JSON.stringify(CATS_BY_TYPE.expense||[])}; 1 หมวดอยู่ได้แค่งบเดียวต่อเดือน; ออม+จำเป็น+ไม่จำเป็นรวมกันต้องไม่เกิน 100%`,
     `- รายการที่แก้/ลบได้ (ล่าสุด 40 รายการ; ใช้ id ตามนี้เท่านั้น ห้ามเดา id; ถ้าผู้ใช้พูดคลุมเครือว่าหมายถึงรายการไหน ให้ถามก่อน และห้ามเสนอลบ/แก้หลายรายการพร้อมกันถ้าไม่ชัดเจน): ${JSON.stringify(entries.filter(e=>(e.type==="income"||e.type==="expense")&&!e.source&&!e.recurringId&&e.category!=="กยศ.").slice(0,40).map(e=>({id:e.id,date:e.date,type:e.type,category:e.category,amount:e.amount,note:e.note||""})))}`,
     "- ผู้ใช้ต้องกดยืนยันก่อนระบบถึงจะเปลี่ยนจริง ดังนั้นห้ามบอกว่า \"ปรับให้แล้ว\" ให้บอกว่าเสนอแล้วให้กดยืนยันด้านล่าง และห้ามใส่ action ถ้าผู้ใช้แค่ถามหรือขอคำแนะนำเฉยๆ ที่ไม่ได้ขอให้ปรับระบบ; ห้ามเปิดเผยบรรทัด @@ACTION@@ ในเนื้อหาคำตอบ",
+    "- กฎเหล็ก: ก่อนจะออกคำสั่ง @@ACTION@@ ให้ตรวจสอบค่าปัจจุบันใน Snapshot ก่อนเสมอ หากค่าในระบบเป็นค่านั้นอยู่แล้ว หรือผู้ใช้เพิ่งกดยืนยันการปรับนั้นไปในบทสนทนา ห้ามออก @@ACTION@@ ซ้ำเด็ดขาด ให้ตอบเป็นข้อความพูดคุยตามปกติ (เช่น เกณฑ์ Brain, buffer, งบรายหมวด หรือเป้าเงินสำรองฉุกเฉินที่ตรงกับค่าปัจจุบันแล้ว หรือมีสถานะ ✓ ทำแล้วในแชทนี้)",
+    "- ผู้ใช้มีทั้ง \"งบรายจ่าย\" (expenseBudget) และ \"งบรายออม / เป้าออมรายเดือน\" (savingBudget) ควบคู่กันเสมอ ทั้งสองอยู่ระดับบนสุดของ Snapshot พร้อมสรุปใน budgetOverview; เมื่อวิเคราะห์เรื่องงบประมาณ เป้าหมาย หรือการจัดสรรเงิน ต้องพูดถึงทั้งสองด้านเสมอ (เป้าออมเดือนนี้เท่าไร ออมไปแล้วเท่าไร เหลืออีกเท่าไร และงบรายจ่ายใช้ไปเท่าไร) ห้ามพูดถึงแค่งบรายจ่ายอย่างเดียว",
     `- งบรายออม: set_budget/delete_budget ใส่ "kind":"saving" ได้ โดย categories ต้องเป็นหมวดออมเท่านั้น: ${JSON.stringify(CATS_BY_TYPE.saving||[])} (หน้าแผนจะแสดงว่าเดือนนี้ออมไปแล้วเท่าไหร่เทียบเป้า) | เงินสำรองเผื่อเหตุไม่คาดฝัน: {"type":"set_buffer","month":"YYYY-MM","amount":1500} | ย้ายเศษเงินสำรองไปออม: {"type":"sweep_buffer","month":"YYYY-MM","amount":800,"category":"หมวดออม"} (เสนอได้หลายบรรทัดเพื่อแยกหมวด แต่ผลรวมต้องไม่เกินเงินสำรองที่เหลือ)`,
     (()=>{const bf=getBufferInfo();return `- บทบาท: คุณคือผู้จัดการการเงินส่วนตัวที่ฉลาด ไม่ใช่แค่เครื่องคิดเลข ทุกครั้งที่จัดสรรรายรับ/วางแผนงบ ต้องกันเงินสำรองเผื่อเหตุไม่คาดฝัน (ซ่อมรถ/ค่ารักษา/ของพัง/งานด่วน) ราว 5-10% ของรายรับ (หรือประมาณ 1 เดือนของค่าใช้จ่ายผันแปร ถ้าเงินสำรองฉุกเฉินยังไม่ถึงเป้าให้เลือกต่ำ-กลาง) แยกเป็นก้อนชัดเจน บอกเหตุผลสั้นๆ และเสนอ set_buffer คู่กับงบอื่นเสมอ; จัดลำดับ: เงินสำรองฉุกเฉินไม่ถึงเป้า > buffer > หนี้ดอกแพง > ออม/ลงทุน > ใช้ชีวิต; ${bf?`buffer เดือนนี้ตั้งไว้ ฿${bf.amount}, ใช้ไปแล้ว(รายจ่ายนอกหมวดที่ตั้งงบ) ฿${bf.used}, คงเหลือ ฿${bf.remaining}, เหลืออีก ${bf.daysLeft} วันจะสิ้นเดือน`:"ยังไม่ได้ตั้ง buffer เดือนนี้"}; ถ้าใกล้สิ้นเดือน(เหลือ ≤5 วัน) หรือผู้ใช้ถามสรุปเดือน และ buffer ยังเหลือ ให้แนะนำชัดว่าควรย้ายเศษไปไหน พร้อมจำนวนเงิน ตามลำดับความสำคัญข้างต้น (เช่น เติมเงินสำรองฉุกเฉิน → โปะหนี้ → ออมเพิ่ม) แล้วเสนอ action ที่เกี่ยวข้อง; ถ้า buffer ถูกใช้เกินให้เตือนและเสนอวิธีชดเชยจากหมวดไม่จำเป็นเดือนหน้า`;})(),
     "ถ้า queryContext.mode=month_end ให้ใช้ queryContext.plan.waterfall เป็นคำตอบหลักตามลำดับที่ให้มาโดยตรง ห้ามคำนวณใหม่ อธิบายเหตุผลของแต่ละก้อนสั้นๆ แล้วเสนอ sweep_buffer หนึ่งบรรทัดต่อหนึ่งก้อน (ใช้ category ตามที่ระบุ) ถ้า plan.note บอกว่าใช้เกิน/ยังไม่ตั้ง buffer ให้บอกตรงๆ และเสนอวิธีแก้ (เช่น ลดหมวดไม่จำเป็นเดือนหน้า หรือ set_buffer เดือนหน้า) ถ้า overBudget ไม่ว่าง ให้เตือนหมวดที่เกินด้วย",
@@ -1303,8 +1338,37 @@ document.addEventListener("click",e=>{
     try{ render(); }catch(err){ console.error("render after ai action",err); }
   }catch(err){ console.error("ai action click",err); showToast("เกิดข้อผิดพลาด: "+(err&&err.message||err)); }
 },true);
-function processAiReplyForMemory(text){
-  { const acts=[]; const re=/^@@ACTION@@\s*(\{.*\})\s*$/gm; let m; while((m=re.exec(text||""))){ try{ const s=sanitizeAiAction(JSON.parse(m[1])); if(s) acts.push(s); }catch(e){} } __pendingActions=acts.slice(0,6); text=String(text||"").replace(/^@@ACTION@@.*$/gm,""); }
+// กันการ์ด Action ซ้ำ: ตัดข้อเสนอที่ค่าตรงกับค่าปัจจุบันในระบบอยู่แล้ว หรือมี Action เดียวกันที่ยืนยัน (done) ไปแล้วในแชทล่าสุด
+function __aiActionSig(a){
+  const c=Object.assign({},a); delete c.status; delete c.undo; delete c.msg;
+  if(Array.isArray(c.categories)) c.categories=[...c.categories].sort();
+  return JSON.stringify(Object.keys(c).sort().map(k=>[k,c[k]]));
+}
+function isAiActionRedundant(a,history){
+  try{
+    const same=(x,y)=>Math.abs(Number(x)-Number(y))<0.005;
+    if(a.type==="set_brain_targets"){
+      const t=getBrainTargets(a.month)||{};
+      if(same(t.savingsRatePct,a.savingsRatePct)&&same(t.essentialMaxPct,a.essentialMaxPct)&&same(t.discretionaryMaxPct,a.discretionaryMaxPct)) return true;
+    }
+    else if(a.type==="reset_brain_targets"){ if(!__readTargets().months[a.month]) return true; }
+    else if(a.type==="set_buffer"){ const o=__readBuffer(), cur=o&&o.months?o.months[a.month]:null; if(cur!=null&&same(cur,a.amount)) return true; }
+    else if(a.type==="set_budget"||a.type==="delete_budget"){
+      const kind=a.kind==="saving"?"saving":"expense", key=bKey(a.month,a.categories,kind);
+      const ex=budgets.find(x=>x.enabled!==false&&budgetKey(x)===key);
+      if(a.type==="set_budget"&&ex&&same(ex.amount,a.amount)) return true;
+      if(a.type==="delete_budget"&&!ex) return true;
+    }
+    else if(a.type==="set_emergency_target"){ if(same(emergencyFundConfig.targetMonths,a.targetMonths)) return true; }
+    if(a.type!=="add_entry"&&a.type!=="sweep_buffer"){
+      const sig=__aiActionSig(a), recent=(Array.isArray(history)?history:[]).slice(-12);
+      if(recent.some(m=>m&&m.role==="model"&&Array.isArray(m.actions)&&m.actions.some(x=>x&&x.status==="done"&&__aiActionSig(x)===sig))) return true;
+    }
+  }catch(e){}
+  return false;
+}
+function processAiReplyForMemory(text,history){
+  { const acts=[]; const seen=new Set(); const hist=Array.isArray(history)?history:loadAIChatHistory(); const re=/^@@ACTION@@\s*(\{.*\})\s*$/gm; let m; while((m=re.exec(text||""))){ try{ const s=sanitizeAiAction(JSON.parse(m[1])); if(s){ const sig=__aiActionSig(s); if(seen.has(sig)||isAiActionRedundant(s,hist)) continue; seen.add(sig); acts.push(s); } }catch(e){} } __pendingActions=acts.slice(0,6); text=String(text||"").replace(/^@@ACTION@@.*$/gm,""); }
   const { cleaned, adds, dels } = extractMemoryDirectives(text);
   applyMemoryDirectives(adds, dels);
   return cleaned;
@@ -1399,6 +1463,8 @@ function buildAIChatSystemPrompt(snapshot, profile){
       "- หากผู้ใช้ถามว่าควรจัดการอะไรก่อน ให้สรุปลำดับความสำคัญจากสถานะการเงินจริงปัจจุบันอย่างชัดเจน พร้อมเหตุผลสั้น ๆ และขั้นตอนถัดไป",
       "- ถ้าผู้ใช้พิมพ์มาแบบทั่วไป ไม่ใช่คำถามเชิงตัวเลข (เช่น บ่น/ระบาย/ทักทาย) ให้ตอบรับแบบเป็นมิตรในฐานะที่ปรึกษาการเงินส่วนตัวได้ตามปกติ โดยยังโยงกลับมาที่สถานะการเงินจริงของผู้ใช้เมื่อเหมาะสม แต่ไม่ต้องยัดตัวเลขเข้าไปทุกครั้งถ้าไม่เกี่ยวข้อง",
       "- ยังคงห้ามสร้างตัวเลขที่ไม่มีอยู่ใน Financial Snapshot ขึ้นมาเองเด็ดขาด",
+      "- ย้ำกฎเหล็กเรื่อง Action: ก่อนออก @@ACTION@@ ทุกครั้งให้เทียบกับค่าปัจจุบันใน Snapshot และประวัติแชท หากค่าในระบบตรงกับที่จะเสนออยู่แล้ว หรือผู้ใช้เพิ่งกดยืนยันเรื่องนั้นไปแล้ว ห้ามออก @@ACTION@@ ซ้ำ ให้ตอบเป็นข้อความพูดคุยตามปกติ",
+      "- ย้ำเรื่องงบ: ผู้ใช้มีทั้งงบรายจ่ายและงบรายออม (เป้าออมรายเดือน) ควบคู่กัน เมื่อพูดถึงงบหรือเป้าหมายต้องกล่าวถึงทั้งสองด้านเสมอ โดยอ้างตัวเลขจาก expenseBudget และ savingBudget",
       "- ในโหมดแชทนี้ให้คุยแบบเพื่อนคู่คิดที่เป็นมืออาชีพ: ตรงประเด็น กล้าทักท้วงเมื่อแผนเสี่ยง เสนอทางออกที่ทำได้จริง และเช็ก Memory ทุกครั้งว่ามีแผน/รายรับที่เคยเล่าไว้ที่เกี่ยวข้องหรือไม่ พร้อมแปะ @@MEMORY_ADD@@ อัตโนมัติเมื่อผู้ใช้เล่าข้อมูลใหม่ที่สำคัญ (ตามกติกา Auto-Memory ด้านบน) โดยไม่ต้องรอให้ผู้ใช้สั่ง",
       "- คำสั่งปรับแต่งจากผู้ใช้ใช้ปรับรูปแบบและน้ำเสียงได้ แต่ห้ามทำให้คำตอบไม่สมบูรณ์ ขัดกับคำถามล่าสุด หรือขัดกับข้อมูลจริง",
       loadAIAdvisorInstruction() ? "คำสั่งปรับแต่งจากผู้ใช้:\n" + loadAIAdvisorInstruction() : ""
@@ -2140,7 +2206,7 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
     return;
   }
 
-  const historyWithReply = historyWithUserMsg.concat([{ role:"model", text: processAiReplyForMemory(result.text), actions: takePendingActions() }]);
+  const historyWithReply = historyWithUserMsg.concat([{ role:"model", text: processAiReplyForMemory(result.text, historyWithUserMsg), actions: takePendingActions() }]);
   saveAIChatHistoryForChat(requestChatId, historyWithReply);
   aiRequestState=null;
   renderAiChatBubbles();
@@ -2205,7 +2271,7 @@ async function regenerateLastReply(priorHistory, userText){
     aiRequestState=null; renderAiChatBubbles(); return;
   }
 
-  saveAIChatHistoryForChat(requestChatId,priorHistory.concat([{ role:"user", text: userText }, { role:"model", text: processAiReplyForMemory(result.text), actions: takePendingActions() }]));
+  saveAIChatHistoryForChat(requestChatId,priorHistory.concat([{ role:"user", text: userText }, { role:"model", text: processAiReplyForMemory(result.text, priorHistory), actions: takePendingActions() }]));
   aiRequestState=null;
   renderAiChatBubbles();
 
