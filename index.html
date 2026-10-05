@@ -282,12 +282,20 @@
     </div>
 
     <div class="settings-card">
+      <div class="settings-card-title">🔢 การแสดงตัวเลข</div>
+      <label class="field-label" style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; margin-top:10px; cursor:pointer;">
+        <input type="checkbox" id="showDecimalsToggle" style="width:16px;height:16px;margin:0;" />
+        แสดงเศษสตางค์ (ทศนิยม)
+      </label>
+    </div>
+
+    <div class="settings-card">
       <div class="settings-card-title">🔑 Gemini API Key</div>
       <div class="ai-status-row" style="margin-top:10px;">
         <span class="ai-status-label">Gemini API Key</span>
         <span class="ai-status-value" id="apiKeyStatus">ยังไม่ได้ตั้งค่า</span>
       </div>
-      <p class="ai-hint">ใส่ได้สูงสุด 3 คีย์ — ถ้าคีย์แรกโควต้าเต็ม (429) ระบบจะสลับไปใช้คีย์ถัดไปให้อัตโนมัติ Key จะถูกเก็บไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ถูกส่งไปรวมในไฟล์สำรองข้อมูล และไม่ถูกอัปโหลดไปที่ไหนนอกจากตอนเรียก AI</p>
+      <p class="ai-hint">ใส่ได้สูงสุด 10 คีย์ — ถ้าคีย์แรกโควต้าเต็ม (429) ระบบจะสลับไปใช้คีย์ถัดไปให้อัตโนมัติ Key จะถูกเก็บไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ถูกส่งไปรวมในไฟล์สำรองข้อมูล และไม่ถูกอัปโหลดไปที่ไหนนอกจากตอนเรียก AI</p>
       <div id="apiKeyList"></div>
       <label class="field-label">เพิ่ม API Key</label>
       <input class="text-input" id="apiKeyInput" type="password" placeholder="วาง Gemini API Key ที่นี่" autocomplete="off" />
@@ -726,5 +734,6 @@
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
 <script src="app.js"></script>
+<script src="ai.js"></script>
 </body>
 </html>

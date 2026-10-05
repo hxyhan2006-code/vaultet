@@ -6422,6 +6422,7 @@ body.ux-chat-active #aiChatSendBtn,
   background: var(--bg,#0B0B0D);
   color: var(--ink,#F5F5F7);
   font-family: inherit;
+  overscroll-behavior: contain;
 }
 
 #pfOverlay.open {
@@ -6467,6 +6468,7 @@ body.ux-chat-active #aiChatSendBtn,
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 4px 16px 24px;
 }
 
@@ -7010,4 +7012,15 @@ body.ux-chat-active #aiChatSendBtn,
 
 #pfBody .pf-dca .mut {
   color: #8E8E93;
+}
+
+/* Lock background page while portfolio overlay is open (prevent scroll chaining) */
+body:has(#pfOverlay.open) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
+body:has(#pfOverlay.open) #pfOverlay {
+  touch-action: auto !important;
 }
