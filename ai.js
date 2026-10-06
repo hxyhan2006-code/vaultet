@@ -848,8 +848,21 @@ function computeFinancialBehavior(snapshot){
 }
 function computeFinancialHealth(snapshot){
   const b=snapshot.behaviorSummary||{}, budget=snapshot.budgetSummary||{}, ef=snapshot.emergencyFund||{}, fc=snapshot.forecastToMonthEnd||{}, income=Number(snapshot.thisMonth?.income||0);
+  // ฐานรายได้ประเมิน: getBrainBaseIncome() -> รายได้ประมาณการในโปรไฟล์ -> เฉลี่ย 3 เดือน -> รายรับจริงเดือนนี้
+  let baseIncome=0;
+  try{
+    if(typeof window!=="undefined"&&typeof window.getBrainBaseIncome==="function"){ const r=window.getBrainBaseIncome(income); baseIncome=Number(r&&typeof r==="object"?r.value:r)||0; }
+    if(!(baseIncome>0)){ const p=(typeof loadAIProfile==="function")?loadAIProfile():null; baseIncome=Number(p&&p.monthlyIncomeEstimate)>0?Number(p.monthlyIncomeEstimate):0; }
+    if(!(baseIncome>0)&&typeof getIncomeBaseline==="function"){ const ib=getIncomeBaseline(); baseIncome=(ib&&ib.months>0&&ib.avg>0)?ib.avg:0; }
+  }catch(e){ baseIncome=0; }
+  if(!(baseIncome>0)) baseIncome=income;
   let score=50;const factors=[];const add=(label,points,status)=>{score+=points;factors.push({label,points,status});};
-  const flow=Number(snapshot.thisMonth?.netCashFlow||0); if(flow>0)add('กระแสเงินสดเป็นบวก',15,'positive'); else if(flow<0)add('กระแสเงินสดติดลบ',-20,'negative');
+  const flow=Number(snapshot.thisMonth?.netCashFlow||0); if(flow>0)add('กระแสเงินสดเป็นบวก',15,'positive'); else if(flow<0){
+    const __n=new Date(), __notMonthEnd=__n.getDate()<new Date(__n.getFullYear(),__n.getMonth()+1,0).getDate();
+    // ติดลบช่วงรอรายรับเข้า (ยังไม่สิ้นเดือน และไม่เกินกรอบ baseIncome) = เฝ้าดูชั่วคราว ไม่หักหนัก
+    if(__notMonthEnd&&baseIncome>0&&Math.abs(flow)<=baseIncome) add('กระแสเงินสดติดลบชั่วคราว (รอรายรับเข้า)',-3,'warning');
+    else add('กระแสเงินสดติดลบ',-20,'negative');
+  }
   if(budget.budgetCount){if(budget.overCount>0)add(`เกินงบ ${budget.overCount} หมวด`,-15,'negative');else if(budget.watchCount>0)add(`ต้องเฝ้าดูงบ ${budget.watchCount} หมวด`,-6,'warning');else add('คุมงบได้ดี',10,'positive');}
   if(ef.recommendedEmergencyFund>0){if(ef.currentAvailableReserve>=ef.recommendedEmergencyFund)add('เงินสำรองถึงเป้าหมาย',15,'positive');else if(ef.currentAvailableReserve>=ef.recommendedEmergencyFund*.5)add('เงินสำรองกำลังสร้าง',6,'warning');else add('เงินสำรองยังต่ำ',-12,'negative');}
   if(income>0){const __S=getBrainTargets().savingsRatePct;if(b.savingsRate>=__S)add('อัตราออมแข็งแรง',10,'positive');else if(b.savingsRate>=__S/2)add('มีการออมสม่ำเสมอ',5,'warning');else add('อัตราออมต่ำ',-7,'warning');}
@@ -857,7 +870,7 @@ function computeFinancialHealth(snapshot){
   if(b.discretionaryRatio>60)add('รายจ่ายไม่จำเป็นมีสัดส่วนสูง',-8,'warning');
   if(Number(snapshot.monthComparison?.incomeChange||0)<0&&income>0)add('รายรับลดจากเดือนก่อน',-5,'warning');
   score=Math.max(0,Math.min(100,Math.round(score)));const status=score<40?'CRITICAL':score<70?'WATCH':'HEALTHY';
-  const __T=getBrainTargets(),benchmark={essentialTargetPct:__T.essentialMaxPct,discretionaryTargetPct:__T.discretionaryMaxPct,savingTargetPct:__T.savingsRatePct,essentialPct:income>0?b.essentialExpense/income*100:null,discretionaryPct:income>0?b.discretionaryExpense/income*100:null,savingPct:income>0?Number(snapshot.thisMonth?.saving||0)/income*100:null};
+  const __T=getBrainTargets(),benchmark={essentialTargetPct:__T.essentialMaxPct,discretionaryTargetPct:__T.discretionaryMaxPct,savingTargetPct:__T.savingsRatePct,essentialPct:baseIncome>0?b.essentialExpense/baseIncome*100:null,baseIncome,essentialAmount:Number(b.essentialExpense||0),discretionaryPct:income>0?b.discretionaryExpense/income*100:null,savingPct:income>0?Number(snapshot.thisMonth?.saving||0)/income*100:null};
   return {score,status,factors,negativeFactorCount:factors.filter(x=>x.status==='negative').length,benchmark,strengths:factors.filter(x=>x.status==='positive').map(x=>x.label),risks:factors.filter(x=>x.status!=='positive').map(x=>x.label)};
 }
 function buildFinancialBrainContext(snapshot,profile){

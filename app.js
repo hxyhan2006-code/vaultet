@@ -3347,16 +3347,39 @@ document.getElementById("saveBudgetBtn")?.addEventListener("click",()=>{
   else{const existing=budgets.find(x=>x.enabled!==false&&budgetKey(x)===bKey(month,cats,kind));if(existing){existing.amount=amt;existing.updatedAt=now;}else budgets.push({id:makeId(),kind,category,categories:cats,name,amount:amt,period:"monthly",month,enabled:true,createdAt:now,updatedAt:now});}
   saveBudgets();budgetEditingId=null;document.getElementById("budgetAmountInput").value="";document.getElementById("budgetNameInput").value="";renderBudgetCategorySelect([]);document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ";renderBudgetManager();render();showToast("บันทึกแล้ว ✓");
 });
+function getBrainBaseIncome(actualIncome){
+  // ฐานรายได้ที่ใช้ประเมิน: 1) รายได้ประมาณการจากโปรไฟล์  2) ค่าเฉลี่ยรายรับ 3 เดือนย้อนหลัง  3) รายรับจริงเดือนนี้
+  let est=null;
+  try{ const p=(typeof loadAIProfile==='function')?loadAIProfile():null; if(p&&Number(p.monthlyIncomeEstimate)>0) est=Number(p.monthlyIncomeEstimate); }catch(e){}
+  if(est==null){ try{ const raw=JSON.parse(localStorage.getItem('vaultet_user_profile_v1')||'null'); if(raw&&Number(raw.monthlyIncomeEstimate)>0) est=Number(raw.monthlyIncomeEstimate); }catch(e){} }
+  if(est!=null) return {value:est,source:'profile'};
+  let bl=null; try{ bl=getIncomeBaseline(); }catch(e){}
+  if(bl&&bl.months>0&&bl.avg>0) return {value:bl.avg,source:'baseline'};
+  return {value:Number(actualIncome)||0,source:'actual'};
+}
+window.getBrainBaseIncome=getBrainBaseIncome;
 function renderFinancialBrainCard(){const card=document.getElementById("financialBrainCard");if(!card)return;if(typeof buildFinancialSnapshot!=="function")return;const s=buildFinancialSnapshot(),h=s.financialBrain,b=s.behaviorSummary;card.style.display="block";document.getElementById("brainScore").textContent=h.score;document.getElementById("brainFill").style.width=h.score+"%";const m=h.status==='CRITICAL'?{l:'ต้องจัดการเร่งด่วน',c:'critical'}:h.status==='WATCH'?{l:'ควรเฝ้าดู',c:'watch'}:{l:'สุขภาพดี ✓',c:'healthy'};const st=document.getElementById("brainStatus");st.className='brain-status '+m.c;st.textContent=m.l;
 const empty=s.thisMonth.income===0&&s.thisMonth.expense===0;
 document.getElementById("brainSub").textContent=empty?'เดือนนี้ยังไม่มีรายการ คะแนนจึงยังไม่สะท้อนความจริง — บันทึกรายรับ/รายจ่ายก่อน':'คะแนนเต็ม 100 ยิ่งสูงยิ่งดี คิดจาก 6 ข้อด้านล่าง (ของเดือนที่ดูอยู่)';
 const BT=getBrainTargets();const pct=x=>x==null?'—':fmt(x)+'%';const tm=Number(emergencyFundConfig.targetMonths)||3;
 const lv=(v,good,ok,rev)=>v==null?0:(rev?(v<=good?1:v<=ok?2:3):(v>=good?1:v>=ok?2:3));
 const net=s.thisMonth.netCashFlow;
+const baseIncome=getBrainBaseIncome(s.thisMonth.income).value;
+const __curKey=monthKey(todayISO()),__viewKey=(s.thisMonth&&s.thisMonth.month)||__curKey,__isCur=__viewKey===__curKey;
+const __now=new Date(),__day=__now.getDate(),__last=new Date(__now.getFullYear(),__now.getMonth()+1,0).getDate();
+let essPctShown=h.benchmark.essentialPct,essT=lv(h.benchmark.essentialPct,BT.essentialMaxPct,BT.essentialMaxPct+15,true);
+if(baseIncome>0){
+const essAmt=h.benchmark.essentialAmount!=null?Number(h.benchmark.essentialAmount):computeEssentialExpenseForMonth(__viewKey,getEmergencyEssentialCategories());
+const essCeil=baseIncome*(BT.essentialMaxPct/100);
+essPctShown=essAmt/baseIncome*100;
+essT=essAmt<=essCeil?1:lv(essPctShown,BT.essentialMaxPct,BT.essentialMaxPct+15,true);
+}
+const earlyOk=net<0&&__isCur&&__day<__last&&baseIncome>0&&Math.abs(net)<=baseIncome;
+const cashT=net<0?(earlyOk?2:3):1;
 const rows=[
-{k:'cash',l:'เงินเข้า − เงินออก',v:empty?'—':(net<0?'ติดลบ ':'เหลือ ')+'฿'+fmt(Math.abs(net)),t:empty?0:net<0?3:1,d:'รายรับลบรายจ่ายของเดือนนี้ ควรเป็นบวก',a:net<0?'ลดรายจ่ายที่ไม่จำเป็นก่อน':''},
+{k:'cash',l:'เงินเข้า − เงินออก',v:empty?'—':(net<0?'ติดลบ ':'เหลือ ')+'฿'+fmt(Math.abs(net)),t:empty?0:cashT,d:'รายรับลบรายจ่ายของเดือนนี้ ควรเป็นบวก',a:net<0?(earlyOk?'รายรับอาจยังเข้าไม่ครบ ยังอยู่ในกรอบรายได้ประมาณการ':'ลดรายจ่ายที่ไม่จำเป็นก่อน'):''},
 {k:'save',l:'อัตราออม',v:pct(b.savingsRate),t:lv(b.savingsRate,BT.savingsRatePct,BT.savingsRatePct/2),d:`ออมกี่ % ของรายรับ เป้าหมาย ${BT.savingsRatePct}% ขึ้นไป${BT.custom?' (ปรับเองเดือนนี้)':''}`,a:''},
-{k:'ess',l:'ค่าใช้จ่ายจำเป็น',v:pct(h.benchmark.essentialPct),t:lv(h.benchmark.essentialPct,BT.essentialMaxPct,BT.essentialMaxPct+15,true),d:`ค่ากิน ค่าห้อง ค่าเดินทาง ฯลฯ ต่อรายรับ ไม่ควรเกิน ${BT.essentialMaxPct}%`,a:''},
+{k:'ess',l:'ค่าใช้จ่ายจำเป็น',v:pct(essPctShown),t:essT,d:`ค่ากิน ค่าห้อง ค่าเดินทาง ฯลฯ ต่อรายได้ฐานของเดือน ไม่ควรเกิน ${BT.essentialMaxPct}%`,a:''},
 {k:'dis',l:'ค่าใช้จ่ายไม่จำเป็น',v:pct(h.benchmark.discretionaryPct),t:lv(h.benchmark.discretionaryPct,BT.discretionaryMaxPct,BT.discretionaryMaxPct+10,true),d:`ของชอบ ฟุ่มเฟือย ต่อรายรับ ไม่ควรเกิน ${BT.discretionaryMaxPct}%`,a:''},
 {k:'res',l:'เงินสำรองฉุกเฉิน',v:s.emergencyFund.monthlyEssentialExpense>0?fmt(s.emergencyFund.reserveCoverageMonths)+' เดือน':'—',t:s.emergencyFund.monthlyEssentialExpense>0?lv(s.emergencyFund.reserveCoverageMonths,tm,1):0,d:'ถ้าไม่มีรายได้ เงินที่มีอยู่อยู่ได้กี่เดือน เป้าหมาย '+tm+' เดือน',a:''},
 {k:'bud',l:'งบประมาณ',v:s.budgetSummary.budgetCount?`${s.budgetSummary.overCount} เกินงบ · ${s.budgetSummary.watchCount} ใกล้เต็ม`:'ยังไม่ได้ตั้ง',t:s.budgetSummary.budgetCount?(s.budgetSummary.overCount?3:s.budgetSummary.watchCount?2:1):0,d:'ตั้งงบรายหมวดได้ในหน้า "แผน"',a:''}];
@@ -4500,7 +4523,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
 
   function openPf(){
     overlay.classList.add('open'); render();
-    const c=readCache(); if(lsGet(PF_APIKEY_KEY) && Object.keys(lotsByTicker()).length && Date.now()-c.fetchedAt>6*3600*1000) refreshPrices();
+    const c=readCache(); if(lsGet(PF_APIKEY_KEY) && Object.keys(lotsByTicker()).length && Date.now()-c.fetchedAt>20*60*1000) refreshPrices();
   }
   function closePf(){ overlay.classList.remove('open'); }
 
@@ -4624,11 +4647,11 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   const old=document.getElementById('manageBudgetsBtn');
   if(old){ const nb=old.cloneNode(true); nb.id='openPortfolioBtn'; nb.textContent='📈 พอร์ตหุ้น'; old.replaceWith(nb); nb.addEventListener('click',openPf); }
 
-  /* ---------- ดึงราคาเองวันละครั้งตอนเปิดแอป ---------- */
+  /* ---------- ดึงราคาเองตอนเปิดแอป (ถ้าราคาล่าสุดเก่าเกิน 20 นาที) ---------- */
   setTimeout(()=>{
     try{
-      const c=readCache(), today=new Date().toDateString();
-      if(lsGet(PF_APIKEY_KEY) && Object.keys(lotsByTicker()).length && (!c.fetchedAt || new Date(c.fetchedAt).toDateString()!==today)) refreshPrices();
+      const c=readCache();
+      if(lsGet(PF_APIKEY_KEY) && Object.keys(lotsByTicker()).length && Date.now()-c.fetchedAt>20*60*1000) refreshPrices();
     }catch(_){}
   },2500);
 
