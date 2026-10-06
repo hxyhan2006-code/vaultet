@@ -3378,7 +3378,7 @@ const earlyOk=net<0&&__isCur&&__day<__last&&baseIncome>0&&Math.abs(net)<=baseInc
 const cashT=net<0?(earlyOk?2:3):1;
 const rows=[
 {k:'cash',l:'เงินเข้า − เงินออก',v:empty?'—':(net<0?'ติดลบ ':'เหลือ ')+'฿'+fmt(Math.abs(net)),t:empty?0:cashT,d:'รายรับลบรายจ่ายของเดือนนี้ ควรเป็นบวก',a:net<0?(earlyOk?'รายรับอาจยังเข้าไม่ครบ ยังอยู่ในกรอบรายได้ประมาณการ':'ลดรายจ่ายที่ไม่จำเป็นก่อน'):''},
-{k:'save',l:'อัตราออม',v:pct(b.savingsRate),t:lv(b.savingsRate,BT.savingsRatePct,BT.savingsRatePct/2),d:`ออมกี่ % ของรายรับ เป้าหมาย ${BT.savingsRatePct}% ขึ้นไป${BT.custom?' (ปรับเองเดือนนี้)':''}`,a:''},
+{k:'save',l:'อัตราออม',v:pct(b.savingsRate),t:h.savingsWaiting?2:lv(b.savingsRate,BT.savingsRatePct,BT.savingsRatePct/2),d:`ออมกี่ % ของรายรับ เป้าหมาย ${BT.savingsRatePct}% ขึ้นไป${BT.custom?' (ปรับเองเดือนนี้)':''}`,a:h.savingsWaiting?'รอรอบเงินเข้า ยังไม่ถึงงวดออม ไม่นับเป็นไฟแดง':''},
 {k:'ess',l:'ค่าใช้จ่ายจำเป็น',v:pct(essPctShown),t:essT,d:`ค่ากิน ค่าห้อง ค่าเดินทาง ฯลฯ ต่อรายได้ฐานของเดือน ไม่ควรเกิน ${BT.essentialMaxPct}%`,a:''},
 {k:'dis',l:'ค่าใช้จ่ายไม่จำเป็น',v:pct(h.benchmark.discretionaryPct),t:lv(h.benchmark.discretionaryPct,BT.discretionaryMaxPct,BT.discretionaryMaxPct+10,true),d:`ของชอบ ฟุ่มเฟือย ต่อรายรับ ไม่ควรเกิน ${BT.discretionaryMaxPct}%`,a:''},
 {k:'res',l:'เงินสำรองฉุกเฉิน',v:s.emergencyFund.monthlyEssentialExpense>0?fmt(s.emergencyFund.reserveCoverageMonths)+' เดือน':'—',t:s.emergencyFund.monthlyEssentialExpense>0?lv(s.emergencyFund.reserveCoverageMonths,tm,1):0,d:'ถ้าไม่มีรายได้ เงินที่มีอยู่อยู่ได้กี่เดือน เป้าหมาย '+tm+' เดือน',a:''},
@@ -4357,6 +4357,21 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   try{ if(typeof renderVaultetNotifications==='function') renderVaultetNotifications(); }catch(_){}
 })();
 
+/* ===== Cold Start ของแชท AI: เริ่มห้องแชทใหม่เฉพาะตอนเปิดแอปครั้งแรกของเซสชันเบราว์เซอร์ =====
+   - sessionStorage 'vaultet_app_session_active' ยังไม่มี = เปิดแอปใหม่ (ปิดแท็บ/เบราว์เซอร์แล้วเปิดใหม่)
+   - สลับแท็บภายในแอปไม่เรียก createNewChat() เด็ดขาด; ห้องใหม่ระหว่างใช้งานสร้างได้จากปุ่ม "+ แชทใหม่" เท่านั้น */
+(window.__vaultetAiPatches=window.__vaultetAiPatches||[]).push(function(){
+  try{
+    if(sessionStorage.getItem('vaultet_app_session_active')) return;
+    sessionStorage.setItem('vaultet_app_session_active','1');
+    const cur=(typeof getActiveChat==='function')?getActiveChat():null;
+    if(cur&&cur.messages&&cur.messages.length&&typeof createNewChat==='function'){
+      createNewChat();
+      if(typeof renderAiChatBubbles==='function'){ try{ renderAiChatBubbles(); }catch(_){} }
+    }
+  }catch(e){ console.error(e); }
+});
+
 // (AI) pruneEmptyChats() ย้ายไปรันท้าย ai.js
 
 (function(){
@@ -4366,8 +4381,9 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   const PF_APIKEY_KEY='finance_tracker_twelvedata_key_v1';
   const DIRTY_DAY_KEY='vaultet_dirty_notice_day_v1';
   const SYNCED_HASH_KEY='vaultet_drive_synced_hash_v1';
+  const DIRTY_DISMISSED_KEY='vaultet_dirty_dismissed_date';
   const PF_SELL_KEY='vaultet_portfolio_sells_v1';
-  try{ [PF_PRICE_KEY,PF_APIKEY_KEY,DIRTY_DAY_KEY,SYNCED_HASH_KEY].forEach(k=>VAULTET_BACKUP_EXCLUDED_KEYS.add(k)); }catch(_){}
+  try{ [PF_PRICE_KEY,PF_APIKEY_KEY,DIRTY_DAY_KEY,SYNCED_HASH_KEY,DIRTY_DISMISSED_KEY].forEach(k=>VAULTET_BACKUP_EXCLUDED_KEYS.add(k)); }catch(_){}
 
   const lsGet=k=>{try{return localStorage.getItem(k);}catch(_){return null;}};
   const lsSet=(k,v)=>{try{localStorage.setItem(k,v);return true;}catch(_){return false;}};
@@ -4670,27 +4686,47 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   };
   const bn=document.createElement('div'); bn.className='backup-banner dd'; bn.id='driveDirtyBanner';
   const anchor=document.getElementById('backupBanner'); if(anchor) anchor.insertAdjacentElement('afterend',bn);
-  let firstOfDay=null;
-  function renderDirty(){
-    let show=false;
+  /* สถานะข้อมูลค้างซิงก์: ไม่เด้งแบนเนอร์หลังบันทึกแบบเรียลไทม์อีกต่อไป
+     - ระหว่างวัน: แสดงจุดไฟเล็กๆ ที่ปุ่มตั้งค่า (#settingsBtn) แทน
+     - แบนเนอร์: แสดงได้สูงสุดวันละครั้ง ตอนเปิดแอปครั้งแรกของวัน และถ้ากด ✕ จะไม่แสดงอีกทั้งวัน */
+  function isDirty(){
     try{
       const clientId=lsGet(GDRIVE_CLIENT_ID_KEY), fileId=lsGet(GDRIVE_FILE_ID_KEY);
-      if(clientId&&fileId&&!sessionStorage.getItem('vaultet_dirty_dismissed')){
-        const tokenOk=!!(gdriveAccessToken&&Date.now()<gdriveAccessTokenExpiry), auto=lsGet(GDRIVE_AUTOSYNC_KEY)==='1';
-        if(!(tokenOk&&auto)) show=(lsGet(SYNCED_HASH_KEY)!==coreHash());
-      }
-    }catch(_){ show=false; }
-    if(show&&firstOfDay===null){ firstOfDay=(lsGet(DIRTY_DAY_KEY)!==todayISO()); lsSet(DIRTY_DAY_KEY,todayISO()); }
-    bn.classList.toggle('show',show);
-    if(!show) return;
-    bn.classList.toggle('first',!!firstOfDay);
-    bn.innerHTML=(firstOfDay
-      ?`<span><b>☁️ มีข้อมูลที่ยังไม่ได้สำรองขึ้น Google Drive</b><small>กดสำรองเลย หน้าต่าง Google จะแวบขึ้นมาแป๊บเดียว</small></span>`
-      :`<span>วันนี้ยังไม่ได้สำรองขึ้น Drive</span>`)
+      if(!(clientId&&fileId)) return false;
+      const tokenOk=!!(gdriveAccessToken&&Date.now()<gdriveAccessTokenExpiry), auto=lsGet(GDRIVE_AUTOSYNC_KEY)==='1';
+      if(tokenOk&&auto) return false;
+      return lsGet(SYNCED_HASH_KEY)!==coreHash();
+    }catch(_){ return false; }
+  }
+  function updateDirtyDot(dirty){
+    const btn=document.getElementById('settingsBtn'); if(!btn) return;
+    let dot=btn.querySelector('.dirty-dot');
+    if(dirty&&!dot){
+      try{ if(getComputedStyle(btn).position==='static') btn.style.position='relative'; }catch(_){}
+      dot=document.createElement('i'); dot.className='dirty-dot'; dot.setAttribute('aria-hidden','true');
+      dot.style.cssText='position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#e9c46a;box-shadow:0 0 0 2px var(--bg,#111);pointer-events:none;display:block';
+      btn.appendChild(dot);
+    }
+    if(dot) dot.style.display=dirty?'block':'none';
+    if(dirty) btn.setAttribute('title','มีข้อมูลที่ยังไม่ได้สำรองขึ้น Google Drive'); else btn.removeAttribute('title');
+  }
+  function renderDirty(){
+    const dirty=isDirty();
+    updateDirtyDot(dirty);
+    if(!dirty) bn.classList.remove('show');
+  }
+  function maybeShowDirtyBanner(){
+    const today=todayISO();
+    if(lsGet(DIRTY_DAY_KEY)===today) return; // เช็กไปแล้ววันนี้ = ไม่ใช่การเปิดแอปครั้งแรกของวัน
+    lsSet(DIRTY_DAY_KEY,today);
+    if(lsGet(DIRTY_DISMISSED_KEY)===today) return;
+    if(!isDirty()) return;
+    bn.classList.add('show','first');
+    bn.innerHTML=`<span><b>☁️ มีข้อมูลที่ยังไม่ได้สำรองขึ้น Google Drive</b><small>กดสำรองเลย หน้าต่าง Google จะแวบขึ้นมาแป๊บเดียว</small></span>`
       +`<span style="display:flex;gap:6px;align-items:center"><button type="button" id="ddNow">สำรองเลย</button><button type="button" class="dismiss" id="ddX" aria-label="ปิด">✕</button></span>`;
   }
   bn.addEventListener('click',e=>{
-    if(e.target.closest('#ddX')){ try{ sessionStorage.setItem('vaultet_dirty_dismissed','1'); }catch(_){} bn.classList.remove('show'); return; }
+    if(e.target.closest('#ddX')){ lsSet(DIRTY_DISMISSED_KEY,todayISO()); bn.classList.remove('show'); return; }
     if(e.target.closest('#ddNow')){ Promise.resolve(runGDriveSync(false)).then(()=>renderDirty()).catch(()=>{}); }
   });
   let dt=null; const later=ms=>{ clearTimeout(dt); dt=setTimeout(()=>{ try{renderDirty();}catch(_){} },ms); };
@@ -4699,8 +4735,8 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     localStorage.setItem=function(k,v){ const r=_si(k,v); try{ if(shouldBackupLocalStorageKey(String(k))) later(6000); }catch(_){} return r; };
     localStorage.removeItem=function(k){ const r=_ri(k); try{ if(shouldBackupLocalStorageKey(String(k))) later(6000); }catch(_){} return r; };
   }catch(_){}
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') later(1500); });
-  later(2500);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ later(1500); setTimeout(()=>{ try{maybeShowDirtyBanner();}catch(_){} },1600); } });
+  setTimeout(()=>{ try{ renderDirty(); maybeShowDirtyBanner(); }catch(_){} },2500);
 })();
 
 (function(){

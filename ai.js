@@ -846,6 +846,17 @@ function computeFinancialBehavior(snapshot){
   const expense=Number(a.expense||0),income=Number(a.income||0),saving=Number(a.saving||0);
   return {spendingTrend:{currentMonthlyExpense:expense,previousMonthlyExpense:Number(prev.expense||0),change:expense-Number(prev.expense||0),pctChange:prev.expense>0?((expense-prev.expense)/prev.expense)*100:null},incomeTrend:{current:income,previous:Number(prev.income||0),change:income-Number(prev.income||0),pctChange:prev.income>0?((income-prev.income)/prev.income)*100:null},averageDailyExpense:expense/daysThisMonth,essentialExpense:essential,discretionaryExpense:Math.max(0,expense-essential),discretionaryRatio:expense>0?Math.max(0,expense-essential)/expense*100:0,savingsRate:income>0?saving/income*100:0,topCategories:trends.slice(0,5),categoryTrends:trends.slice(0,20),frequentCategories:full.slice().sort((x,y)=>Number(y.count||0)-Number(x.count||0)).slice(0,5).map(r=>({category:r.cat,count:Number(r.count||0),amount:Number(r.amount||0)})),spendingDaysElapsed:daysThisMonth};
 }
+// ช่วงรอรอบรายรับเข้า: ก่อนวันที่ 22 หรือรายรับสะสมยังไม่ถึง 50% ของรายได้ฐาน (เฉพาะเดือนปัจจุบัน)
+function getSavingsTimingState(snapshot,baseIncome){
+  try{
+    const income=Number(snapshot&&snapshot.thisMonth&&snapshot.thisMonth.income||0), base=Number(baseIncome||0);
+    const viewMonth=snapshot&&snapshot.thisMonth&&snapshot.thisMonth.month, curMonth=monthKey(todayISO());
+    if(viewMonth&&viewMonth!==curMonth) return {waiting:false,beforeDay22:false,incomeBelowHalf:false};
+    const beforeDay22=new Date().getDate()<22;
+    const incomeBelowHalf=base>0&&income<base*0.5;
+    return {waiting:beforeDay22||incomeBelowHalf,beforeDay22,incomeBelowHalf};
+  }catch(e){ return {waiting:false,beforeDay22:false,incomeBelowHalf:false}; }
+}
 function computeFinancialHealth(snapshot){
   const b=snapshot.behaviorSummary||{}, budget=snapshot.budgetSummary||{}, ef=snapshot.emergencyFund||{}, fc=snapshot.forecastToMonthEnd||{}, income=Number(snapshot.thisMonth?.income||0);
   // ฐานรายได้ประเมิน: getBrainBaseIncome() -> รายได้ประมาณการในโปรไฟล์ -> เฉลี่ย 3 เดือน -> รายรับจริงเดือนนี้
@@ -865,13 +876,14 @@ function computeFinancialHealth(snapshot){
   }
   if(budget.budgetCount){if(budget.overCount>0)add(`เกินงบ ${budget.overCount} หมวด`,-15,'negative');else if(budget.watchCount>0)add(`ต้องเฝ้าดูงบ ${budget.watchCount} หมวด`,-6,'warning');else add('คุมงบได้ดี',10,'positive');}
   if(ef.recommendedEmergencyFund>0){if(ef.currentAvailableReserve>=ef.recommendedEmergencyFund)add('เงินสำรองถึงเป้าหมาย',15,'positive');else if(ef.currentAvailableReserve>=ef.recommendedEmergencyFund*.5)add('เงินสำรองกำลังสร้าง',6,'warning');else add('เงินสำรองยังต่ำ',-12,'negative');}
-  if(income>0){const __S=getBrainTargets().savingsRatePct;if(b.savingsRate>=__S)add('อัตราออมแข็งแรง',10,'positive');else if(b.savingsRate>=__S/2)add('มีการออมสม่ำเสมอ',5,'warning');else add('อัตราออมต่ำ',-7,'warning');}
+  const __savTiming=getSavingsTimingState(snapshot,baseIncome); let savingsWaiting=false;
+  if(income>0){const __S=getBrainTargets().savingsRatePct;if(b.savingsRate>=__S)add('อัตราออมแข็งแรง',10,'positive');else if(b.savingsRate>=__S/2)add('มีการออมสม่ำเสมอ',5,'warning');else if(__savTiming.waiting){savingsWaiting=true;add('รอรอบการออมตามรายรับ (ยังไม่ถึงงวดเงินเข้า)',0,'neutral');}else add('อัตราออมต่ำ',-7,'warning');}
   if(Number(fc.forecastAvailable||0)<0)add('คาดการณ์เงินใช้ได้ติดลบ',-20,'negative'); else if(Number(fc.forecastAvailable||0)>0)add('คาดการณ์เงินใช้ได้ยังเป็นบวก',5,'positive');
   if(b.discretionaryRatio>60)add('รายจ่ายไม่จำเป็นมีสัดส่วนสูง',-8,'warning');
   if(Number(snapshot.monthComparison?.incomeChange||0)<0&&income>0)add('รายรับลดจากเดือนก่อน',-5,'warning');
   score=Math.max(0,Math.min(100,Math.round(score)));const status=score<40?'CRITICAL':score<70?'WATCH':'HEALTHY';
   const __T=getBrainTargets(),benchmark={essentialTargetPct:__T.essentialMaxPct,discretionaryTargetPct:__T.discretionaryMaxPct,savingTargetPct:__T.savingsRatePct,essentialPct:baseIncome>0?b.essentialExpense/baseIncome*100:null,baseIncome,essentialAmount:Number(b.essentialExpense||0),discretionaryPct:income>0?b.discretionaryExpense/income*100:null,savingPct:income>0?Number(snapshot.thisMonth?.saving||0)/income*100:null};
-  return {score,status,factors,negativeFactorCount:factors.filter(x=>x.status==='negative').length,benchmark,strengths:factors.filter(x=>x.status==='positive').map(x=>x.label),risks:factors.filter(x=>x.status!=='positive').map(x=>x.label)};
+  return {score,status,factors,savingsWaiting,savingsWaitingLabel:savingsWaiting?'รอรอบการออมตามรายรับ (ยังไม่ถึงงวดเงินเข้า)':'',negativeFactorCount:factors.filter(x=>x.status==='negative').length,benchmark,strengths:factors.filter(x=>x.status==='positive').map(x=>x.label),risks:factors.filter(x=>x.status!=='positive'&&x.status!=='neutral').map(x=>x.label)};
 }
 function buildFinancialBrainContext(snapshot,profile){
   const advisor=getAdvisorIntelligence(snapshot,profile||{});
@@ -888,7 +900,7 @@ function financialBrainRuleFindings(snapshot){
   if(b.discretionaryRatio>60)f.push({id:'HIGH_DISCRETIONARY_SPENDING',severity:'warning',data:{discretionaryRatio:b.discretionaryRatio}});
   if(Number(b.spendingTrend?.pctChange||0)>=30&&Number(b.spendingTrend?.change||0)>=500)f.push({id:'SPENDING_SPIKE',severity:'warning',data:b.spendingTrend});
   if(Number(b.incomeTrend?.pctChange||0)<=-20&&Number(b.incomeTrend?.change||0)<0)f.push({id:'INCOME_DROP',severity:'warning',data:b.incomeTrend});
-  if(b.savingsRate<getBrainTargets().savingsRatePct/2&&Number(snapshot.thisMonth.income||0)>0)f.push({id:'SAVINGS_RATE_LOW',severity:'warning',data:{savingsRate:b.savingsRate}});
+  if(b.savingsRate<getBrainTargets().savingsRatePct/2&&Number(snapshot.thisMonth.income||0)>0&&!getSavingsTimingState(snapshot,snapshot.financialBrain?.benchmark?.baseIncome).waiting)f.push({id:'SAVINGS_RATE_LOW',severity:'warning',data:{savingsRate:b.savingsRate}});
   if(!f.length)f.push({id:'FINANCIAL_STRENGTH',severity:'positive',data:{score:snapshot.financialBrain?.score}});
   const rank={critical:4,warning:3,info:2,positive:1};return f.sort((a,z)=>(rank[z.severity]||0)-(rank[a.severity]||0));
 }
