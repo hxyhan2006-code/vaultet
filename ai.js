@@ -33,6 +33,8 @@ const AI_MEMORY_KEY = "finance_tracker_ai_memory_v1"; // ความจำร�
 const AI_ADVISOR_INSTRUCTION_KEY = "finance_tracker_ai_advisor_instruction_v1"; // คำสั่งปรับบุคลิก/รูปแบบคำตอบของที่ปรึกษา AI
 // Milestone 4: แคชผลวิเคราะห์ Proactive Insight — เก็บแยกจากทุกคีย์ข้างบน ห้ามรวมเข้า exportBtn backup
 const AI_PROACTIVE_KEY = "finance_tracker_ai_proactive_v1";
+// Weekly Audit: ผลวิเคราะห์ล่าสุด {text,generatedAt,weekKey,rangeStart,rangeEnd,stats} — ห้ามรวมเข้า exportBtn backup เช่นกัน
+const WEEKLY_AUDIT_KEY = "vaultet_last_weekly_audit";
 
 // ===== AI Layer (Milestone 3) state =====
 // สำเนาโปรไฟล์ที่กำลังแก้ไขอยู่ในหน้า Settings — sync กับ localStorage ทันทีทุกครั้งที่เพิ่ม/ลบเป้าหมาย
@@ -1721,6 +1723,553 @@ async function generateProactiveInsight(evalResult, snapshot, profile){
   return { ok:true, text };
 }
 
+// ======================================================================
+// ===== Weekly Audit — ตรวจสุขภาพการเงินรอบสัปดาห์โดย AI =====
+// ส่วนนี้เพิ่มใหม่ทั้งหมด ไม่แตะ logic เดิม:
+//  1) buildWeeklyAuditContext()  — รวมข้อมูลจริง 7 วันล่าสุดแบบ deterministic (ไม่ยิง network)
+//  2) generateWeeklyAudit()      — ส่ง Context ให้ Gemini เขียนรายงานสั้น 3 หัวข้อ
+//  3) UI: ปุ่ม + Modal + แบนเนอร์สัปดาห์ใหม่ + แคชผลลง localStorage (WEEKLY_AUDIT_KEY)
+// กฎเหล็กเดียวกับคีย์ AI อื่น: ห้ามนำ WEEKLY_AUDIT_KEY ไปรวมใน payload ของ exportBtn (ไม่ใช่ข้อมูลการเงิน)
+// ======================================================================
+const WEEKLY_AUDIT_DAYS = 7;                 // ช่วงที่ตรวจ: 7 วันล่าสุดรวมวันนี้
+const WEEKLY_AUDIT_OVERUSE_PCT = 50;         // สัปดาห์เดียวใช้เกิน 50% ของงบทั้งเดือน = ระดับ critical
+const WEEKLY_AUDIT_WARN_FACTOR = 1.5;        // ใช้เกิน 1.5 เท่าของสัดส่วนที่ควรใช้ใน 7 วัน = ระดับ warning
+const WEEKLY_AUDIT_DISMISS_KEY = "vaultet_weekly_audit_banner_dismissed"; // เก็บใน sessionStorage เท่านั้น
+let weeklyAuditBusy = false;
+
+// --- helpers ---
+function waNum(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function waRound(v){ return Math.round(waNum(v)); }
+function waIsoFromDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+// คีย์สัปดาห์ = วันจันทร์ของสัปดาห์นั้น (YYYY-MM-DD) ใช้ตัดสินว่า "สัปดาห์ใหม่" หรือยัง
+function waWeekKey(iso){
+  const p = String(iso || todayISO()).split("-").map(Number);
+  const d = new Date(p[0], p[1]-1, p[2], 12, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return waIsoFromDate(d);
+}
+function waShortDate(iso){
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(iso || "")) ? `${iso.slice(8,10)}/${iso.slice(5,7)}` : "";
+}
+function waBaht(v){ return "฿" + fmt(waRound(v)); }
+
+// --- storage ---
+function loadWeeklyAuditCache(){
+  try{
+    const raw = localStorage.getItem(WEEKLY_AUDIT_KEY);
+    if(!raw) return null;
+    const c = JSON.parse(raw);
+    return (c && typeof c.text === "string" && c.text.trim() && c.weekKey) ? c : null;
+  }catch(e){ return null; }
+}
+function saveWeeklyAuditCache(record){
+  try{ localStorage.setItem(WEEKLY_AUDIT_KEY, JSON.stringify(record)); return true; }catch(e){ return false; }
+}
+
+// ===== 1) รวบรวมข้อมูลรอบ 7 วัน =====
+function buildWeeklyAuditContext(){
+  const today = todayISO();
+  const start = isoDaysFromToday(-(WEEKLY_AUDIT_DAYS - 1));
+  const prevStart = isoDaysFromToday(-(WEEKLY_AUDIT_DAYS * 2 - 1));
+  const prevEnd = isoDaysFromToday(-WEEKLY_AUDIT_DAYS);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const mk = monthKey(today);
+  const mb = monthBoundsISO(ty, tm - 1);
+  const daysInMonth = new Date(ty, tm, 0).getDate();
+  const daysLeftAfterToday = Math.max(1, daysInMonth - td);
+
+  // ใช้ตัววิเคราะห์ช่วงวันตัวเดิมของแอป เพื่อให้ตัวเลข (รายรับจริง/ไม่นับเงินคืนจากการให้ยืม/หมวด) ตรงกับหน้าอื่นเสมอ
+  const week = computePeriodAnalysisForRange(start, today, null);
+  const prevWeek = computePeriodAnalysisForRange(prevStart, prevEnd, null);
+  const month = computePeriodAnalysisForRange(mb.start, today, null);
+
+  let essentialSet;
+  try{ essentialSet = new Set(getEmergencyEssentialCategories()); }catch(e){ essentialSet = new Set(); }
+
+  const weekExpense = waNum(week.expense);
+  const weekRows = Array.isArray(week.breakdown) ? week.breakdown : [];
+  const categories = weekRows
+    .map(r => ({
+      category: r.cat,
+      amount: waRound(r.amount),
+      count: waNum(r.count),
+      pctOfWeekExpense: weekExpense > 0 ? Math.round(waNum(r.amount) / weekExpense * 100) : 0,
+      necessity: essentialSet.has(r.cat) ? "จำเป็น" : "ไม่จำเป็น"
+    }))
+    .filter(r => r.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+  const essentialExpense = categories.filter(c => c.necessity === "จำเป็น").reduce((s, c) => s + c.amount, 0);
+  const discretionaryExpense = Math.max(0, waRound(weekExpense) - essentialExpense);
+
+  // งบรายจ่ายรายกลุ่มของเดือนนี้ เทียบกับยอดที่ใช้ใน 7 วัน
+  const weekCatSpent = {}, monthCatSpent = {};
+  weekRows.forEach(r => { weekCatSpent[r.cat] = waNum(r.amount); });
+  (Array.isArray(month.breakdown) ? month.breakdown : []).forEach(r => { monthCatSpent[r.cat] = waNum(r.amount); });
+  const fairSharePct = Math.round(WEEKLY_AUDIT_DAYS / daysInMonth * 100);
+  const budgetGroups = (Array.isArray(budgets) ? budgets : [])
+    .filter(b => b && b.enabled !== false && b.month === mk && (b.kind || "expense") === "expense" && waNum(b.amount) > 0)
+    .map(b => {
+      const cats = (Array.isArray(b.categories) && b.categories.length) ? b.categories : (b.category ? [b.category] : []);
+      const amount = waNum(b.amount);
+      const weekSpent = cats.reduce((s, c) => s + waNum(weekCatSpent[c]), 0);
+      const monthSpent = cats.reduce((s, c) => s + waNum(monthCatSpent[c]), 0);
+      const weekPct = Math.round(weekSpent / amount * 100);
+      const level = weekPct >= WEEKLY_AUDIT_OVERUSE_PCT ? "critical"
+        : weekPct >= fairSharePct * WEEKLY_AUDIT_WARN_FACTOR ? "warning" : "ok";
+      return {
+        name: b.name || b.category || cats.join(" + "),
+        categories: cats,
+        monthlyBudget: waRound(amount),
+        weekSpent: waRound(weekSpent),
+        weekPctOfMonthlyBudget: weekPct,
+        monthSpentToDate: waRound(monthSpent),
+        monthPctUsed: Math.round(monthSpent / amount * 100),
+        level
+      };
+    });
+  const overuseFlags = budgetGroups
+    .filter(g => g.level !== "ok")
+    .sort((a, b) => b.weekPctOfMonthlyBudget - a.weekPctOfMonthlyBudget)
+    .map(g => ({
+      budget: g.name,
+      level: g.level,
+      weekSpent: g.weekSpent,
+      monthlyBudget: g.monthlyBudget,
+      weekPctOfMonthlyBudget: g.weekPctOfMonthlyBudget,
+      reason: g.level === "critical"
+        ? `ใช้ใน 7 วันเกิน ${WEEKLY_AUDIT_OVERUSE_PCT}% ของงบทั้งเดือน`
+        : `ใช้ใน 7 วันสูงกว่าสัดส่วนที่ควรใช้ (~${fairSharePct}% ของงบเดือน) เกิน ${WEEKLY_AUDIT_WARN_FACTOR} เท่า`
+    }));
+
+  // งบรายจ่ายรวมของเดือนนี้ (ใช้ตัวสรุปงบเดิมของแอป ถ้าอ่านไม่ได้ค่อย fallback เป็นผลรวมงบรายกลุ่ม)
+  let budgetTarget = 0, budgetActual = 0;
+  try{
+    const bs = buildBudgetSummaryBothSides();
+    budgetTarget = waNum(bs.expenseBudget && bs.expenseBudget.target);
+    budgetActual = waNum(bs.expenseBudget && bs.expenseBudget.actual);
+  }catch(e){}
+  if(!(budgetTarget > 0)){
+    budgetTarget = budgetGroups.reduce((s, g) => s + g.monthlyBudget, 0);
+    budgetActual = budgetGroups.reduce((s, g) => s + g.monthSpentToDate, 0);
+  }
+
+  // Burn Rate: ยอดใช้จริงเฉลี่ยต่อวัน เทียบงบเฉลี่ยต่อวัน (ถ้าไม่ได้ตั้งงบ ใช้ค่าเฉลี่ยรายวันของเดือนก่อนเป็นฐานแทน)
+  const burnPerDay = weekExpense / WEEKLY_AUDIT_DAYS;
+  const dailyBudget = budgetTarget > 0 ? budgetTarget / daysInMonth : null;
+  let baseline = { type: "none", dailyAmount: null };
+  if(dailyBudget){
+    baseline = { type: "monthly_budget", dailyAmount: dailyBudget };
+  }else{
+    try{
+      const lm = new Date(ty, tm - 2, 1);
+      const lmb = monthBoundsISO(lm.getFullYear(), lm.getMonth());
+      const la = computePeriodAnalysisForRange(lmb.start, lmb.end, null);
+      const lmDays = new Date(lm.getFullYear(), lm.getMonth() + 1, 0).getDate();
+      if(waNum(la.expense) > 0) baseline = { type: "last_month_average", dailyAmount: waNum(la.expense) / lmDays };
+    }catch(e){}
+  }
+  const ratio = baseline.dailyAmount > 0 ? burnPerDay / baseline.dailyAmount : null;
+  const paceStatus = ratio == null ? "ไม่มีฐานเปรียบเทียบ"
+    : ratio > 1.05 ? "เร็วกว่าแผน"
+    : ratio < 0.95 ? "ช้ากว่าแผน (ใช้น้อยกว่าแผน)"
+    : "ตามแผน";
+
+  // เพดานเงินใช้ได้ต่อวันสำหรับ 7 วันข้างหน้า — คำนวณเองฝั่งโค้ด ให้ AI แค่นำไปสั่งการ ไม่ต้องคิดเลข
+  const essentialPerDay = essentialExpense / WEEKLY_AUDIT_DAYS;
+  let ceiling, basis;
+  if(budgetTarget > 0){
+    const remaining = budgetTarget - budgetActual;
+    if(remaining > 0){
+      ceiling = remaining / daysLeftAfterToday;
+      basis = `งบรายจ่ายเดือนนี้คงเหลือ ${waBaht(remaining)} หารวันที่เหลือในเดือน ${daysLeftAfterToday} วัน`;
+      if(dailyBudget && ceiling > dailyBudget * 1.25){
+        ceiling = dailyBudget * 1.25;
+        basis += " (จำกัดไม่เกิน 125% ของงบเฉลี่ยต่อวัน กันใช้พรวดช่วงปลายเดือน)";
+      }
+    }else{
+      ceiling = essentialPerDay;
+      basis = "งบรายจ่ายเดือนนี้หมดแล้ว — คุมเฉพาะรายจ่ายจำเป็นตามค่าเฉลี่ยของสัปดาห์นี้";
+    }
+  }else{
+    ceiling = essentialPerDay + (discretionaryExpense / WEEKLY_AUDIT_DAYS) * 0.7;
+    basis = "ยังไม่ได้ตั้งงบเดือนนี้ — คงรายจ่ายจำเป็นเท่าเดิม และลดรายจ่ายไม่จำเป็นลง 30% จากสัปดาห์นี้";
+  }
+  ceiling = Math.max(0, Math.floor(ceiling));
+
+  const topTransactions = entries
+    .filter(e => e && e.type === "expense" && !e.debtId && !e.loanId && e.date >= start && e.date <= today)
+    .sort((a, b) => waNum(b.amount) - waNum(a.amount))
+    .slice(0, 3)
+    .map(e => ({ date: e.date, category: e.category, amount: waRound(e.amount), note: String(e.note || "").slice(0, 40) }));
+  const transactionCount = entries.filter(e => e && (e.type === "expense" || e.type === "income") && e.date >= start && e.date <= today).length;
+
+  const realIncome = week.nonLoanIncome != null ? waNum(week.nonLoanIncome) : waNum(week.income);
+  const prevExpense = waNum(prevWeek.expense);
+
+  return {
+    generatedAt: today,
+    period: { start, end: today, days: WEEKLY_AUDIT_DAYS, weekKey: waWeekKey(today), crossesMonthBoundary: start < mb.start },
+    totals: {
+      transactionCount,
+      realIncome: waRound(realIncome),
+      loanRepaymentReceived: waRound(week.loanRepaymentIncome),
+      expense: waRound(weekExpense),
+      essentialExpense,
+      discretionaryExpense,
+      saving: waRound(week.saving)
+    },
+    previousWeek: {
+      expense: waRound(prevExpense),
+      changePct: prevExpense > 0 ? Math.round((weekExpense - prevExpense) / prevExpense * 100) : null
+    },
+    categories: categories.slice(0, 8),
+    topTransactions,
+    burnRate: {
+      perDay: waRound(burnPerDay),
+      baselineType: baseline.type,
+      baselineDailyAmount: baseline.dailyAmount != null ? waRound(baseline.dailyAmount) : null,
+      ratioToBaseline: ratio != null ? Math.round(ratio * 100) / 100 : null,
+      paceStatus
+    },
+    monthBudget: {
+      month: mk,
+      totalExpenseBudget: waRound(budgetTarget),
+      spentToDate: waRound(budgetActual),
+      remaining: waRound(budgetTarget - budgetActual),
+      usedPct: budgetTarget > 0 ? Math.round(budgetActual / budgetTarget * 100) : null,
+      daysInMonth,
+      daysLeftAfterToday,
+      dailyBudget: dailyBudget != null ? waRound(dailyBudget) : null
+    },
+    budgetGroups,
+    overuseFlags,
+    nextWeekPlan: {
+      suggestedDailyCeiling: ceiling,
+      weeklyCeiling: ceiling * WEEKLY_AUDIT_DAYS,
+      essentialPerDay: waRound(essentialPerDay),
+      discretionaryCeilingPerDay: Math.max(0, ceiling - waRound(essentialPerDay)),
+      ceilingBelowEssentialRun: ceiling < waRound(essentialPerDay),
+      basis
+    },
+    thresholds: { overusePctOfMonthlyBudget: WEEKLY_AUDIT_OVERUSE_PCT, fairWeeklySharePct: fairSharePct }
+  };
+}
+
+// ตัวเลขสรุปสั้นๆ ที่ใช้โชว์บนหัว Modal (มาจาก Context ล้วน ไม่ผ่าน AI)
+function waStatsFromContext(ctx){
+  return {
+    expense: ctx.totals.expense,
+    burnPerDay: ctx.burnRate.perDay,
+    baselineDaily: ctx.burnRate.baselineDailyAmount,
+    baselineType: ctx.burnRate.baselineType,
+    paceStatus: ctx.burnRate.paceStatus,
+    ceiling: ctx.nextWeekPlan.suggestedDailyCeiling
+  };
+}
+
+// ===== 2) สั่งการ AI =====
+function buildWeeklyAuditSystemPrompt(ctx){
+  return [
+    "คุณคือผู้ตรวจสุขภาพการเงินส่วนตัวของแอป Vaultet เขียนรายงาน Weekly Audit จากข้อมูลจริงของ 7 วันที่ผ่านมา",
+    "",
+    "สไตล์: สั้น กระชับ ตรงประเด็น เป็นมืออาชีพ — ห้ามเยิ่นเย้อ ห้ามชมเพ้อเจ้อ ห้ามทักทาย ห้ามเกริ่นนำ ห้ามลงท้าย ห้ามสอนเรื่องการเงินทั่วไป",
+    "ตัวเลข: ใช้เฉพาะตัวเลขใน Context ด้านล่างเท่านั้น ห้ามคำนวณหรือสร้างตัวเลขใหม่เอง ถ้าข้อมูลส่วนไหนไม่มี ให้บอกสั้นๆ ว่าไม่มีข้อมูล",
+    "รายรับ: ใช้ totals.realIncome เป็นรายรับจริง (loanRepaymentReceived คือเงินที่เพื่อนคืน ไม่ใช่รายรับ)",
+    "",
+    "ตอบเป็น 3 หัวข้อเท่านั้น เรียงตามนี้ และใช้ชื่อหัวข้อตามนี้เป๊ะ (หัวข้อเป็นตัวหนา):",
+    "**1) สรุปภาพรวมสัปดาห์**",
+    "   2-3 บรรทัด: ยอดใช้รวม 7 วัน (totals.expense) แยกจำเป็น/ไม่จำเป็น, burn rate เฉลี่ยต่อวัน เทียบงบ/วัน (หรือฐานเทียบอื่นตาม burnRate.baselineType), และบอกชัดว่า \"เร็วกว่าแผน\" / \"ช้ากว่าแผน\" / \"ตามแผน\" ตาม burnRate.paceStatus",
+    "**2) จุดที่รั่วไหล/ต้องระวัง**",
+    "   ไม่เกิน 3 ข้อ ขึ้นต้นด้วย \"- \": ระบุหมวดที่ใช้เปลืองที่สุดพร้อมตัวเลขจริง (บาท และ % ของยอดสัปดาห์) และถ้ามี overuseFlags ให้ระบุกลุ่มงบที่ใช้เกินอัตราส่วนพร้อม % ของงบทั้งเดือน ถ้าไม่มีจุดผิดปกติให้บอกสั้นๆ ว่าไม่พบจุดรั่วชัดเจน แล้วระบุหมวดอันดับ 1 อยู่ดี",
+    "**3) แผนคุมเงินสัปดาห์หน้า**",
+    "   สั่งการแบบชัดเจน: เพดานเงินใช้ได้ต่อวันสำหรับ 7 วันข้างหน้า = nextWeekPlan.suggestedDailyCeiling บาท/วัน (รวมไม่เกิน nextWeekPlan.weeklyCeiling บาท) แล้วตามด้วย 1-2 ข้อปฏิบัติเจาะจงหมวดที่ต้องลด ถ้า ceilingBelowEssentialRun เป็น true ให้เตือนตรงๆ ว่าเพดานต่ำกว่ารายจ่ายจำเป็นเฉลี่ยต่อวัน",
+    "",
+    "รูปแบบ: ใช้ **ตัวหนา** เฉพาะหัวข้อและตัวเลขเงินสำคัญ ห้ามใช้ตาราง ห้ามใช้หัวข้อ markdown (#) ความยาวรวมไม่เกิน 14 บรรทัด เขียนเป็นภาษาไทย เงินใช้สัญลักษณ์ ฿",
+    "",
+    "Context (7 วันล่าสุด ถึงวันที่ " + ctx.period.end + "):",
+    JSON.stringify(ctx)
+  ].join("\n");
+}
+
+// คืน { ok:true, text } หรือ { ok:false, error, detail?, status? } — รูปแบบเดียวกับ generateProactiveInsight
+async function generateWeeklyAudit(ctx, signal){
+  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  const baseSystemPrompt = buildWeeklyAuditSystemPrompt(ctx);
+
+  async function requestAudit(extraInstruction){
+    let res;
+    try{
+      res = await fetchGeminiWithRetry(
+        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_ADVISOR_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role:"user", parts:[{ text:"สร้างรายงาน Weekly Audit ตามกติกาใน system prompt" }] }],
+            systemInstruction: { parts: [{ text: baseSystemPrompt + (extraInstruction ? "\n\n" + extraInstruction : "") }] },
+            generationConfig: { temperature: 0.2, maxOutputTokens: 4096 }
+          }),
+          signal
+        },
+        1
+      );
+    }catch(e){
+      if(e && e.name === "AbortError") return { ok:false, error:"aborted" };
+      return { ok:false, error:"network_error" };
+    }
+    if(!res.ok){
+      let detail = "";
+      try{ detail = (await res.text()).slice(0,300); }catch(e){}
+      return { ok:false, error: res.status === 400 ? "invalid_api_key" : "api_error", detail, status: res.status };
+    }
+    let data;
+    try{ data = await res.json(); }catch(e){ return { ok:false, error:"invalid_json" }; }
+    const rawText = collectGeminiText(data);
+    if(!rawText) return { ok:false, error:"empty_response" };
+    return { ok:true, text: cleanAiChatReply(rawText), data };
+  }
+
+  const hasAllSections = (t) => /1\)/.test(t) && /2\)/.test(t) && /3\)/.test(t);
+
+  let result = await requestAudit("");
+  if(!result.ok) return result;
+  if(isUsableAiChatReply(result.text, result.data) && hasAllSections(result.text)) return { ok:true, text: result.text };
+
+  // รอบแรกถูกตัดหรือรูปแบบไม่ครบ 3 หัวข้อ → ลองใหม่ครั้งเดียวด้วยกติกาที่เข้มขึ้น
+  result = await requestAudit("คำตอบรอบก่อนไม่ครบหรือถูกตัด ให้เขียนใหม่ทั้งหมดให้ครบ 3 หัวข้อ (1) 2) 3)) ตามรูปแบบที่กำหนด สั้น กระชับ และจบอย่างสมบูรณ์ ห้ามอ้างชื่อฟิลด์ภายใน");
+  if(!result.ok) return result;
+  if(!isUsableAiChatReply(result.text, result.data)) return { ok:false, error:"invalid_ai_response" };
+  return { ok:true, text: result.text };
+}
+
+// ===== 3) UI & Storage =====
+function injectWeeklyAuditStyles(){
+  if(document.getElementById("weeklyAuditStyles")) return;
+  const st = document.createElement("style");
+  st.id = "weeklyAuditStyles";
+  st.textContent = `
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 24px);margin:8px 12px;padding:10px 14px;border:1px solid var(--accent1,#7c8cff);border-radius:12px;background:transparent;color:var(--accent1,#7c8cff);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.wa-btn.wa-has-new::after{content:"ใหม่";font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent1,#7c8cff);color:#fff}
+.wa-banner{display:none;align-items:center;gap:10px;margin:8px 12px;padding:10px 12px;border:1px solid var(--accent1,#7c8cff);border-radius:14px;font-size:13px;line-height:1.35}
+.wa-banner.show{display:flex}
+.wa-banner-text{flex:1;min-width:0}
+.wa-banner-open{border:0;border-radius:10px;padding:7px 12px;background:var(--accent1,#7c8cff);color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.wa-banner-x{border:0;background:transparent;color:var(--faint,#888);font-size:16px;cursor:pointer;padding:4px}
+.wa-overlay{position:fixed;inset:0;z-index:10050;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
+.wa-overlay.open{display:flex}
+.wa-sheet{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;background:var(--surface,var(--card,var(--bg,#15171d)));color:var(--text,inherit);border-radius:20px 20px 0 0;padding:16px 16px 22px;box-shadow:0 -8px 30px rgba(0,0,0,.35)}
+.wa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.wa-title{font-size:16px;font-weight:700}
+.wa-sub{font-size:11px;color:var(--faint,#888);margin-top:3px}
+.wa-close{border:0;background:transparent;color:var(--faint,#888);font-size:20px;cursor:pointer;padding:2px 6px}
+.wa-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.wa-stat{padding:9px 8px;border:1px solid rgba(128,128,128,.25);border-radius:12px;text-align:center}
+.wa-stat-label{font-size:10px;color:var(--faint,#888);margin-bottom:3px}
+.wa-stat-value{font-size:14px;font-weight:700}
+.wa-stat-note{font-size:10px;color:var(--faint,#888);margin-top:2px}
+.wa-body{font-size:14px;line-height:1.6;min-height:60px}
+.wa-muted{color:var(--faint,#888)}
+.wa-err{color:var(--expense,#ff6b6b);font-size:12px;margin-top:10px}
+.wa-stale{font-size:11px;color:var(--faint,#888);margin-top:10px}
+.wa-refresh{display:block;width:100%;margin-top:14px;padding:11px 14px;border:1px solid var(--accent1,#7c8cff);border-radius:12px;background:transparent;color:var(--accent1,#7c8cff);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.wa-refresh:disabled{opacity:.5;cursor:default}
+`;
+  document.head.appendChild(st);
+}
+
+function ensureWeeklyAuditModal(){
+  if(document.getElementById("weeklyAuditOverlay")) return;
+  const ov = document.createElement("div");
+  ov.id = "weeklyAuditOverlay";
+  ov.className = "wa-overlay";
+  ov.setAttribute("role", "dialog");
+  ov.setAttribute("aria-modal", "true");
+  ov.setAttribute("aria-labelledby", "weeklyAuditTitle");
+  ov.innerHTML = `
+    <div class="wa-sheet">
+      <div class="wa-head">
+        <div>
+          <div class="wa-title" id="weeklyAuditTitle">📊 รายงานรอบสัปดาห์ (Weekly Audit)</div>
+          <div class="wa-sub" id="weeklyAuditSub"></div>
+        </div>
+        <button type="button" class="wa-close" id="weeklyAuditCloseBtn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="wa-stats" id="weeklyAuditStats"></div>
+      <div class="wa-body" id="weeklyAuditBody"></div>
+      <button type="button" class="wa-refresh" id="weeklyAuditRefreshBtn">🔄 วิเคราะห์ใหม่</button>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener("click", (e) => { if(e.target === ov) closeWeeklyAuditModal(); });
+  document.getElementById("weeklyAuditCloseBtn").addEventListener("click", closeWeeklyAuditModal);
+  document.getElementById("weeklyAuditRefreshBtn").addEventListener("click", () => { runWeeklyAudit(); });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && ov.classList.contains("open")) closeWeeklyAuditModal();
+  });
+}
+
+function waStatsHtml(s){
+  const baseLabel = s.baselineType === "monthly_budget" ? "งบ"
+    : s.baselineType === "last_month_average" ? "เดือนก่อนเฉลี่ย" : "";
+  const baseNote = (baseLabel && s.baselineDaily != null) ? `${baseLabel} ${waBaht(s.baselineDaily)}/วัน` : "ไม่มีฐานเทียบ";
+  return `
+    <div class="wa-stat"><div class="wa-stat-label">ใช้รวม 7 วัน</div><div class="wa-stat-value">${waBaht(s.expense)}</div></div>
+    <div class="wa-stat"><div class="wa-stat-label">เฉลี่ย/วัน</div><div class="wa-stat-value">${waBaht(s.burnPerDay)}</div><div class="wa-stat-note">${escapeHtml(baseNote)}</div></div>
+    <div class="wa-stat"><div class="wa-stat-label">เพดานสัปดาห์หน้า</div><div class="wa-stat-value">${waBaht(s.ceiling)}/วัน</div></div>`;
+}
+
+// status: loading | ready | error | needsApiKey | empty
+function waRenderView(v){
+  const body = document.getElementById("weeklyAuditBody");
+  if(!body) return;
+  const statsEl = document.getElementById("weeklyAuditStats");
+  const subEl = document.getElementById("weeklyAuditSub");
+  const refreshBtn = document.getElementById("weeklyAuditRefreshBtn");
+
+  const rec = v.record || v.cache || null;
+  let stats = v.stats || null;
+  if(rec && rec.stats && (v.status === "ready" || v.status === "error" || v.status === "needsApiKey")) stats = rec.stats;
+  statsEl.innerHTML = stats ? waStatsHtml(stats) : "";
+  statsEl.style.display = stats ? "grid" : "none";
+  subEl.textContent = rec
+    ? `ข้อมูล ${waShortDate(rec.rangeStart)}–${waShortDate(rec.rangeEnd)} · วิเคราะห์เมื่อ ${waShortDate(rec.generatedAt)}`
+    : (v.meta || "");
+  refreshBtn.disabled = v.status === "loading";
+
+  if(v.status === "loading"){
+    body.innerHTML = `<span class="wa-muted">กำลังวิเคราะห์ข้อมูล 7 วันล่าสุด...</span>`;
+  }else if(v.status === "empty"){
+    body.innerHTML = `<span class="wa-muted">ยังไม่มีรายการรายรับ/รายจ่ายใน 7 วันที่ผ่านมา เลยยังไม่มีอะไรให้ตรวจ</span>`;
+  }else if(v.status === "needsApiKey"){
+    body.innerHTML = (rec ? simpleMarkdownToHtml(rec.text) + "<br><br>" : "")
+      + `<span class="wa-muted">ตั้งค่า API Key (⚙️) ก่อน เพื่อให้ AI วิเคราะห์รอบใหม่ได้</span>`;
+  }else if(v.status === "error"){
+    const r = v.result || {};
+    const codeLine = r.error ? ` (โค้ด: ${escapeHtml(r.error)}${r.status ? " HTTP " + r.status : ""})` : "";
+    body.innerHTML = (rec ? simpleMarkdownToHtml(rec.text) + `<div class="wa-stale">⚠️ นี่คือรายงานรอบก่อน (${escapeHtml(waShortDate(rec.generatedAt))}) — รอบใหม่ยังไม่สำเร็จ</div>` : "")
+      + `<div class="wa-err">${escapeHtml(aiErrorLabel(r))}${codeLine}</div>`;
+  }else{
+    body.innerHTML = simpleMarkdownToHtml(rec ? rec.text : "");
+  }
+}
+
+function openWeeklyAuditModal(){
+  injectWeeklyAuditStyles();
+  ensureWeeklyAuditModal();
+  document.getElementById("weeklyAuditOverlay").classList.add("open");
+  const cache = loadWeeklyAuditCache();
+  // มีผลของสัปดาห์นี้อยู่แล้ว → โชว์จากแคชเลย ไม่ยิง API ใหม่ (ผู้ใช้กด "วิเคราะห์ใหม่" เองได้)
+  if(cache && cache.weekKey === waWeekKey(todayISO())){
+    waRenderView({ status:"ready", record:cache });
+    return;
+  }
+  runWeeklyAudit();
+}
+function closeWeeklyAuditModal(){
+  document.getElementById("weeklyAuditOverlay")?.classList.remove("open");
+}
+
+async function runWeeklyAudit(){
+  if(weeklyAuditBusy) return;
+  const cache = loadWeeklyAuditCache();
+  let ctx;
+  try{ ctx = buildWeeklyAuditContext(); }
+  catch(e){
+    console.error(e);
+    waRenderView({ status:"error", cache, result:{ error:"context_error" } });
+    return;
+  }
+  const stats = waStatsFromContext(ctx);
+
+  if(ctx.totals.transactionCount === 0){ waRenderView({ status:"empty", stats }); return; }
+  if(getApiKeys().length === 0){ waRenderView({ status:"needsApiKey", stats, cache }); return; }
+
+  weeklyAuditBusy = true;
+  waRenderView({ status:"loading", stats, meta:`ข้อมูล ${waShortDate(ctx.period.start)}–${waShortDate(ctx.period.end)}` });
+  let result;
+  try{ result = await generateWeeklyAudit(ctx); }
+  catch(e){ result = { ok:false, error:"network_error" }; }
+  weeklyAuditBusy = false;
+
+  if(!result.ok){ waRenderView({ status:"error", stats, cache, result }); return; }
+
+  const record = {
+    text: result.text,
+    generatedAt: todayISO(),
+    generatedAtTs: Date.now(),
+    weekKey: ctx.period.weekKey,
+    rangeStart: ctx.period.start,
+    rangeEnd: ctx.period.end,
+    stats
+  };
+  saveWeeklyAuditCache(record);
+  waRenderView({ status:"ready", record });
+  refreshWeeklyAuditBanner();
+}
+
+// แบนเนอร์ชวนดูรายงาน: แสดงเมื่อเป็นสัปดาห์ใหม่ที่ยังไม่ได้ Audit และมีรายการใน 7 วันล่าสุดให้ตรวจ
+function shouldShowWeeklyAuditBanner(){
+  const weekKey = waWeekKey(todayISO());
+  const cache = loadWeeklyAuditCache();
+  if(cache && cache.weekKey === weekKey) return false;
+  try{ if(sessionStorage.getItem(WEEKLY_AUDIT_DISMISS_KEY) === weekKey) return false; }catch(e){}
+  const start = isoDaysFromToday(-(WEEKLY_AUDIT_DAYS - 1)), today = todayISO();
+  return entries.some(e => e && (e.type === "expense" || e.type === "income") && e.date >= start && e.date <= today);
+}
+function refreshWeeklyAuditBanner(){
+  const show = shouldShowWeeklyAuditBanner();
+  const banner = document.getElementById("weeklyAuditBanner");
+  if(banner) banner.classList.toggle("show", show);
+  const btn = document.getElementById("weeklyAuditBtn");
+  if(btn) btn.classList.toggle("wa-has-new", show);
+}
+
+// เสียบปุ่ม/แบนเนอร์เข้าหน้าจอที่มีอยู่ (ไม่แก้ HTML เดิม) — ถ้าหา anchor ไม่เจอจะข้ามเงียบๆ ไม่ทำให้แอปพัง
+function mountWeeklyAuditEntryPoints(){
+  if(!document.getElementById("weeklyAuditBtn")){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "weeklyAuditBtn";
+    btn.className = "wa-btn";
+    btn.textContent = "📊 รายงานรอบสัปดาห์ (Weekly Audit)";
+    btn.addEventListener("click", openWeeklyAuditModal);
+    const panel = document.getElementById("aiAdvisorSettingsPanel");
+    const chatBody = document.getElementById("aiAnalystBody");
+    const settingsBtn = document.getElementById("aiAdvisorSettingsBtn");
+    if(panel) panel.insertAdjacentElement("afterend", btn);
+    else if(chatBody) chatBody.insertAdjacentElement("beforebegin", btn);
+    else if(settingsBtn && settingsBtn.parentElement) settingsBtn.parentElement.insertAdjacentElement("afterend", btn);
+  }
+  if(!document.getElementById("weeklyAuditBanner")){
+    const card = document.getElementById("aiProactiveCard");
+    if(card){
+      const banner = document.createElement("div");
+      banner.id = "weeklyAuditBanner";
+      banner.className = "wa-banner";
+      banner.innerHTML = `
+        <span aria-hidden="true">📊</span>
+        <div class="wa-banner-text">สัปดาห์ใหม่แล้ว — ดูรายงานสุขภาพการเงินรอบ 7 วันที่ผ่านมา</div>
+        <button type="button" class="wa-banner-open" id="weeklyAuditBannerOpenBtn">ดูรายงาน</button>
+        <button type="button" class="wa-banner-x" id="weeklyAuditBannerDismissBtn" aria-label="ปิดแจ้งเตือน">✕</button>`;
+      card.insertAdjacentElement("afterend", banner);
+      document.getElementById("weeklyAuditBannerOpenBtn").addEventListener("click", openWeeklyAuditModal);
+      document.getElementById("weeklyAuditBannerDismissBtn").addEventListener("click", () => {
+        try{ sessionStorage.setItem(WEEKLY_AUDIT_DISMISS_KEY, waWeekKey(todayISO())); }catch(e){}
+        refreshWeeklyAuditBanner();
+      });
+    }
+  }
+}
+
+function initWeeklyAudit(){
+  injectWeeklyAuditStyles();
+  ensureWeeklyAuditModal();
+  mountWeeklyAuditEntryPoints();
+  refreshWeeklyAuditBanner();
+  // เปิดแอปค้างข้ามวัน/ข้ามสัปดาห์ → เช็คแบนเนอร์ใหม่ตอนกลับมาที่แท็บ
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) refreshWeeklyAuditBanner(); });
+}
+window.openWeeklyAudit = openWeeklyAuditModal;
+
 // ===== Vaultet Notification Center: functional local engine =====
 const VAULTET_NOTIF_KEY="vaultet_notifications_v1", VAULTET_NOTIF_SETTINGS_KEY="vaultet_notification_settings_v1", VAULTET_NOTIF_STATE_KEY="vaultet_notification_states_v2", VAULTET_ADVISOR_ACTIVE_KEY="vaultet_advisor_active_v1";
 const DEFAULT_NOTIF_SETTINGS=Object.freeze({enabled:true,positive:true,budget:true,emergency:true,forecast:true,obligation:true,behavior:true,quiet:true});
@@ -2535,6 +3084,7 @@ refreshApiKeyStatus();
 refreshProactiveCard();
 try{renderFinancialBrainCard();}catch(e){console.error(e);}
 try{ if(typeof renderVaultetNotifications==="function") renderVaultetNotifications(); }catch(_){}
+try{ initWeeklyAudit(); }catch(e){ console.error(e); }
 
 // Patch ที่เลเยอร์ใน app.js ลงทะเบียนไว้ เพื่อครอบฟังก์ชัน AI (openAiAnalystSheet / loadAIProfile / buildFinancialAnalystSystemPrompt)
 (window.__vaultetAiPatches||[]).forEach(function(fn){ try{ fn(); }catch(e){ console.error(e); } });
