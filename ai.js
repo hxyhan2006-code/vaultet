@@ -1736,6 +1736,18 @@ const WEEKLY_AUDIT_OVERUSE_PCT = 50;         // สัปดาห์เดี�
 const WEEKLY_AUDIT_WARN_FACTOR = 1.5;        // ใช้เกิน 1.5 เท่าของสัดส่วนที่ควรใช้ใน 7 วัน = ระดับ warning
 const WEEKLY_AUDIT_DISMISS_KEY = "vaultet_weekly_audit_banner_dismissed"; // เก็บใน sessionStorage เท่านั้น
 let weeklyAuditBusy = false;
+const WEEKLY_AUDIT_VERSION = 2;              // เปลี่ยนเลขนี้เมื่อรูปแบบรายงานเปลี่ยน → แคชเก่าถูกมองว่าหมดอายุ
+
+// แยกประเภทค่าใช้จ่ายจากชื่อหมวด: "ก้อนเดียวจบ/รายคาบ" (one-off) vs "กินอยู่ประจำวัน" (daily flexible)
+// แก้ regex ให้ตรงกับชื่อหมวดจริงของแอปได้ที่นี่ — ถ้าชื่อไม่เข้าเลย จะเดาจากความถี่ (ซื้อ ≤2 ครั้งใน 7 วัน = ก้อนเดียวจบ)
+const WEEKLY_AUDIT_ONEOFF_RE = /ของใช้|ของเข้าบ้าน|ซื้อของ|ดูแลตัว|ช้อป|เสื้อผ้า|ค่าเทอม|ค่าเช่า|ค่าหอ|ประกัน|ซ่อม|ของขวัญ|อุปกรณ์|ค่ารักษา|หมอ|ค่าน้ำ|ค่าไฟ|เน็ต|อินเทอร์เน็ต|สมาชิก|ผ่อน/;
+const WEEKLY_AUDIT_DAILY_RE = /กิน|อาหาร|ข้าว|กาแฟ|ขนม|เครื่องดื่ม|เดินทาง|น้ำมัน|ค่ารถ|ค่าโดยสาร|ตลาด/;
+function waClassifySpend(category, count){
+  const c = String(category || "");
+  if(WEEKLY_AUDIT_ONEOFF_RE.test(c)) return { type:"one_off_periodic", by:"name" };
+  if(WEEKLY_AUDIT_DAILY_RE.test(c)) return { type:"daily_flexible", by:"name" };
+  return { type: waNum(count) >= 3 ? "daily_flexible" : "one_off_periodic", by:"frequency" };
+}
 
 // --- helpers ---
 function waNum(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
@@ -1759,7 +1771,7 @@ function loadWeeklyAuditCache(){
     const raw = localStorage.getItem(WEEKLY_AUDIT_KEY);
     if(!raw) return null;
     const c = JSON.parse(raw);
-    return (c && typeof c.text === "string" && c.text.trim() && c.weekKey) ? c : null;
+    return (c && c.ver === WEEKLY_AUDIT_VERSION && typeof c.text === "string" && c.text.trim() && c.weekKey) ? c : null;
   }catch(e){ return null; }
 }
 function saveWeeklyAuditCache(record){
@@ -1794,12 +1806,16 @@ function buildWeeklyAuditContext(){
       amount: waRound(r.amount),
       count: waNum(r.count),
       pctOfWeekExpense: weekExpense > 0 ? Math.round(waNum(r.amount) / weekExpense * 100) : 0,
-      necessity: essentialSet.has(r.cat) ? "จำเป็น" : "ไม่จำเป็น"
+      necessity: essentialSet.has(r.cat) ? "จำเป็น" : "ไม่จำเป็น",
+      spendType: waClassifySpend(r.cat, r.count).type,
+      spendTypeBasis: waClassifySpend(r.cat, r.count).by
     }))
     .filter(r => r.amount > 0)
     .sort((a, b) => b.amount - a.amount);
   const essentialExpense = categories.filter(c => c.necessity === "จำเป็น").reduce((s, c) => s + c.amount, 0);
   const discretionaryExpense = Math.max(0, waRound(weekExpense) - essentialExpense);
+  const oneOffExpense = categories.filter(c => c.spendType === "one_off_periodic").reduce((s, c) => s + c.amount, 0);
+  const dailyFlexibleExpense = categories.filter(c => c.spendType === "daily_flexible").reduce((s, c) => s + c.amount, 0);
 
   // งบรายจ่ายรายกลุ่มของเดือนนี้ เทียบกับยอดที่ใช้ใน 7 วัน
   const weekCatSpent = {}, monthCatSpent = {};
@@ -1824,6 +1840,7 @@ function buildWeeklyAuditContext(){
         weekPctOfMonthlyBudget: weekPct,
         monthSpentToDate: waRound(monthSpent),
         monthPctUsed: Math.round(monthSpent / amount * 100),
+        spendType: (cats.length && cats.every(c => WEEKLY_AUDIT_ONEOFF_RE.test(String(c)))) ? "one_off_periodic" : "daily_flexible",
         level
       };
     });
@@ -1896,6 +1913,15 @@ function buildWeeklyAuditContext(){
   }
   ceiling = Math.max(0, Math.floor(ceiling));
 
+  // กรอบแบบยืดหยุ่น: 7 วันถัดไปมีวันธรรมดา 5 + วันหยุด 2 เสมอ ให้วันหยุดใช้ได้ ~2 เท่าของวันธรรมดา
+  // เพดานบนรวมทั้งสัปดาห์ (5*วันธรรมดา + 2*วันหยุด) ไม่เกิน weeklyCeiling ที่คำนวณจากงบเหลือ
+  const weeklyCeiling = ceiling * WEEKLY_AUDIT_DAYS;
+  const floor10 = (n) => Math.max(0, Math.floor(n / 10) * 10);
+  const weekdayMax = floor10(weeklyCeiling / 9);
+  const weekendMax = weekdayMax * 2;
+  const weekdayMin = floor10(weekdayMax * 0.8);
+  const weekendMin = floor10(weekendMax * 0.8);
+
   const topTransactions = entries
     .filter(e => e && e.type === "expense" && !e.debtId && !e.loanId && e.date >= start && e.date <= today)
     .sort((a, b) => waNum(b.amount) - waNum(a.amount))
@@ -1916,6 +1942,11 @@ function buildWeeklyAuditContext(){
       expense: waRound(weekExpense),
       essentialExpense,
       discretionaryExpense,
+      essentialPct: weekExpense > 0 ? Math.round(essentialExpense / waRound(weekExpense) * 100) : null,
+      discretionaryPct: weekExpense > 0 ? Math.round(discretionaryExpense / waRound(weekExpense) * 100) : null,
+      oneOffPeriodicExpense: oneOffExpense,
+      dailyFlexibleExpense,
+      dailyFlexiblePerDay: waRound(dailyFlexibleExpense / WEEKLY_AUDIT_DAYS),
       saving: waRound(week.saving)
     },
     previousWeek: {
@@ -1943,11 +1974,19 @@ function buildWeeklyAuditContext(){
     },
     budgetGroups,
     overuseFlags,
+    oneOffSettled: categories
+      .filter(c => c.spendType === "one_off_periodic")
+      .map(c => {
+        const g = budgetGroups.find(x => x.categories.includes(c.category));
+        return { category: c.category, spentThisWeek: c.amount, monthSpentToDate: waRound(monthCatSpent[c.category]), budgetPctUsed: g ? g.monthPctUsed : null, suggestCloseBudget: !!g && g.monthPctUsed >= 70 };
+      }),
     nextWeekPlan: {
-      suggestedDailyCeiling: ceiling,
-      weeklyCeiling: ceiling * WEEKLY_AUDIT_DAYS,
+      weeklyCeiling,
+      weekdayRangePerDay: { min: weekdayMin, max: weekdayMax },
+      weekendRangePerDay: { min: weekendMin, max: weekendMax },
+      avgCeilingPerDay: ceiling,
+      dailyFlexibleSpentPerDayLastWeek: waRound(dailyFlexibleExpense / WEEKLY_AUDIT_DAYS),
       essentialPerDay: waRound(essentialPerDay),
-      discretionaryCeilingPerDay: Math.max(0, ceiling - waRound(essentialPerDay)),
       ceilingBelowEssentialRun: ceiling < waRound(essentialPerDay),
       basis
     },
@@ -1957,34 +1996,48 @@ function buildWeeklyAuditContext(){
 
 // ตัวเลขสรุปสั้นๆ ที่ใช้โชว์บนหัว Modal (มาจาก Context ล้วน ไม่ผ่าน AI)
 function waStatsFromContext(ctx){
+  const p = ctx.nextWeekPlan;
   return {
     expense: ctx.totals.expense,
     burnPerDay: ctx.burnRate.perDay,
     baselineDaily: ctx.burnRate.baselineDailyAmount,
     baselineType: ctx.burnRate.baselineType,
     paceStatus: ctx.burnRate.paceStatus,
-    ceiling: ctx.nextWeekPlan.suggestedDailyCeiling
+    weekday: [p.weekdayRangePerDay.min, p.weekdayRangePerDay.max],
+    weekend: [p.weekendRangePerDay.min, p.weekendRangePerDay.max]
   };
 }
 
 // ===== 2) สั่งการ AI =====
 function buildWeeklyAuditSystemPrompt(ctx){
   return [
-    "คุณคือผู้ตรวจสุขภาพการเงินส่วนตัวของแอป Vaultet เขียนรายงาน Weekly Audit จากข้อมูลจริงของ 7 วันที่ผ่านมา",
+    "คุณคือที่ปรึกษาการเงินส่วนตัวระดับท็อปของแอป Vaultet เขียนรายงานรอบสัปดาห์จากข้อมูลจริง 7 วันที่ผ่านมา พูดเหมือนคนที่เข้าใจชีวิตเจ้าของเงินจริงๆ ไม่ใช่บอทอ่านตาราง",
     "",
-    "สไตล์: สั้น กระชับ ตรงประเด็น เป็นมืออาชีพ — ห้ามเยิ่นเย้อ ห้ามชมเพ้อเจ้อ ห้ามทักทาย ห้ามเกริ่นนำ ห้ามลงท้าย ห้ามสอนเรื่องการเงินทั่วไป",
-    "ตัวเลข: ใช้เฉพาะตัวเลขใน Context ด้านล่างเท่านั้น ห้ามคำนวณหรือสร้างตัวเลขใหม่เอง ถ้าข้อมูลส่วนไหนไม่มี ให้บอกสั้นๆ ว่าไม่มีข้อมูล",
-    "รายรับ: ใช้ totals.realIncome เป็นรายรับจริง (loanRepaymentReceived คือเงินที่เพื่อนคืน ไม่ใช่รายรับ)",
+    "น้ำเสียงและภาษา:",
+    "- สั้น กระชับ ตรงประเด็น เป็นมืออาชีพ ไม่ชมเพ้อเจ้อ ไม่ทักทาย ไม่เกริ่น ไม่ลงท้าย",
+    "- ห้ามใช้ศัพท์ประดิษฐ์/อังกฤษแบบท่องจำ เช่น Burn rate, Pacing, Momentum, One-off, Daily Flexible ให้พูดภาษาธรรมชาติ เช่น \"สปีดการใช้เงินเฉลี่ยต่อวัน\", \"ค่าใช้จ่ายก้อนเดียวจบ\", \"ค่ากินอยู่ประจำวัน\"",
+    "- ห้ามอ้างชื่อฟิลด์ใน Context",
+    "- ห้ามพ่นตัวเลขซ้ำซ้อนในประโยคเดียว ให้รวบความอย่างฉลาด เช่น ถ้า discretionaryPct = 0 ให้พูดว่า \"ยอดทั้งหมดเป็นรายจ่ายจำเป็น 100% ยังไม่มีหมวดฟุ่มเฟือยหลุดมา\" แทนการไล่ยอดจำเป็น/ไม่จำเป็นทีละช่อง; ใช้ตัวเลขเฉพาะที่ช่วยให้ตัดสินใจ",
+    "- ใช้เฉพาะตัวเลขใน Context ห้ามคำนวณหรือเดาตัวเลขใหม่ ถ้าไม่มีข้อมูลให้บอกสั้นๆ",
+    "- totals.realIncome คือรายรับจริง (loanRepaymentReceived คือเงินที่คนคืน ไม่ใช่รายรับ)",
     "",
-    "ตอบเป็น 3 หัวข้อเท่านั้น เรียงตามนี้ และใช้ชื่อหัวข้อตามนี้เป๊ะ (หัวข้อเป็นตัวหนา):",
-    "**1) สรุปภาพรวมสัปดาห์**",
-    "   2-3 บรรทัด: ยอดใช้รวม 7 วัน (totals.expense) แยกจำเป็น/ไม่จำเป็น, burn rate เฉลี่ยต่อวัน เทียบงบ/วัน (หรือฐานเทียบอื่นตาม burnRate.baselineType), และบอกชัดว่า \"เร็วกว่าแผน\" / \"ช้ากว่าแผน\" / \"ตามแผน\" ตาม burnRate.paceStatus",
-    "**2) จุดที่รั่วไหล/ต้องระวัง**",
-    "   ไม่เกิน 3 ข้อ ขึ้นต้นด้วย \"- \": ระบุหมวดที่ใช้เปลืองที่สุดพร้อมตัวเลขจริง (บาท และ % ของยอดสัปดาห์) และถ้ามี overuseFlags ให้ระบุกลุ่มงบที่ใช้เกินอัตราส่วนพร้อม % ของงบทั้งเดือน ถ้าไม่มีจุดผิดปกติให้บอกสั้นๆ ว่าไม่พบจุดรั่วชัดเจน แล้วระบุหมวดอันดับ 1 อยู่ดี",
-    "**3) แผนคุมเงินสัปดาห์หน้า**",
-    "   สั่งการแบบชัดเจน: เพดานเงินใช้ได้ต่อวันสำหรับ 7 วันข้างหน้า = nextWeekPlan.suggestedDailyCeiling บาท/วัน (รวมไม่เกิน nextWeekPlan.weeklyCeiling บาท) แล้วตามด้วย 1-2 ข้อปฏิบัติเจาะจงหมวดที่ต้องลด ถ้า ceilingBelowEssentialRun เป็น true ให้เตือนตรงๆ ว่าเพดานต่ำกว่ารายจ่ายจำเป็นเฉลี่ยต่อวัน",
+    "หลักคิดสำคัญ:",
+    "- แยก \"ค่าใช้จ่ายก้อนเดียวจบของเดือน\" (categories[].spendType = one_off_periodic เช่น ของใช้จำเป็น ซื้อของเข้าบ้าน ดูแลตัวเอง) ออกจาก \"ค่ากินอยู่ประจำวัน\" (daily_flexible) เสมอ",
+    "- ถ้าหมวดก้อนเดียวจบจ่ายไปแล้ว ห้ามเอามาเป็นตัวกดดันค่ากินอยู่รายวันของสัปดาห์หน้า ให้ถือว่าจบแล้ว และถ้า oneOffSettled[].suggestCloseBudget เป็น true ให้แนะนำให้ปิด/หยุดใช้งบหมวดนั้นไว้สำหรับเดือนนี้",
+    "- spendTypeBasis = frequency แปลว่าระบบเดาประเภทจากความถี่ ให้ใช้คำว่า \"น่าจะเป็น\" ไม่ฟันธง",
+    "- กรอบสัปดาห์หน้าต้องเป็นช่วง (range) ตามจังหวะชีวิตจริง ห้ามสั่งตัวเลขเดียวทื่อๆ ทุกวัน",
     "",
-    "รูปแบบ: ใช้ **ตัวหนา** เฉพาะหัวข้อและตัวเลขเงินสำคัญ ห้ามใช้ตาราง ห้ามใช้หัวข้อ markdown (#) ความยาวรวมไม่เกิน 14 บรรทัด เขียนเป็นภาษาไทย เงินใช้สัญลักษณ์ ฿",
+    "ตอบเป็น 3 หัวข้อเท่านั้น ตามลำดับ ใช้ชื่อหัวข้อนี้เป๊ะ (หัวข้อเป็นตัวหนา):",
+    "**1) จังหวะและโมเมนตัมการเงิน**",
+    "   2-3 บรรทัด: สปีดการใช้เงินเฉลี่ยต่อวันใน 7 วันที่ผ่านมาเร็วหรือช้ากว่าแผน (ตาม burnRate.paceStatus เทียบฐานตาม burnRate.baselineType) ตึงตัวหรือคุมได้ดี พร้อมยอดใช้รวมและการเทียบสัปดาห์ก่อนถ้าเปลี่ยนชัดเจน",
+    "**2) วินิจฉัยพฤติกรรมเชิงลึก**",
+    "   ไม่เกิน 3 ข้อ ขึ้นต้นด้วย \"- \": เจาะหมวดที่ใช้เยอะสุดพร้อมตัวเลขจริง ชี้ชัดว่าเป็นก้อนเดียวจบหรือค่ากินใช้สะสม และถ้ามี overuseFlags ให้บอกกลุ่มงบที่ใช้เกินสัดส่วนพร้อม % ของงบเดือน ปิดแต่ละข้อด้วยคำแนะนำตรงจุด ถ้าไม่พบจุดรั่วให้บอกสั้นๆ แล้วยังระบุหมวดอันดับ 1",
+    "**3) กลยุทธ์จัดสรรสัปดาห์หน้า**",
+    "   - วันธรรมดา (จันทร์-ศุกร์): nextWeekPlan.weekdayRangePerDay.min–max บาท/วัน เพื่อเซฟเงิน",
+    "   - วันหยุด (เสาร์-อาทิตย์): nextWeekPlan.weekendRangePerDay.min–max บาท/วัน เผื่อให้ใช้ชีวิตพักผ่อนได้สบายใจ",
+    "   บอกว่าภาพรวมทั้งสัปดาห์ต้องไม่เกิน nextWeekPlan.weeklyCeiling บาท แล้วปิดด้วยข้อควรระวังสำคัญ 1 ข้อเท่านั้น ถ้า ceilingBelowEssentialRun เป็น true ให้ข้อควรระวังนั้นเตือนตรงๆ ว่ากรอบต่ำกว่ารายจ่ายจำเป็นเฉลี่ยต่อวัน",
+    "",
+    "รูปแบบ: ใช้ **ตัวหนา** เฉพาะหัวข้อและตัวเลขเงินสำคัญ ห้ามตาราง ห้ามหัวข้อ markdown (#) รวมไม่เกิน 16 บรรทัด ภาษาไทย เงินใช้ ฿",
     "",
     "Context (7 วันล่าสุด ถึงวันที่ " + ctx.period.end + "):",
     JSON.stringify(ctx)
@@ -2048,10 +2101,10 @@ function injectWeeklyAuditStyles(){
   const st = document.createElement("style");
   st.id = "weeklyAuditStyles";
   st.textContent = `
-.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 24px);margin:8px 12px;padding:10px 14px;border:1px solid var(--accent1,#7c8cff);border-radius:12px;background:transparent;color:var(--accent1,#7c8cff);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.wa-btn.wa-has-new::after{content:"ใหม่";font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent1,#7c8cff);color:#fff}
+#weeklyAuditHeaderBtn{position:relative}
+#weeklyAuditHeaderBtn.wa-has-new::after{content:"";position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--expense,#ff6b6b)}
 .wa-banner{display:none;align-items:center;gap:10px;margin:8px 12px;padding:10px 12px;border:1px solid var(--accent1,#7c8cff);border-radius:14px;font-size:13px;line-height:1.35}
-.wa-banner.show{display:flex}
+body.ux-chat-active .wa-banner.show{display:flex}
 .wa-banner-text{flex:1;min-width:0}
 .wa-banner-open{border:0;border-radius:10px;padding:7px 12px;background:var(--accent1,#7c8cff);color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .wa-banner-x{border:0;background:transparent;color:var(--faint,#888);font-size:16px;cursor:pointer;padding:4px}
@@ -2114,7 +2167,7 @@ function waStatsHtml(s){
   return `
     <div class="wa-stat"><div class="wa-stat-label">ใช้รวม 7 วัน</div><div class="wa-stat-value">${waBaht(s.expense)}</div></div>
     <div class="wa-stat"><div class="wa-stat-label">เฉลี่ย/วัน</div><div class="wa-stat-value">${waBaht(s.burnPerDay)}</div><div class="wa-stat-note">${escapeHtml(baseNote)}</div></div>
-    <div class="wa-stat"><div class="wa-stat-label">เพดานสัปดาห์หน้า</div><div class="wa-stat-value">${waBaht(s.ceiling)}/วัน</div></div>`;
+    <div class="wa-stat"><div class="wa-stat-label">กรอบสัปดาห์หน้า</div><div class="wa-stat-value">${s.weekday ? `฿${fmt(s.weekday[0])}–${fmt(s.weekday[1])}` : "-"}</div><div class="wa-stat-note">${s.weekend ? `หยุด ฿${fmt(s.weekend[0])}–${fmt(s.weekend[1])}` : ""}</div></div>`;
 }
 
 // status: loading | ready | error | needsApiKey | empty
@@ -2196,6 +2249,7 @@ async function runWeeklyAudit(){
     text: result.text,
     generatedAt: todayISO(),
     generatedAtTs: Date.now(),
+    ver: WEEKLY_AUDIT_VERSION,
     weekKey: ctx.period.weekKey,
     rangeStart: ctx.period.start,
     rangeEnd: ctx.period.end,
@@ -2219,29 +2273,36 @@ function refreshWeeklyAuditBanner(){
   const show = shouldShowWeeklyAuditBanner();
   const banner = document.getElementById("weeklyAuditBanner");
   if(banner) banner.classList.toggle("show", show);
-  const btn = document.getElementById("weeklyAuditBtn");
+  const btn = document.getElementById("weeklyAuditHeaderBtn");
   if(btn) btn.classList.toggle("wa-has-new", show);
 }
 
 // เสียบปุ่ม/แบนเนอร์เข้าหน้าจอที่มีอยู่ (ไม่แก้ HTML เดิม) — ถ้าหา anchor ไม่เจอจะข้ามเงียบๆ ไม่ทำให้แอปพัง
 function mountWeeklyAuditEntryPoints(){
-  if(!document.getElementById("weeklyAuditBtn")){
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "weeklyAuditBtn";
-    btn.className = "wa-btn";
-    btn.textContent = "📊 รายงานรอบสัปดาห์ (Weekly Audit)";
-    btn.addEventListener("click", openWeeklyAuditModal);
+  // เก็บกวาดของเวอร์ชันก่อน: ปุ่มแคปซูลกลางจอเลิกใช้แล้ว
+  document.getElementById("weeklyAuditBtn")?.remove();
+
+  // ปุ่มไอคอน 📊 บน Header ขวาบนของแท็บที่ปรึกษา AI (วางข้างปุ่มประวัติแชท/ตั้งค่า AI)
+  if(!document.getElementById("weeklyAuditHeaderBtn")){
+    const anchor = document.getElementById("aiChatHistoryBtn") || document.getElementById("aiAdvisorSettingsBtn");
+    if(anchor){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "weeklyAuditHeaderBtn";
+      btn.className = "icon-btn ai-icon-btn";
+      btn.title = "รายงานรอบสัปดาห์";
+      btn.setAttribute("aria-label", "รายงานรอบสัปดาห์");
+      btn.textContent = "📊";
+      btn.addEventListener("click", (e) => { e.stopPropagation(); openWeeklyAuditModal(); });
+      anchor.insertAdjacentElement("beforebegin", btn);
+    }
+  }
+
+  // แบนเนอร์สัปดาห์ใหม่: อยู่ในแท็บที่ปรึกษา AI เท่านั้น (ห้ามแตะหน้าภาพรวม) — CSS ซ่อนเมื่อ body ไม่มี ux-chat-active
+  if(!document.getElementById("weeklyAuditBanner")){
     const panel = document.getElementById("aiAdvisorSettingsPanel");
     const chatBody = document.getElementById("aiAnalystBody");
-    const settingsBtn = document.getElementById("aiAdvisorSettingsBtn");
-    if(panel) panel.insertAdjacentElement("afterend", btn);
-    else if(chatBody) chatBody.insertAdjacentElement("beforebegin", btn);
-    else if(settingsBtn && settingsBtn.parentElement) settingsBtn.parentElement.insertAdjacentElement("afterend", btn);
-  }
-  if(!document.getElementById("weeklyAuditBanner")){
-    const card = document.getElementById("aiProactiveCard");
-    if(card){
+    if(panel || chatBody){
       const banner = document.createElement("div");
       banner.id = "weeklyAuditBanner";
       banner.className = "wa-banner";
@@ -2250,7 +2311,8 @@ function mountWeeklyAuditEntryPoints(){
         <div class="wa-banner-text">สัปดาห์ใหม่แล้ว — ดูรายงานสุขภาพการเงินรอบ 7 วันที่ผ่านมา</div>
         <button type="button" class="wa-banner-open" id="weeklyAuditBannerOpenBtn">ดูรายงาน</button>
         <button type="button" class="wa-banner-x" id="weeklyAuditBannerDismissBtn" aria-label="ปิดแจ้งเตือน">✕</button>`;
-      card.insertAdjacentElement("afterend", banner);
+      if(panel) panel.insertAdjacentElement("afterend", banner);
+      else chatBody.insertAdjacentElement("beforebegin", banner);
       document.getElementById("weeklyAuditBannerOpenBtn").addEventListener("click", openWeeklyAuditModal);
       document.getElementById("weeklyAuditBannerDismissBtn").addEventListener("click", () => {
         try{ sessionStorage.setItem(WEEKLY_AUDIT_DISMISS_KEY, waWeekKey(todayISO())); }catch(e){}
