@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds21">
-<link rel="stylesheet" href="ds.css?v=ds21">
+<link rel="stylesheet" href="style.css?v=ds22">
+<link rel="stylesheet" href="ds.css?v=ds22">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -693,16 +693,17 @@
     <div class="sheet notification-sheet" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
       <div class="sheet-head notification-modal-head">
         <strong id="notificationModalTitle">การแจ้งเตือน</strong>
-        <button class="icon-btn" id="closeNotificationBtn" type="button" aria-label="ปิด" onclick="closeVaultetNotificationCenter()">✕</button>
+        <div class="notification-head-actions">
+          <button class="icon-btn" id="notificationSettingsGear" type="button" aria-label="ตั้งค่าการแจ้งเตือน"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M18.400 5.600l-2.100 2.100M7.700 16.300l-2.100 2.100"/></svg></button>
+          <button class="icon-btn" id="closeNotificationBtn" type="button" aria-label="ปิด" onclick="closeVaultetNotificationCenter()"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
       </div>
 
-      <section class="notification-history-section" aria-labelledby="notificationHistoryTitle">
-        <div class="notification-section-head">
-          <div>
-            <h3 id="notificationHistoryTitle">ประวัติ</h3>
-            <p>การแจ้งเตือนล่าสุดของคุณ</p>
-          </div>
-          <span class="notification-count" id="notificationHistoryCount">0</span>
+      <section class="notification-history-section" aria-labelledby="notificationModalTitle">
+        <div class="notification-history-tools">
+          <span class="notification-count" id="notificationHistoryCount" hidden>0</span>
+          <button type="button" class="notification-link" id="markNotificationsReadBtn">อ่านทั้งหมด</button>
+          <button type="button" class="notification-link is-danger" id="clearNotificationsBtn">ล้างประวัติ</button>
         </div>
         <div id="notificationFullList" class="notification-list" aria-live="polite"></div>
       </section>
@@ -716,18 +717,16 @@
           <div class="notification-permission" id="notificationPermissionBox">การแจ้งเตือนในแอปทำงานได้ทันที ส่วนการแจ้งเตือนระดับระบบเมื่อแอปถูกปิดต้องติดตั้งเป็น PWA และมี Web Push backend ของ Vaultet</div>
           <div class="notification-actions">
             <button class="manage-accounts-btn" id="requestNotificationBtn" type="button">เปิดการแจ้งเตือนบนเครื่อง</button>
-            <button class="manage-accounts-btn" id="markNotificationsReadBtn" type="button">อ่านทั้งหมด</button>
-            <button class="manage-accounts-btn" id="clearNotificationsBtn" type="button">ล้างประวัติ</button>
           </div>
           <div class="notification-settings-grid">
             <div class="notification-setting"><label><span>เปิดระบบแจ้งเตือน</span><input type="checkbox" id="notifEnabledInput"></label><small>ให้ Vaultet ตรวจสอบและสร้างการแจ้งเตือนอัตโนมัติ</small></div>
             <div class="notification-setting"><label><span>แจ้งเตือนเชิงบวก</span><input type="checkbox" id="notifPositiveInput"></label><small>เช่น เงินสำรองถึงเป้าหมายหรือการเงินแข็งแรง</small></div>
-            <div class="notification-setting"><label><span>งบประมาณ</span><input type="checkbox" id="notifBudgetInput"></label><small>เตือนเมื่อเกินงบหรือใช้ pace เร็วเกินไป</small></div>
+            <div class="notification-setting"><label><span>งบประมาณ</span><input type="checkbox" id="notifBudgetInput"></label><small>เตือนเมื่อเกินงบหรือใช้เงินเร็วเกินไป</small></div>
             <div class="notification-setting"><label><span>เงินสำรอง</span><input type="checkbox" id="notifEmergencyInput"></label><small>เตือนเมื่อเงินสำรองต่ำกว่าเป้าหมาย</small></div>
-            <div class="notification-setting"><label><span>Forecast / กระแสเงินสด</span><input type="checkbox" id="notifForecastInput"></label><small>เตือนเมื่อเงินอาจไม่พอถึงสิ้นช่วง</small></div>
-            <div class="notification-setting"><label><span>ค่าใช้จ่ายประจำ / หนี้</span><input type="checkbox" id="notifObligationInput"></label><small>เตือนภาระใกล้ถึงกำหนดและแรงกดดันจากหนี้</small></div>
+            <div class="notification-setting"><label><span>เงินอาจไม่พอ</span><input type="checkbox" id="notifForecastInput"></label><small>เตือนเมื่อเงินอาจไม่พอถึงสิ้นช่วง</small></div>
+            <div class="notification-setting"><label><span>ค่าใช้จ่ายประจำและหนี้</span><input type="checkbox" id="notifObligationInput"></label><small>เตือนภาระใกล้ถึงกำหนดและแรงกดดันจากหนี้</small></div>
             <div class="notification-setting"><label><span>พฤติกรรมการใช้เงิน</span><input type="checkbox" id="notifBehaviorInput"></label><small>เช่น spending spike, รายรับลดลง, อัตราออมต่ำ</small></div>
-            <div class="notification-setting"><label><span>เงียบช่วง 23:00–07:00</span><input type="checkbox" id="notifQuietInput"></label><small>Critical ยังสามารถข้าม quiet hours ได้</small></div>
+            <div class="notification-setting"><label><span>ไม่รบกวนช่วง 23:00–07:00</span><input type="checkbox" id="notifQuietInput"></label><small>เรื่องสำคัญมากยังเตือนได้</small></div>
           </div>
         </div>
       </section>
@@ -740,9 +739,9 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds21"></script>
-<script src="app.js?v=ds21"></script>
-<script src="ai.js?v=ds21"></script>
-<script src="ui.js?v=ds21"></script>
+<script src="dialog.js?v=ds22"></script>
+<script src="app.js?v=ds22"></script>
+<script src="ai.js?v=ds22"></script>
+<script src="ui.js?v=ds22"></script>
 </body>
 </html>

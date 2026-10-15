@@ -2539,7 +2539,12 @@ function addVaultetNotification(f,states){
 function renderVaultetNotifications(){
   const a=loadVaultetNotifications(),unread=a.filter(n=>!n.read).length,badge=document.getElementById("notificationUnreadBadge"),dot=document.getElementById("uxBellDot");
   if(badge){badge.textContent=unread;badge.style.display=unread?"flex":"none"}if(dot)dot.style.display=unread?"block":"none";
-  const draw=(arr,target)=>{if(!target)return;target.innerHTML=arr.length?arr.map(n=>`<div class="notification-item ${n.read?"":"unread"}" data-notif-id="${escapeHtml(n.id)}"><div class="notification-icon">${vaultetIcon(n.icon)}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(n.title)}</div><div class="notification-item-body">${escapeHtml(n.body)}</div></div><div class="notification-time">${escapeHtml((n.day||todayISO())===todayISO() ? (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}) : "ตอนนี้") : dayLabel(n.day||todayISO()))}</div></div>`).join(""):"<div class=\"notification-empty\">ตอนนี้ยังไม่มีเรื่องสำคัญที่ต้องแจ้ง</div>";target.querySelectorAll("[data-notif-id]").forEach(el=>el.onclick=()=>{const x=loadVaultetNotifications(),n=x.find(v=>v.id===el.dataset.notifId);if(n)n.read=true;saveVaultetNotifications(x);renderVaultetNotifications()})};
+  const draw=(arr,target)=>{if(!target)return;
+    const timeOf=n=>n.createdAt?new Date(n.createdAt).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}):"";
+    let lastDay="";
+    target.innerHTML=arr.length?arr.map(n=>{const day=n.day||todayISO();let head="";if(day!==lastDay){lastDay=day;head=`<div class="notification-day">${escapeHtml(dayHeading(day))}</div>`;}
+      return head+`<div class="notification-item ${n.read?"":"unread"}" data-notif-id="${escapeHtml(n.id)}"><div class="notification-icon">${vaultetIcon(n.icon)}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(n.title)}</div><div class="notification-item-body">${escapeHtml(n.body)}</div></div><div class="notification-time">${escapeHtml(timeOf(n))}</div></div>`;}).join(""):"<div class=\"notification-empty\">ยังไม่มีการแจ้งเตือน</div>";
+    target.querySelectorAll("[data-notif-id]").forEach(el=>el.onclick=()=>{const x=loadVaultetNotifications(),n=x.find(v=>v.id===el.dataset.notifId);if(n)n.read=true;saveVaultetNotifications(x);renderVaultetNotifications()})};
   const active=loadVaultetAdvisorActive();
   const current=active.slice(0,3);
   const dashboardTarget=document.getElementById("notificationPreviewList");

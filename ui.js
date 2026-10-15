@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds21";
+  const UI_VERSION = "ds22";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -294,6 +294,26 @@
   }
   let mtries = 0;
   (function waitMenu(){ if(buildAiMenu() || ++mtries > 30) return; setTimeout(waitMenu, 150); })();
+
+  // ---------- ศูนย์แจ้งเตือน: ลิสต์เป็นหลัก ตั้งค่าอยู่ในหน้าแยก (กดเฟือง) ----------
+  (function(){
+    const sheet = document.querySelector("#notificationOverlay .notification-sheet");
+    const panel = document.getElementById("notificationSettingsPanel");
+    const title = document.getElementById("notificationModalTitle");
+    const gear = document.getElementById("notificationSettingsGear");
+    if(!sheet || !panel || !gear || !title) return;
+    const sync = () => {
+      const on = !panel.hidden;
+      sheet.classList.toggle("is-settings", on);
+      title.textContent = on ? "ตั้งค่าการแจ้งเตือน" : "การแจ้งเตือน";
+      gear.setAttribute("aria-label", on ? "กลับไปรายการแจ้งเตือน" : "ตั้งค่าการแจ้งเตือน");
+    };
+    new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ["hidden"] });
+    gear.addEventListener("click", () => { if(typeof toggleNotificationSettings === "function") toggleNotificationSettings(); });
+    // เปิดศูนย์แจ้งเตือนครั้งใหม่ → เริ่มที่รายการเสมอ
+    new MutationObserver(() => { if(!document.getElementById("notificationOverlay").classList.contains("open") && !panel.hidden){ panel.hidden = true; } }).observe(document.getElementById("notificationOverlay"), { attributes: true, attributeFilter: ["class"] });
+    sync();
+  })();
 
   // จุดแดงที่แท็บ AI เมื่อมีคำตอบใหม่ที่ยังไม่ได้อ่าน (เดิมอยู่ที่ปุ่มประกายลอย ซึ่งเอาออกแล้ว)
   const fab = document.getElementById("aiFabBtn"), chatTab = document.querySelector('.ux-bottom-item[data-page="chat"]');

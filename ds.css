@@ -644,3 +644,71 @@ html body #settingsOverlay .gdrive-auto-status { border-radius: var(--v-r-md); }
 .ai-stream-caret { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--v-accent); animation: v-caret 1s steps(2, start) infinite; }
 @keyframes v-caret { to { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .ai-stream-caret { animation: none; } }
+
+/* ===== ds22: notification centre (list first, settings on its own page) + flat scoped sheets ===== */
+html body #notificationOverlay .notification-sheet { background: var(--v-bg) !important; border: 1px solid var(--v-line) !important; border-bottom: 0 !important; border-radius: 24px 24px 0 0 !important; padding: 0 !important; display: flex; flex-direction: column; max-height: 88vh; }
+html body #notificationOverlay .notification-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 8px 20px; border: 0; }
+html body #notificationOverlay .notification-modal-head strong { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.notification-head-actions { display: flex; gap: 8px; }
+html body #notificationOverlay .notification-head-actions .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 50%; color: var(--v-fg); }
+.notification-head-actions .v-ic { width: 20px; height: 20px; }
+.notification-history-tools { display: flex; justify-content: flex-end; gap: 18px; padding: 0 20px 6px; }
+.notification-link { background: none; border: 0; padding: 6px 0; color: var(--v-in); font: inherit; font-size: 14px; cursor: pointer; }
+.notification-link.is-danger { color: var(--v-muted); }
+html body #notificationOverlay .notification-history-section { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; overflow: hidden; }
+html body #notificationOverlay .notification-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px)); display: block; }
+.notification-day { padding: 14px 8px 6px; font-size: 13px; font-weight: 500; color: var(--v-muted); }
+html body #notificationOverlay .notification-item { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 12px 8px 12px 18px; margin: 0; background: none !important; border: 0 !important; border-radius: 14px; box-shadow: none !important; cursor: pointer; }
+html body #notificationOverlay .notification-item:active { background: var(--v-surface) !important; }
+html body #notificationOverlay .notification-item.unread::before { content: ""; position: absolute; left: 4px; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: var(--v-accent); }
+html body #notificationOverlay .notification-icon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--v-surface); color: var(--v-muted); }
+html body #notificationOverlay .notification-item.unread .notification-icon { color: var(--v-out); }
+html body #notificationOverlay .notification-content { flex: 1; min-width: 0; }
+html body #notificationOverlay .notification-item-title { font-size: 15px; font-weight: 600; line-height: 1.35; }
+html body #notificationOverlay .notification-item:not(.unread) .notification-item-title { font-weight: 500; }
+html body #notificationOverlay .notification-item-body { margin-top: 2px; font-size: 14px; color: var(--v-muted); line-height: 1.45; }
+html body #notificationOverlay .notification-time { flex: none; font-size: 12px; color: var(--v-muted); padding-top: 3px; }
+html body #notificationOverlay .notification-empty { padding: 56px 20px; text-align: center; font-size: 15px; color: var(--v-muted); }
+/* the old settings accordion row is replaced by the gear; the panel becomes its own page */
+html body #notificationOverlay .notification-settings-toggle { display: none !important; }
+html body #notificationOverlay .notification-settings-section { display: none; padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; border: 0; }
+html body #notificationOverlay .notification-sheet.is-settings .notification-settings-section { display: block; }
+html body #notificationOverlay .notification-sheet.is-settings .notification-history-section { display: none; }
+html body #notificationOverlay .notification-settings-panel { display: block; }
+html body #notificationOverlay .notification-settings-panel[hidden] { display: none; }
+html body #notificationOverlay .notification-permission { background: none; border: 0; padding: 0 0 8px; font-size: 13px; color: var(--v-muted); }
+html body #notificationOverlay .notification-actions { display: flex; margin: 4px 0 8px; }
+html body #notificationOverlay .notification-actions button { flex: 1; height: 46px; border: 0; border-radius: var(--v-r-md); background: var(--v-surface-2); color: var(--v-fg); font: inherit; font-size: 14px; font-weight: 600; }
+html body #notificationOverlay .notification-settings-grid { display: block; border-top: 1px solid var(--v-line); margin-top: 8px; }
+html body #notificationOverlay .notification-setting { padding: 14px 0; background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; border-radius: 0 !important; box-shadow: none !important; }
+html body #notificationOverlay .notification-setting label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 16px; }
+html body #notificationOverlay .notification-setting label span { font-weight: 500; }
+html body #notificationOverlay .notification-setting small { display: block; margin-top: 4px; padding-right: 60px; font-size: 13px; color: var(--v-muted); line-height: 1.4; }
+html body #notificationOverlay .notification-setting .notification-state, html body #notificationOverlay .notification-setting [class*="badge"] { display: none !important; }
+html body #notificationOverlay .notification-setting input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 48px; height: 28px; margin: 0; border-radius: 999px; background: var(--v-surface-2) !important; border: 1px solid var(--v-line); cursor: pointer; transition: background .18s ease; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--v-muted); transition: transform .18s ease, background .18s ease; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked { background: var(--v-accent) !important; border-color: transparent; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked::after { transform: translateX(20px); background: var(--v-accent-ink); }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* scoped settings sheets (Memory / API key / Drive / stocks): no duplicate inner title, no box inside the sheet */
+html body #settingsOverlay[data-topic] .settings-card { background: none !important; border: 0 !important; padding: 0 !important; margin: 0 0 8px !important; box-shadow: none !important; }
+html body #settingsOverlay[data-topic] .settings-card-title { display: none !important; }
+html body #settingsOverlay[data-topic] .ai-status-row { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; border-radius: 0 !important; padding: 12px 0 !important; margin: 0 !important; }
+
+html body #notificationOverlay .notification-setting[data-state] { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; box-shadow: none !important; }
+html body #notificationOverlay .notification-setting[data-state] label > span::after { content: none !important; display: none !important; }
+html body #notificationOverlay .notification-modal-head { padding: 18px 16px 8px 20px !important; border: 0 !important; background: none !important; }
+html body #notificationOverlay .notification-sheet { overflow: hidden; }
+html body #notificationOverlay .notification-sheet .notification-settings-section { padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px)) !important; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked::after { background: var(--v-accent-ink) !important; }
+
+html body #notificationOverlay .notification-sheet .notification-item.unread { background: none !important; box-shadow: none !important; border: 0 !important; }
+html body #notificationOverlay .notification-count[hidden] { display: none !important; }
+html body #notificationOverlay .notification-sheet .notification-settings-section { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+html body #notificationOverlay .notification-settings-panel, html body #notificationOverlay .notification-sheet .notification-settings-grid { background: none !important; border-left: 0 !important; border-right: 0 !important; box-shadow: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+html body #notificationOverlay .notification-sheet .notification-permission { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md); padding: 12px 14px !important; }
+html body #notificationOverlay .notification-setting[data-state]:has(input[type="checkbox"]) { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; }
+html body #notificationOverlay .notification-setting:has(input[type="checkbox"]:checked) { background: none !important; border-color: var(--v-line) !important; }
+html body #notificationOverlay .notification-settings-panel { max-height: none !important; overflow: visible !important; }
+html body #notificationOverlay .notification-actions button { border-radius: var(--v-r-md) !important; }
