@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds19";
+  const UI_VERSION = "ds20";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -202,7 +202,19 @@
 
     let closeTimer = 0;
     const close = () => { panel.classList.remove("is-open"); back.classList.remove("is-open"); document.body.classList.remove("v-aimenu-open"); };
-    const after = fn => { close(); setTimeout(fn, 230); };   // รอเมนูเลื่อนออกก่อนค่อยเปิดอย่างอื่น ไม่ให้กระตุก
+    const chatActive = () => document.body.classList.contains("ux-chat-active");
+    const isOpenEl = el => el.classList.contains("open") || el.classList.contains("is-open");
+    // เปิดหน้าย่อยจากเมนูแล้วปิดออก → กลับมาที่เมนูเดิม (ไม่ใช่หลุดไปหน้าแชทเลย)
+    function armReturn(){
+      const els = ["vaultetProfileOverlay", "settingsOverlay", "weeklyAuditOverlay", "aiAdvisorSettingsPanel"].map(id => document.getElementById(id)).filter(Boolean);
+      let armed = null; const t0 = Date.now();
+      const iv = setInterval(() => {
+        if(!armed){ armed = els.find(isOpenEl) || null; if(!armed && Date.now() - t0 > 1500) clearInterval(iv); return; }
+        if(!isOpenEl(armed)){ clearInterval(iv); setTimeout(() => { if(chatActive()) open(); }, 140); }
+      }, 120);
+    }
+    const after = (fn, ret) => { close(); setTimeout(() => { fn(); if(ret) armReturn(); }, 230); };   // รอเมนูเลื่อนออกก่อนค่อยเปิดอย่างอื่น ไม่ให้กระตุก
+    let fromMenu = false;
     const renderHist = () => {
       const q = (document.getElementById("aiMenuSearch").value || "").trim().toLowerCase();
       const data = chatsData();
@@ -238,18 +250,18 @@
       renderHist();
       back.classList.add("is-open"); panel.classList.add("is-open"); document.body.classList.add("v-aimenu-open");
     };
-    const item = (icon, label, fn, danger) => {
+    const item = (icon, label, fn, danger, ret) => {
       const b = document.createElement("button"); b.type = "button"; b.className = "v-aimenu-row" + (danger ? " is-danger" : "");
       b.innerHTML = svg(icon) + "<span></span>"; b.querySelector("span").textContent = label;
-      b.addEventListener("click", () => after(fn));
+      b.addEventListener("click", () => after(fn, ret));
       return b;
     };
     const click = id => () => document.getElementById(id)?.click();
     list.append(
-      item(I.user, "ข้อมูลของฉันที่ AI ใช้", () => window.vaultetOpenProfile && window.vaultetOpenProfile()),
-      item(I.mem, "Memory ที่ AI จำได้", () => openSettingsSheet("memory")),
-      item(I.tune, "นิสัยและคำสั่งของ AI", () => { const p = document.getElementById("aiAdvisorSettingsPanel"); if(!p || !p.classList.contains("is-open")) click("aiAdvisorSettingsBtn")(); }),
-      item(I.chart, "รายงานรายสัปดาห์", () => { if(typeof openWeeklyAuditModal === "function") openWeeklyAuditModal(); }),
+      item(I.user, "ข้อมูลของฉันที่ AI ใช้", () => window.vaultetOpenProfile && window.vaultetOpenProfile(), false, true),
+      item(I.mem, "Memory ที่ AI จำได้", () => openSettingsSheet("memory"), false, true),
+      item(I.tune, "นิสัยและคำสั่งของ AI", () => { const p = document.getElementById("aiAdvisorSettingsPanel"); if(!p || !p.classList.contains("is-open")) click("aiAdvisorSettingsBtn")(); }, false, true),
+      item(I.chart, "รายงานรายสัปดาห์", () => { if(typeof openWeeklyAuditModal === "function") openWeeklyAuditModal(); }, false, true),
       item(I.trash, "ล้างข้อความในแชทนี้", async () => { if(await vaultetAsk("ล้าง", "ล้างข้อความทั้งหมดในแชทนี้ใช่ไหม?", true)) click("clearAiChatBtn")(); }, true)
     );
     panel.append(head, searchWrap, list, histLabel, hist, prof);
@@ -258,7 +270,21 @@
     document.addEventListener("keydown", e => { if(e.key === "Escape" && panel.classList.contains("is-open")) close(); });
     menuBtn.addEventListener("click", open);
     newBtn.addEventListener("click", () => document.getElementById("newAiChatBtn")?.click());
-    prof.addEventListener("click", () => after(() => window.vaultetOpenSettings && window.vaultetOpenSettings()));
+    prof.addEventListener("click", () => { fromMenu = true; after(() => window.vaultetOpenSettings && window.vaultetOpenSettings()); });
+    // กดย้อนกลับจากหน้าตั้งค่า (ที่เปิดมาจากเมนู AI) → กลับมาที่เมนู
+    document.getElementById("uxBackBtn")?.addEventListener("click", () => { if(!fromMenu) return; fromMenu = false; setTimeout(() => { if(chatActive()) open(); }, 280); });
+    document.querySelectorAll(".ux-bottom-item, #uxAddBtn").forEach(b => b.addEventListener("click", () => { fromMenu = false; }));
+    // ปุ่ม ✕ + ฉากหลังของแผง "ปรับแต่ง AI"
+    const adv = document.getElementById("aiAdvisorSettingsPanel");
+    if(adv){
+      const advBack = document.createElement("div"); advBack.className = "v-sheet-back"; advBack.id = "aiAdvBack"; document.body.append(advBack);
+      const advClose = () => adv.classList.remove("is-open");
+      advBack.addEventListener("click", advClose);
+      document.getElementById("aiAdvisorCloseBtn")?.addEventListener("click", advClose);
+      const sync = () => advBack.classList.toggle("is-open", adv.classList.contains("is-open"));
+      new MutationObserver(sync).observe(adv, { attributes: true, attributeFilter: ["class"] }); sync();
+      document.addEventListener("keydown", e => { if(e.key === "Escape" && adv.classList.contains("is-open")) advClose(); });
+    }
     document.getElementById("aiMenuSearchBtn").addEventListener("click", () => {
       searchWrap.hidden = !searchWrap.hidden;
       if(!searchWrap.hidden) document.getElementById("aiMenuSearch").focus(); else { document.getElementById("aiMenuSearch").value = ""; renderHist(); }

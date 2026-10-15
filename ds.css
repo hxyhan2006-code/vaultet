@@ -610,3 +610,32 @@ html body #ux-more .ux-user-context { border-radius: 20px !important; }
 /* smooth tab/page change */
 @media (prefers-reduced-motion: no-preference) { html body .ux-view.active { animation: v-viewin .22s ease-out; } }
 @keyframes v-viewin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ===== ds20: advisor-instruction sheet, Drive/Key buttons, checkbox ===== */
+.v-sheet-back { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.55); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s .2s; }
+.v-sheet-back.is-open { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+html body .ai-advisor-settings-panel { display: block !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 9101; margin: 0; max-height: 88vh; overflow-y: auto; padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--v-surface); border: 1px solid var(--v-line); border-bottom: 0; border-radius: 24px 24px 0 0; transform: translateY(105%); visibility: hidden; transition: transform .26s cubic-bezier(.2,.8,.2,1), visibility 0s .26s; }
+html body .ai-advisor-settings-panel.is-open { transform: none; visibility: visible; transition: transform .26s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { html body .ai-advisor-settings-panel, .v-sheet-back { transition: none !important; } }
+.v-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 6px; }
+.ai-advisor-settings-title { margin: 0 !important; font-size: 17px !important; font-weight: 600 !important; }
+.v-sheet-x { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-muted); cursor: pointer; }
+.v-sheet-x .v-ic { width: 18px; height: 18px; }
+html body .ai-advisor-settings-help { font-size: 13px; color: var(--v-muted); margin: 4px 0 12px; }
+html body #aiAdvisorInstruction { min-height: 120px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); }
+html body #aiAdvisorInstruction:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+html body .ai-advisor-settings-actions { gap: 10px; margin-top: 12px; }
+html body .ai-advisor-settings-actions button { height: 46px; padding: 0; border: 0; border-radius: var(--v-r-md); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; background: var(--v-surface-2); color: var(--v-fg); }
+html body .ai-advisor-settings-actions button#saveAiAdvisorInstructionBtn { background: var(--v-accent); color: var(--v-accent-ink); }
+html body .ai-advisor-settings-status { font-size: 12px; color: var(--v-muted); }
+
+/* buttons inside the old settings sheets (Drive / keys / stocks) */
+html body #settingsOverlay .ai-key-actions { gap: 10px; }
+html body #settingsOverlay .ai-key-actions button { height: 46px; padding: 0 8px !important; white-space: nowrap; border: 0 !important; border-radius: var(--v-r-md) !important; font: inherit; font-size: 14px !important; font-weight: 600 !important; cursor: pointer; background: var(--v-surface-2) !important; color: var(--v-fg) !important; }
+html body #settingsOverlay .ai-key-actions button[style*="accent1"] { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+html body #settingsOverlay .ai-key-actions button.danger-btn { background: color-mix(in srgb, var(--v-out) 14%, transparent) !important; color: var(--v-out) !important; }
+html body #settingsOverlay .ai-key-actions button:disabled { opacity: .45; }
+html body #settingsOverlay input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; width: 22px !important; height: 22px !important; margin: 0; border: 1.5px solid var(--v-muted); border-radius: 7px; background: transparent; display: inline-grid; place-items: center; cursor: pointer; }
+html body #settingsOverlay input[type="checkbox"]:checked { background: var(--v-accent) !important; border-color: var(--v-accent) !important; }
+html body #settingsOverlay input[type="checkbox"]:checked::after { content: ""; width: 5px; height: 10px; border: solid var(--v-accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
+html body #settingsOverlay .gdrive-auto-status { border-radius: var(--v-r-md); }

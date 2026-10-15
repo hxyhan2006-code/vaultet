@@ -81,7 +81,7 @@ await pg.click('[data-gdel]'); await T.dlgOK(pg); await pg.waitForTimeout(250); 
 await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(300); await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(200); await pg.click('#aiMenu .v-aimenu-row >> nth=1'); await pg.waitForTimeout(650);
 await pg.click('.edit-ai-memory-btn'); await T.dlgOK(pg,{text:'ชอบออมเดือนละ 4,000'}); await pg.waitForTimeout(250);
 const mem=await get('finance_tracker_ai_memory_v1'); ok('AI memory edit saved', mem[0].text==='ชอบออมเดือนละ 4,000');
-await closeAll();
+await closeAll(); await pg.waitForTimeout(600); await pg.keyboard.press('Escape'); await pg.waitForTimeout(400);
 
 // ===== lock (PIN) =====
 await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(300);
