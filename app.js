@@ -1577,13 +1577,6 @@ function render(){
     }
     bindTxRows(listContainer);
   }
-  // หน้าหลัก: โชว์แค่ 5 รายการล่าสุดของเดือน (ไม่ผูกกับช่องค้นหา/ตัวกรองของแท็บ "รายการ")
-  const recentContainer = document.getElementById("recentContainer");
-  if(recentContainer){
-    const recent = [...getMonthEntries()].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
-    recentContainer.innerHTML = recent.length ? txListHtml(recent) : emptyMsg;
-    bindTxRows(recentContainer);
-  }
   scheduleGDriveAutoSync();
 }
 
@@ -3449,7 +3442,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     page.appendChild(v); views[id]=v; return v;
   }
   const home=makeView('home','ภาพรวม','ทุกสิ่งที่สำคัญสำหรับคุณในตอนนี้');
-  const tx=makeView('transactions','รายการเงิน','ดู ค้นหา และจัดการรายรับรายจ่ายทั้งหมด');
+  const analysisV=makeView('analysis','วิเคราะห์','ดูว่าเงินไปไหน และเทียบแต่ละช่วงเวลา');
   const plan=makeView('plan','วางแผนการเงิน','กำหนดกรอบการใช้เงินและสร้างความปลอดภัยให้การเงิน');
   const more=makeView('more','เพิ่มเติม','ตั้งค่าและเครื่องมือของ Vaultet');
   const chatV=makeView('chat','AI ที่ปรึกษา','คุยแบบอิสระกับ Vaultet ได้เหมือนคุยกับที่ปรึกษาส่วนตัว');
@@ -3462,12 +3455,11 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   if(emergency) plan.append(emergency);
   if(notify) more.append(notify);
   if(backup) more.append(backup);
-  // แท็บ "รายการ": ค้นหา/กรองรายการทั้งหมดก่อน แล้วค่อยเป็นการวิเคราะห์และเปรียบเทียบ
-  tx.append(list);
-  if(breakdown) tx.append(breakdown);
-  analyses.forEach(a=>tx.append(a));
-  // หน้าหลัก: โชว์เฉพาะ 5 รายการล่าสุด
-  const recent=page.querySelector('#vRecent'); if(recent) home.append(recent);
+  // แท็บ "วิเคราะห์": สรุปตามหมวด + วิเคราะห์ตามช่วงเวลา + เปรียบเทียบ
+  if(breakdown) analysisV.append(breakdown);
+  analyses.forEach(a=>analysisV.append(a));
+  // รายการทั้งหมด (ค้นหา/กรอง) อยู่ท้ายหน้าหลัก
+  home.append(list);
 
   // Dedicated AI page reuses the existing chat DOM/logic.
   const aiOverlay=document.getElementById('aiAnalystOverlay');
@@ -3496,19 +3488,18 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   bottom.setAttribute('aria-label','เมนูหลัก');
   bottom.innerHTML=`
     <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>หน้าหลัก</button>
-    <button class="ux-bottom-item" data-page="transactions"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>รายการ</button>
+    <button class="ux-bottom-item" data-page="analysis"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1112 3v9z"/><path d="M15 3.500A9 9 0 0120.500 9H15z"/></svg>วิเคราะห์</button>
     <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>แผน</button>
     <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>ที่ปรึกษา AI</button>
     <button class="ux-bottom-item" data-page="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.300 16.300l2.100 2.100M18.400 5.600l-2.100 2.100M7.700 16.300l-2.100 2.100"/></svg>ตั้งค่า</button>`;
   document.body.append(bottom);
 
-  const names={home:'หน้าหลัก',transactions:'รายการ',plan:'แผน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า'};
+  const names={home:'หน้าหลัก',analysis:'วิเคราะห์',plan:'แผน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า'};
   function go(id){
     if(!views[id]) id='home';
     Object.entries(views).forEach(([k,v])=>v.classList.toggle('active',k===id));
     document.body.classList.toggle('ux-home-active',id==='home');
     document.body.classList.toggle('ux-chat-active',id==='chat');
-    document.body.classList.toggle('ux-tx-active',id==='transactions');
     document.body.classList.toggle('ux-nonhome',id!=='home');
     document.body.classList.toggle('ux-more-active',id==='more');
     const pageName=document.getElementById('uxPageName');
@@ -3626,7 +3617,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     if(!anchor) return;
     const active=document.querySelector('.ux-view.active');
     const pageId=active ? active.id.replace(/^ux-/,'') : 'home';
-    anchor.classList.toggle('fab-hidden', pageId !== 'home' && pageId !== 'transactions');
+    anchor.classList.toggle('fab-hidden', pageId !== 'home');
   }
 
   if(nav) nav.addEventListener('click',()=>setTimeout(syncFabVisibility,0),true);
@@ -3636,6 +3627,17 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     observer.observe(v,{attributes:true,attributeFilter:['class']});
   });
   syncFabVisibility();
+
+  // หน้าหลัก: ซ่อนปุ่มลอยตอนรายการอยู่ในจอ จะได้ไม่บังแถวรายการ
+  const listSection=document.querySelector('#ux-home .list-section');
+  if(anchor && listSection && 'IntersectionObserver' in window){
+    const listObserver=new IntersectionObserver(entries=>{
+      const visible=entries.some(x=>x.isIntersecting);
+      const active=document.querySelector('.ux-view.active')?.id==='ux-home';
+      anchor.classList.toggle('fab-hidden', active && visible);
+    },{threshold:0.08});
+    listObserver.observe(listSection);
+  }
 
   const bell=document.getElementById('uxBellBtn');
   const overlay=document.getElementById('notificationOverlay');

@@ -108,7 +108,8 @@ header.v-hero {
 
 /* ---------- ขอบซ้าย-ขวาของหน้าแรก (16px เท่ากันทุกบล็อก) ---------- */
 html body #ux-home > header.v-hero,
-html body #ux-home > .hero-cards { padding-left: 16px !important; padding-right: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
+html body #ux-home > .hero-cards,
+html body #ux-home > .list-section { padding-left: 16px !important; padding-right: 16px !important; margin-left: 0 !important; margin-right: 0 !important; }
 html body .ux-shell { padding-left: 0 !important; padding-right: 0 !important; }
 html body .ux-topbar { padding-left: 16px !important; padding-right: 16px !important; margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; }
 
@@ -286,19 +287,15 @@ html body #ux-plan > .ux-view-title, html body #ux-plan > .ux-view-sub { display
 .v-btn-block:focus-visible, .v-icon-btn:focus-visible, .v-srow summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 
 /* =====================================================================
-   โครงแท็บใหม่: หน้าหลัก / รายการ / แผน / ที่ปรึกษา AI / ตั้งค่า
+   โครงแท็บ: หน้าหลัก / วิเคราะห์ / แผน / ที่ปรึกษา AI / ตั้งค่า
    ===================================================================== */
-/* ขอบ 16px เท่ากันทุกแท็บ */
-html body #ux-transactions { padding-left: 16px !important; padding-right: 16px !important; }
-html body #ux-transactions.active { display: flex; flex-direction: column; gap: 16px; }
-html body #ux-transactions > .ux-view-title, html body #ux-transactions > .ux-view-sub { display: none; }
-html body #ux-transactions .list-section { padding-left: 0 !important; padding-right: 0 !important; margin: 0 !important; }
-/* แท็บ "รายการ" ต้องเลือกเดือนได้ (กฎเก่าซ่อนตัวเลือกเดือนนอกหน้าหลัก) */
-html body.ux-tx-active .ux-month { display: block !important; }
+/* แท็บ "วิเคราะห์": ขอบ 16px เท่าแท็บอื่น (แสดงเฉพาะตอน .active — ห้ามตั้ง display บน #ux-analysis ตรงๆ) */
+html body #ux-analysis { padding-left: 16px !important; padding-right: 16px !important; }
+html body #ux-analysis.active { display: flex; flex-direction: column; gap: 16px; }
+html body #ux-analysis > .ux-view-title, html body #ux-analysis > .ux-view-sub { display: none; }
 
-/* รายการล่าสุด (หน้าหลัก) */
-html body #ux-home > .v-recent { padding: 0 16px; margin: 8px 0 0; }
-.v-recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+/* เว้นจากแถบบน 16px ทุกแท็บที่ไม่ใช่หน้าหลัก/แชท (ก่อนหน้านี้ชิดจนบังตัวอักษรเมื่อไม่มีแถบเตือนคั่น) */
+html body .ux-view.active:not(#ux-home):not(#ux-chat) { padding-top: 16px !important; }
 
 /* ปุ่มลบในหน้าแก้ไข: ลิงก์เล็กสีแดง ไม่ให้เด่นกว่าปุ่มบันทึก */
 .v-del-link { display: block; margin: 12px auto 0; background: none; border: 0; padding: 4px 8px; color: var(--v-out); font: inherit; font-size: 14px; cursor: pointer; }
@@ -306,11 +303,4 @@ html body #ux-home > .v-recent { padding: 0 16px; margin: 8px 0 0; }
 .v-del-link:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 
 /* กันปุ่ม + ลอยทับแถวสุดท้ายของรายการ */
-html body.ux-tx-active .page, html body.ux-home-active .page { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
-
-/* สวิตช์สองทาง (รายการ | วิเคราะห์) */
-.v-seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 12px; }
-.v-seg button { background: none; border: 0; border-radius: 9px; padding: 8px 0; color: var(--v-muted); font: inherit; font-size: 14px; cursor: pointer; }
-.v-seg button.is-on { background: var(--v-surface-2); color: var(--v-fg); font-weight: 600; }
-.v-seg button:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
-.v-off { display: none !important; }
+html body.ux-home-active .page { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
