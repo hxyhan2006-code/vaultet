@@ -760,3 +760,18 @@ html body .overlay .v-loan-rep .icon-btn { width: 32px; height: 32px; }
 .v-loan-hist { align-self: stretch; }
 .v-loan-rep .mono { white-space: nowrap; }
 .v-loan-rep > span:first-child { flex: 1; min-width: 0; }
+
+/* ===== ds30: OpenRouter card + model picker ===== */
+.v-or-usage { margin: 14px 0 6px; }
+.v-or-urow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-line); font-size: 15px; }
+.v-or-pill { padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--v-accent) 14%, transparent); color: var(--v-in); font-family: var(--v-mono); font-size: 14px; }
+.v-or-pill.is-over { background: color-mix(in srgb, var(--v-out) 16%, transparent); color: var(--v-out); }
+.v-or-usub { padding: 0 0 8px; font-size: 13px; color: var(--v-muted); }
+.v-or-usub.is-over { color: var(--v-out); }
+.v-or-pick .v-field { width: 100%; margin: 6px 0; height: 44px; padding: 0 14px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); font: inherit; font-size: 15px; box-sizing: border-box; }
+.v-or-list { max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; margin: 6px 0; font-size: 14px; color: var(--v-muted); }
+.v-or-row { display: block; width: 100%; text-align: left; padding: 10px 8px; background: none; border: 0; border-top: 1px solid var(--v-line); color: var(--v-fg); font: inherit; cursor: pointer; }
+.v-or-row.is-current { background: var(--v-surface-2); border-radius: 10px; }
+.v-or-name { display: block; font-size: 15px; font-weight: 500; }
+.v-or-id { display: block; font-size: 12px; color: var(--v-muted); overflow-wrap: anywhere; }
+.v-or-price { display: block; font-size: 12px; color: var(--v-in); margin-top: 2px; }

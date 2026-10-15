@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds29";
+  const UI_VERSION = "ds30";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -140,7 +140,8 @@
     drive: { title: "Google Drive",   test: /Drive/ },
     stock: { title: "ราคาหุ้น",        test: /Twelve|ราคาหุ้น/ },
     memory:{ title: "Memory ที่ AI จำได้", test: /Memory/ },
-    aikey: { title: "Gemini API Key", test: /Gemini/ }
+    aikey: { title: "Gemini API Key", test: /Gemini/ },
+    or:    { title: "OpenRouter", test: /OpenRouter/ }
   };
   function openSettingsSheet(topic){
     const btn = document.getElementById("settingsBtn");
@@ -211,6 +212,7 @@
     const drive = rowBtn("vSetDrive", "Google Drive", "", () => openSettingsSheet("drive"));
     const notif = rowBtn("vSetNotif", "การแจ้งเตือน", "ประวัติและเลือกว่าจะให้เตือนเรื่องอะไร", () => { if(typeof openVaultetNotificationCenter === "function") openVaultetNotificationCenter(); });
     const aikey = rowBtn("vSetAiKey", "Gemini API Key", "", () => openSettingsSheet("aikey"));
+    const orRow = rowBtn("vSetOR", "OpenRouter · AI หลายค่าย", "", () => openSettingsSheet("or"));
     const stock = rowBtn("vSetStock", "ราคาหุ้น (Twelve Data)", "", () => openSettingsSheet("stock"));
 
     // แสดงเศษสตางค์: ย้ายสวิตช์เดิมมาไว้หน้านี้ (id เดิม ตัวจัดการเดิมยังทำงาน) แล้วลบการ์ดเก่าที่ว่างแล้วออก
@@ -227,7 +229,7 @@
     const groups = [
       group("สำรองข้อมูล", backupNow, exp, imp, drive),
       group("การแจ้งเตือน", notif),
-      group("AI", aikey),
+      group("AI", aikey, orRow),
       lockCard ? group("ความปลอดภัย", lockCard) : null,
       group("การแสดงผลและข้อมูล", ...[decRow, stock].filter(Boolean))
     ].filter(Boolean);
@@ -249,6 +251,7 @@
     set("vSetDrive", last && !/ยังไม่เคย/.test(last) ? conn + " · สำรองขึ้น Drive ล่าสุด " + last : conn);
     set("vSetStock", document.getElementById("pfKeyStatus2")?.textContent || "");
     set("vSetAiKey", document.getElementById("apiKeyStatus")?.textContent || "");
+    set("vSetOR", window.vaultetOR && window.vaultetOR.statusText ? window.vaultetOR.statusText() : "");
   }
   // หน้าตั้งค่าสร้างหลังโค้ดเดิมโหลดครบ (บางส่วนถูกสร้างด้วย timer) — ลองใหม่สั้นๆ จนกว่าจะพร้อม
   let tries = 0;

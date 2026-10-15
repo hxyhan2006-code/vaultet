@@ -340,8 +340,11 @@ function buildAISystemPrompt(context){
 // ===== AI model routing =====
 // ใช้โมเดล Flash ตัวเดียวกับ AI ที่ปรึกษา เพื่อให้พฤติกรรมสอดคล้องกัน
 // แต่ flow พิมพ์รายการมี local fast-path ก่อน เพื่อไม่ต้องรอ API สำหรับประโยคสั้นชัดเจน
-const AI_TRANSACTION_MODEL = "gemini-3.6-flash";
-const AI_ADVISOR_MODEL = AI_TRANSACTION_MODEL;
+// โมเดล Gemini ทุกงานใช้ตัวเดียวกัน (Flash 3.8) — ถ้า Google ตอบว่าไม่พบรุ่นนี้ (404) จะถอยไปรุ่นก่อนหน้าเองครั้งเดียวแล้วจำไว้
+const GEMINI_MODEL_DEFAULT = "gemini-3.8-flash", GEMINI_MODEL_FALLBACK = "gemini-3.6-flash", GEMINI_MODEL_KEY = "vaultet_gemini_model_v1";
+function aiModelId(){ try{ return localStorage.getItem(GEMINI_MODEL_KEY) || GEMINI_MODEL_DEFAULT; }catch(e){ return GEMINI_MODEL_DEFAULT; } }
+// มี AI ให้ใช้ไหม: คีย์ Gemini อย่างน้อย 1 อัน หรือ OpenRouter ตั้งค่าครบ (คีย์ + โมเดล)
+function aiAvailable(){ return getApiKeys().length > 0 || !!(window.vaultetOR && window.vaultetOR.enabled()); }
 
 // ===== AI Layer (Milestone 1): Gemini call =====
 const AI_RESPONSE_SCHEMA = {
@@ -368,22 +371,42 @@ const AI_RESPONSE_SCHEMA = {
 // 2) ถ้าคีย์เดิม retry แล้วยัง 429 อยู่ ให้สลับไปลองคีย์สำรองถัดไปในลิสต์ทันที (ถ้าตั้งค่าไว้หลายคีย์)
 // buildUrl: function(apiKey) => url เต็มพร้อม query key (เพราะแต่ละคีย์ต้องประกอบ url ใหม่)
 // ผู้ใช้จะไม่เห็น error 429 เลยถ้าคีย์ใดคีย์หนึ่งในลิสต์ผ่านได้ภายในเงื่อนไขนี้
-async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2){
+async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, meta = {}){
+  const OR = window.vaultetOR, kind = meta.kind || "small";
+  const stream = /streamGenerateContent/.test(buildUrl("x"));
+  let triedOR = false;
+  // แชท/ที่ปรึกษา: ถ้าตั้ง OpenRouter ไว้ ใช้ตัวนั้นก่อน (ถ้าไม่สำเร็จ ไปต่อที่ Gemini ฟรีเงียบๆ)
+  if(OR && kind === "chat" && OR.enabled()){
+    triedOR = true;
+    const r = await OR.call(options.body, { kind, stream, signal: options.signal });
+    if(r) return r;
+  }
   const keys = getApiKeys();
   let res = null;
   for(let i = 0; i < keys.length; i++){
-    const url = buildUrl(keys[i]);
+    let url = buildUrl(keys[i]);
     let attempt = 0;
     while(true){
       res = await fetch(url, options);
+      // รุ่น 3.8 ยังไม่เปิดให้คีย์นี้ (404) → ถอยไปรุ่นก่อนหน้า จำไว้ แล้วลองใหม่ทันที
+      if(res.status === 404 && aiModelId() === GEMINI_MODEL_DEFAULT){
+        try{ localStorage.setItem(GEMINI_MODEL_KEY, GEMINI_MODEL_FALLBACK); }catch(e){}
+        url = buildUrl(keys[i]);
+        res = await fetch(url, options);
+      }
       if((res.status !== 429 && res.status !== 503) || attempt >= maxRetriesPerKey) break;
       attempt++;
       await new Promise(r => setTimeout(r, 1500 * attempt)); // หน่วงเพิ่มขึ้นทีละรอบ: 1.5s, 3s
     }
-    if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์ถัดไป
-    // คีย์นี้โควต้าเต็มแม้ retry แล้ว → ลองคีย์สำรองถัดไปทันที ไม่ต้องหน่วงเพิ่ม
+    if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์อื่น
+    // คีย์นี้โควต้าเต็มแม้ retry แล้ว → ลองคีย์สำรองถัดไปทันที
   }
-  return res; // ทุกคีย์โดน 429 หมด (หรือไม่มีคีย์เลย) — คืนตัวสุดท้ายให้ caller จัดการ error ตามปกติ
+  // โควต้า Gemini ฟรีเต็มทุกคีย์ (หรือไม่มีคีย์) → สลับไป OpenRouter เงียบๆ ไม่แจ้งผู้ใช้
+  if(OR && !triedOR && OR.enabled()){
+    const r = await OR.call(options.body, { kind, stream, signal: options.signal });
+    if(r) return r;
+  }
+  return res || new Response("no_ai_available", { status: 503 });
 }
 
 // Local fast-path สำหรับภาษาพูดสั้น ๆ ที่ชัดเจน เช่น "กินข้าว เมื่อวาน 43"
@@ -438,7 +461,7 @@ function parseSpokenTransactionFast(text){
 async function parseNaturalLanguageEntry(text){
   const fastPayload=parseSpokenTransactionFast(text);
   if(fastPayload) return { ok:true, payload:fastPayload, fast:true };
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
   if(!text || !text.trim()) return { ok:false, error:"empty_input" };
 
   const context = buildAIContext();
@@ -447,7 +470,7 @@ async function parseNaturalLanguageEntry(text){
   let res;
   try{
     res = await fetchGeminiWithRetry(
-      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_TRANSACTION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -498,7 +521,7 @@ async function classifyIntent(text){
   if(!text || !text.trim()) return { ok:false, error:"empty_input" };
   // ประโยคสั้นที่ local parser เข้าใจได้ ให้เป็น transaction ทันที — เร็วกว่าเรียก AI และแก้เคส "กินข้าว เมื่อวาน 43"
   if(parseSpokenTransactionFast(text)) return { ok:true, intent:"transaction", fast:true };
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
 
   const systemPrompt = [
     "คุณคือตัวจัดประเภทข้อความสำหรับแอปการเงินส่วนตัว Vaultet",
@@ -512,7 +535,7 @@ async function classifyIntent(text){
   let res;
   try{
     res = await fetchGeminiWithRetry(
-      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_TRANSACTION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1056,7 +1079,7 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
 
 // ส่ง Snapshot + Profile + คำถามผู้ใช้ ให้ Gemini วิเคราะห์ คืน { ok:true, text } หรือ { ok:false, error }
 async function analyzeFinancialQuery(query, snapshot){
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
   if(!query || !query.trim()) return { ok:false, error:"empty_input" };
 
   const profile = loadAIProfile(); // null ถ้าผู้ใช้ยังไม่เคยตั้งค่า — ไม่ทำให้ query flow พังถ้าไม่มีโปรไฟล์
@@ -1066,7 +1089,7 @@ async function analyzeFinancialQuery(query, snapshot){
   let res;
   try{
     res = await fetchGeminiWithRetry(
-      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_TRANSACTION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1075,7 +1098,8 @@ async function analyzeFinancialQuery(query, snapshot){
           systemInstruction: { parts: [{ text: systemPrompt }] },
           generationConfig: { maxOutputTokens: 4096 }
         })
-      }
+      },
+        2, { kind: "chat" }
     );
   }catch(e){
     return { ok:false, error:"network_error" };
@@ -1611,7 +1635,7 @@ function createAiStreamUI(chatId){
 
 // onPartial(text) — ถ้าส่งมา จะรับคำตอบแบบสตรีม (ทีละท่อน) เพื่อแสดงสดๆ; ถ้าสตรีมใช้ไม่ได้จะถอยกลับไปแบบรอทั้งก้อนเอง
 async function generateChatReply(priorHistory, userText, snapshot, profile, signal, onPartial){
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
   if(!userText || !userText.trim()) return { ok:false, error:"empty_input" };
 
   const baseSystemPrompt = buildAIChatSystemPrompt(snapshot, profile);
@@ -1626,7 +1650,7 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
     const method = stream ? "streamGenerateContent?alt=sse&" : "generateContent?";
     try{
       res = await fetchGeminiWithRetry(
-        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_ADVISOR_MODEL}:${method}key=${encodeURIComponent(apiKey)}`,
+        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:${method}key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1637,7 +1661,7 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
           }),
           signal
         },
-        1
+        1, { kind: "chat" }
       );
     }catch(e){
       if(e && e.name === "AbortError") return { ok:false, error:"aborted" };
@@ -1803,14 +1827,14 @@ function buildProactiveSystemPrompt(evalResult, snapshot, profile){
 
 // ส่ง Findings + Snapshot + Profile ให้ Gemini เรียบเรียงเป็นข้อความ คืน { ok:true, text } หรือ { ok:false, error }
 async function generateProactiveInsight(evalResult, snapshot, profile){
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
 
   const systemPrompt = buildProactiveSystemPrompt(evalResult, snapshot, profile);
 
   let res;
   try{
     res = await fetchGeminiWithRetry(
-      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_TRANSACTION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2163,14 +2187,14 @@ function buildWeeklyAuditSystemPrompt(ctx){
 
 // คืน { ok:true, text } หรือ { ok:false, error, detail?, status? } — รูปแบบเดียวกับ generateProactiveInsight
 async function generateWeeklyAudit(ctx, signal){
-  if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
+  if(!aiAvailable()) return { ok:false, error:"missing_api_key" };
   const baseSystemPrompt = buildWeeklyAuditSystemPrompt(ctx);
 
   async function requestAudit(extraInstruction){
     let res;
     try{
       res = await fetchGeminiWithRetry(
-        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_ADVISOR_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${aiModelId()}:generateContent?key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2181,7 +2205,7 @@ async function generateWeeklyAudit(ctx, signal){
           }),
           signal
         },
-        1
+        1, { kind: "chat" }
       );
     }catch(e){
       if(e && e.name === "AbortError") return { ok:false, error:"aborted" };
@@ -2351,7 +2375,7 @@ async function runWeeklyAudit(){
   const stats = waStatsFromContext(ctx);
 
   if(ctx.totals.transactionCount === 0){ waRenderView({ status:"empty", stats }); return; }
-  if(getApiKeys().length === 0){ waRenderView({ status:"needsApiKey", stats, cache }); return; }
+  if(!aiAvailable()){ waRenderView({ status:"needsApiKey", stats, cache }); return; }
 
   weeklyAuditBusy = true;
   waRenderView({ status:"loading", stats, meta:`ข้อมูล ${waShortDate(ctx.period.start)}–${waShortDate(ctx.period.end)}` });
@@ -2673,7 +2697,7 @@ async function refreshProactiveCard(force){
     return;
   }
 
-  if(getApiKeys().length === 0){
+  if(!aiAvailable()){
     renderProactiveCard(evalResult.severity, null, "needsApiKey");
     return;
   }
@@ -2707,7 +2731,7 @@ function closeAiInputSheet(){
   document.getElementById("aiInputOverlay").classList.remove("open");
 }
 document.getElementById("aiFabBtn").addEventListener("click", () => {
-  if(getApiKeys().length === 0){
+  if(!aiAvailable()){
     showToast("ใส่ Gemini API Key ก่อนถึงจะใช้ AI ได้");
     if(window.vaultetOpenAiSettings) window.vaultetOpenAiSettings();
     return;
@@ -2915,7 +2939,7 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
   errBox.style.display = "none";
   if(!text) return;
 
-  if(getApiKeys().length === 0){
+  if(!aiAvailable()){
     errBox.textContent = AI_ERROR_MESSAGES.missing_api_key;
     errBox.style.display = "block";
     return;
