@@ -396,3 +396,54 @@ html body #settingsOverlay .settings-card.v-hide { display: none !important; }
 .v-ai-entry[hidden] { display: none; }
 .v-ai-entry svg { flex: none; width: 18px; height: 18px; fill: none; stroke: var(--v-accent); stroke-width: 1.8; stroke-linejoin: round; }
 .v-ai-entry:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* =====================================================================
+   หน้าต่างจัดการ (บัญชี / เงินกันไว้ / เงินให้ยืม / หนี้ / ฯลฯ): กรอบและหัวข้อเหมือนกันทุกอัน
+   ===================================================================== */
+html body .overlay > .sheet-modal:not(.v-sheet) { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-bottom: 0 !important; border-radius: 24px 24px 0 0 !important; padding: 18px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important; }
+html body .overlay > .sheet-modal:not(.v-sheet) .modal-title { font-size: 17px; font-weight: 600; }
+html body .overlay > .sheet-modal:not(.v-sheet) .close-btn { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2) !important; border: 0 !important; border-radius: 50%; color: var(--v-muted); }
+.overlay .close-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.v-sheet-desc { margin: 0 0 14px; line-height: 1.5; }
+.v-ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* แถวรายการ (บัญชี / เงินกันไว้ / เงินให้ยืม) */
+html body .overlay .account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 !important; border-top: 1px solid var(--v-line); font-size: 15px; }
+html body .overlay .account-row:first-child { border-top: 0; }
+html body .overlay .account-row .acc-name { min-width: 0; overflow-wrap: anywhere; }
+html body .overlay .acc-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+html body .overlay .acc-actions .icon-btn, html body .overlay .acc-name .icon-btn { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; background: none !important; border: 0 !important; border-radius: 8px; color: var(--v-muted); cursor: pointer; }
+html body .overlay .acc-actions .repay-loan-btn { width: auto; padding: 0 12px; font: inherit; font-size: 13px; background: var(--v-surface-2) !important; color: var(--v-fg); border-radius: 999px; }
+html body .overlay .manage-accounts-btn#addAccountBtn, html body .overlay #addReservedBtn, html body .overlay #addLoanBtn, html body .overlay #addRecurringBtn { width: 100%; margin-top: 14px; padding: 12px; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 14px; cursor: pointer; }
+
+/* ปุ่ม */
+.v-btn-solid { padding: 11px 14px; background: var(--v-accent) !important; color: var(--v-accent-ink) !important; border: 0 !important; border-radius: var(--v-r-md) !important; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.v-btn-soft { padding: 11px 14px; background: var(--v-surface-2) !important; color: var(--v-fg) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; font: inherit; font-size: 14px; cursor: pointer; }
+.v-btn-solid:focus-visible, .v-btn-soft:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-chip-pill { background: var(--v-surface-2); border: 1px solid var(--v-line); }
+
+/* หนี้ */
+.v-debt { padding: 16px; margin-bottom: 12px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-lg); }
+.v-debt-name { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; flex-wrap: wrap; }
+.v-debt-bal { margin: 6px 0 14px; font-family: var(--v-mono); font-size: 28px; font-weight: 600; letter-spacing: -.02em; color: var(--v-out); font-variant-numeric: tabular-nums; }
+.v-debt-actions { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+.v-debt-actions .v-btn-solid, .v-debt-actions .v-btn-soft { padding: 10px 6px; }
+.v-debt-quick { margin-top: 12px; }
+.v-debt-more { margin-top: 12px; border-top: 1px solid var(--v-line); }
+.v-debt-more summary { padding: 12px 0 4px; font-size: 13px; color: var(--v-muted); cursor: pointer; list-style: none; }
+.v-debt-more summary::-webkit-details-marker { display: none; }
+.v-debt-more summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-hrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--v-line); font-size: 13px; }
+.v-debt-hist .v-hrow:first-child { border-top: 0; }
+.v-hrow-main { flex: 1; min-width: 0; color: var(--v-muted); overflow-wrap: anywhere; }
+.v-hrow-amt { font-family: var(--v-mono); white-space: nowrap; }
+.v-hrow-note { font-size: 11px; color: var(--v-muted); }
+.v-tone-out-red { color: var(--v-out); }
+.v-debt-manage .v-chip-x, .v-debt-manage .v-chip-add { display: inline-block; }
+.v-debt-more .v-label { margin: 14px 0 8px; }
+.v-debt-form { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; padding: 16px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-lg); }
+.v-debt-form .v-label, .v-debt-form .field-label { margin: 0; font-size: 14px; font-weight: 500; color: var(--v-fg); text-transform: none; letter-spacing: 0; }
+html body #debtsOverlay .v-field { width: 100%; height: 46px; padding: 0 14px !important; margin: 0 !important; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px; }
+html body #debtsOverlay .v-field:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+.v-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--v-muted); }
+#debtsOverlay .v-btn-block { margin-top: 14px; }

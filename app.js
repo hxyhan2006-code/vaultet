@@ -2178,14 +2178,17 @@ selectedMonth = monthKey(todayISO());
 render();
 // (AI) refreshApiKeyStatus(); refreshProactiveCard(); ย้ายไปรันท้าย ai.js
 
+// ไอคอนปุ่มในหน้าต่างจัดการ (ชุดเดียวกันทั้งแอป แทนอีโมจิ)
+const ICON_EDIT = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+const ICON_TRASH = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
 function renderAccountsManageList(){
   const el = document.getElementById("accountsManageList");
   el.innerHTML = accounts.map(a => `
     <div class="account-row">
       <span class="acc-name">${escapeHtml(a.name)} <span class="mono" style="color:var(--faint)">฿${fmt(computeAccountBalance(a.id))}</span></span>
       <span class="acc-actions">
-        <button class="icon-btn rename-acc-btn" data-id="${a.id}" aria-label="แก้ไข">✏️</button>
-        <button class="icon-btn delete-acc-btn" data-id="${a.id}" aria-label="ลบ">🗑</button>
+        <button class="icon-btn rename-acc-btn" data-id="${a.id}" aria-label="แก้ไข">${ICON_EDIT}</button>
+        <button class="icon-btn delete-acc-btn" data-id="${a.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>
   `).join("");
@@ -2272,8 +2275,8 @@ function renderReservedManageList(){
     <div class="account-row">
       <span class="acc-name">${escapeHtml(r.name)} <span class="mono" style="color:var(--faint)">฿${fmt(r.amount)}</span>${r.dueDate ? ` <span style="color:var(--faint)">(${dayLabel(r.dueDate)})</span>` : ""}</span>
       <span class="acc-actions">
-        <button class="icon-btn edit-reserved-btn" data-id="${r.id}" aria-label="แก้ไข">✏️</button>
-        <button class="icon-btn delete-reserved-btn" data-id="${r.id}" aria-label="ลบ">🗑</button>
+        <button class="icon-btn edit-reserved-btn" data-id="${r.id}" aria-label="แก้ไข">${ICON_EDIT}</button>
+        <button class="icon-btn delete-reserved-btn" data-id="${r.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>
   `).join("");
@@ -2461,11 +2464,11 @@ function renderLoansManageList(){
       <span class="acc-name" style="flex-direction:column; align-items:flex-start; display:flex;">
         <span>${escapeHtml(l.person)} <span style="color:var(--faint)">— ${status}</span></span>
         <span class="mono" style="font-size:12px;color:var(--faint)">ยืม ฿${fmt(l.amount)} · ค้าง ฿${fmt(outstanding)}</span>
-        ${(l.repayments||[]).length ? `<span style="font-size:10px;color:var(--faint);margin-top:5px;display:block">คืนแล้ว: ${(l.repayments||[]).map(r=>`฿${fmt(r.amount)} · ${escapeHtml(r.date||'') } <button type="button" class="icon-btn edit-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="แก้เงินคืน">✏️</button><button type="button" class="icon-btn delete-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="ลบเงินคืน">🗑</button>`).join(' · ')}</span>` : ''}
+        ${(l.repayments||[]).length ? `<span style="font-size:10px;color:var(--faint);margin-top:5px;display:block">คืนแล้ว: ${(l.repayments||[]).map(r=>`฿${fmt(r.amount)} · ${escapeHtml(r.date||'') } <button type="button" class="icon-btn edit-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="แก้เงินคืน">${ICON_EDIT}</button><button type="button" class="icon-btn delete-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="ลบเงินคืน">${ICON_TRASH}</button>`).join(' · ')}</span>` : ''}
       </span>
       <span class="acc-actions">
-        ${outstanding>0 ? `<button class="icon-btn repay-loan-btn" data-id="${l.id}" aria-label="รับคืน">💰</button>` : ""}
-        <button class="icon-btn edit-loan-btn" data-id="${l.id}" aria-label="แก้ไข">✏️</button><button class="icon-btn delete-loan-btn" data-id="${l.id}" aria-label="ลบ">🗑</button>
+        ${outstanding>0 ? `<button class="icon-btn repay-loan-btn" data-id="${l.id}" aria-label="รับคืน">รับคืน</button>` : ""}
+        <button class="icon-btn edit-loan-btn" data-id="${l.id}" aria-label="แก้ไข">${ICON_EDIT}</button><button class="icon-btn delete-loan-btn" data-id="${l.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>`;
   }).join("");
@@ -2610,34 +2613,38 @@ function renderDebtsManageList(){
   if(!debts.length){
     el.innerHTML = `<div class="empty-state">ยังไม่มีข้อมูลหนี้สิน กด "+ เพิ่มหนี้ใหม่" ด้านล่าง</div>`;
   }else{
+    // จำว่าการ์ดไหนกางประวัติอยู่ — วาดใหม่แล้วไม่ต้องพับกลับ (เช่น หลังลบปุ่มลัด/ยกเลิกรายการ)
+    const openIds = new Set([...el.querySelectorAll(".v-debt-more[open]")].map(x => x.closest(".v-debt")?.dataset.id));
     el.innerHTML = debts.map(d => `
-      <div class="debt-card" data-id="${d.id}">
-        <div class="debt-card-top">
-          <div>
-            <div class="debt-name">${escapeHtml(d.name)}${d.gracePeriod ? `<span class="debt-grace-badge">Grace Period</span>` : ""}</div>
-            <div class="debt-balance mono">฿${fmt(d.outstandingBalance)}</div>
+      <div class="v-debt" data-id="${d.id}">
+        <div class="v-debt-name">${escapeHtml(d.name)}${d.gracePeriod ? `<span class="v-pill v-pill-watch">Grace Period</span>` : ""}</div>
+        <div class="v-debt-bal">฿${fmt(d.outstandingBalance)}</div>
+        <div class="v-debt-actions">
+          <button type="button" class="v-btn-solid" data-act="repayment" data-id="${d.id}">ชำระคืน</button>
+          <button type="button" class="v-btn-soft" data-act="increase" data-id="${d.id}">เพิ่มยอด</button>
+          <button type="button" class="v-btn-soft" data-act="set" data-id="${d.id}">แก้ยอด</button>
+        </div>
+        ${d.quick.length ? `<div class="v-chips v-debt-quick">${d.quick.map((x,i)=>`<button type="button" class="v-chip v-chip-pill" data-qi="${i}" data-id="${d.id}">+${fmt(x.amount)} ${escapeHtml(x.note||"")}</button>`).join("")}</div>` : ""}
+        <details class="v-debt-more">
+          <summary>ประวัติและตัวเลือก${d.history.length ? ` (${d.history.length})` : ""}</summary>
+          <div class="v-debt-hist">
+            ${d.history.length ? d.history.slice(0,8).map(h => { const e=eff(h); return `
+              <div class="v-hrow">
+                <span class="v-hrow-main">${dayLabel(h.date)} · ${debtHistoryLabel(h.type)}${h.note ? " · "+escapeHtml(h.note) : ""}</span>
+                <span class="v-hrow-amt ${e>0 ? "v-tone-out-red" : "v-tone-in"}">${e>=0?'+':'−'}฿${fmt(Math.abs(e))}</span>
+                ${h.entryId ? `<span class="v-hrow-note" title="เชื่อมกับรายการ กยศ. — ลบที่รายการนั้น">ผูกรายการ</span>` : `<button type="button" class="v-link" data-undo="${h.id}" data-id="${d.id}" aria-label="ยกเลิกรายการนี้">ยกเลิก</button>`}
+              </div>`; }).join("") : `<div class="v-hint">ยังไม่มีประวัติ</div>`}
           </div>
-          <button class="icon-btn delete-debt-btn" data-id="${d.id}" aria-label="ลบหนี้นี้" title="ลบหนี้นี้ทั้งก้อน">🗑</button>
-        </div>
-        <div class="debt-quick-row">
-          <button class="debt-quick-btn" data-act="increase" data-id="${d.id}">＋ เพิ่มยอด</button>
-          <button class="debt-quick-btn" data-act="repayment" data-id="${d.id}">− ชำระคืน</button>
-          <button class="debt-quick-btn" data-act="set" data-id="${d.id}">✎ แก้ยอด</button>
-        </div>
-        <div class="debt-quick-row" style="flex-wrap:wrap;align-items:center">
-          ${d.quick.map((x,i)=>`<span class="cat-chip-wrap"><button type="button" class="cat-chip-label" data-qi="${i}" data-id="${d.id}">+${fmt(x.amount)} ${escapeHtml(x.note||"")}</button><button type="button" class="cat-chip-del" data-qd="${i}" data-id="${d.id}" aria-label="ลบปุ่มลัด">×</button></span>`).join("")}
-          <button type="button" class="cat-chip add-chip" data-act="addq" data-id="${d.id}">+ ปุ่มลัด</button>
-        </div>
-        <div class="debt-history">
-          ${d.history.length ? d.history.slice(0,8).map(h => { const e=eff(h); return `
-            <div class="debt-history-row" style="align-items:center">
-              <span style="flex:1">${dayLabel(h.date)} · ${debtHistoryLabel(h.type)}${h.note ? " · "+escapeHtml(h.note) : ""}</span>
-              <span class="mono" style="color:${e>0 ? 'var(--expense)' : 'var(--income)'}">${e>=0?'+':'−'}฿${fmt(Math.abs(e))}</span>
-              ${h.entryId ? `<span title="เชื่อมกับรายการ กยศ. — ลบที่รายการนั้น" style="width:28px;text-align:center">🔗</span>` : `<button type="button" class="icon-btn" data-undo="${h.id}" data-id="${d.id}" aria-label="ยกเลิกรายการนี้" title="ยกเลิกรายการนี้" style="width:28px">↶</button>`}
-            </div>`; }).join("") : `<div class="empty-state" style="padding:6px 0;">ยังไม่มีประวัติ</div>`}
-        </div>
+          <div class="v-label">ปุ่มลัดเพิ่มยอด</div>
+          <div class="v-chips v-debt-manage">
+            ${d.quick.map((x,i)=>`<span class="v-chip-wrap"><span class="v-chip">+${fmt(x.amount)} ${escapeHtml(x.note||"")}</span><button type="button" class="v-chip-x" data-qd="${i}" data-id="${d.id}" aria-label="ลบปุ่มลัด">×</button></span>`).join("")}
+            <button type="button" class="v-chip v-chip-add" data-act="addq" data-id="${d.id}">+ ปุ่มลัด</button>
+          </div>
+          <button type="button" class="v-del-link delete-debt-btn" data-id="${d.id}">ลบหนี้นี้ทั้งก้อน</button>
+        </details>
       </div>
     `).join("");
+    el.querySelectorAll(".v-debt").forEach(c => { if(openIds.has(c.dataset.id)) c.querySelector(".v-debt-more").open = true; });
   }
 
   const select = document.getElementById("debtActionSelect");

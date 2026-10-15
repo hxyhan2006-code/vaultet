@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds7">
-<link rel="stylesheet" href="ds.css?v=ds7">
+<link rel="stylesheet" href="style.css?v=ds8">
+<link rel="stylesheet" href="ds.css?v=ds8">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -609,32 +609,30 @@
   <div class="sheet-modal" onclick="event.stopPropagation()">
     <div class="modal-header">
       <span class="modal-title">หนี้สิน</span>
-      <button class="close-btn" id="closeDebtsBtn">✕</button>
+      <button class="close-btn" id="closeDebtsBtn" type="button" aria-label="ปิด"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <p style="font-size:12.5px; color:var(--faint); margin:0 0 12px;">หนี้ที่ยังไม่ตัดเงินสดตอนนี้ (เช่น กยศ. ที่อยู่ใน Grace Period) — ไม่กระทบคาดการณ์กระแสเงินสด แต่นับรวมอยู่ใน Net Worth</p>
+    <p class="v-hint v-sheet-desc">หนี้ที่ยังไม่ตัดเงินสดตอนนี้ (เช่น กยศ. ที่อยู่ใน Grace Period) ไม่กระทบคาดการณ์กระแสเงินสด แต่นับรวมอยู่ในมูลค่าสุทธิ</p>
     <div id="debtsManageList"></div>
 
-    <div class="debt-action-row">
-      <label class="field-label" style="margin-top:0;">แก้ไข / บันทึกรายการหนี้</label>
-      <select class="field-select" id="debtActionSelect"></select>
-      <select class="field-select" id="debtActionType">
+    <div class="debt-action-row v-debt-form">
+      <label class="field-label v-label" style="margin-top:0;">แก้ไข / บันทึกรายการหนี้</label>
+      <select class="field-select v-field" id="debtActionSelect"></select>
+      <select class="field-select v-field" id="debtActionType">
         <option value="increase">เพิ่มยอด (อื่นๆ)</option>
         <option value="repayment">บันทึกชำระคืน</option>
         <option value="set">แก้ยอดคงค้างเป็น...</option>
       </select>
-      <input class="text-input" id="debtActionAmount" type="number" inputmode="decimal" step="any" min="0" placeholder="จำนวนเงิน (บาท)" autocomplete="off" />
-      <input class="text-input" id="debtActionNote" type="text" placeholder="โน้ต (ไม่บังคับ)" autocomplete="off" />
-      <button id="debtActionSubmitBtn" class="manage-accounts-btn" style="width:100%;">บันทึก</button>
+      <input class="text-input v-field" id="debtActionAmount" type="number" inputmode="decimal" step="any" min="0" placeholder="จำนวนเงิน (บาท)" autocomplete="off" />
+      <input class="text-input v-field" id="debtActionNote" type="text" placeholder="โน้ต (ไม่บังคับ)" autocomplete="off" />
+      <button id="debtActionSubmitBtn" class="v-btn-solid" type="button">บันทึก</button>
     </div>
 
-    <button class="manage-accounts-btn" id="addDebtBtn" style="width:100%; margin-top:14px;">+ เพิ่มหนี้ใหม่</button>
-    <div class="debt-add-form" id="debtAddForm" style="display:none;">
-      <input class="text-input" id="debtNewName" type="text" placeholder="ชื่อหนี้ เช่น กยศ." autocomplete="off" />
-      <input class="text-input" id="debtNewAmount" type="number" inputmode="decimal" step="any" min="0" placeholder="ยอดคงค้างเริ่มต้น (บาท)" autocomplete="off" />
-      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--faint); margin-top:2px;">
-        <input type="checkbox" id="debtNewGrace" checked /> อยู่ใน Grace Period (ยังไม่มีดอกเบี้ย/ยังไม่ต้องผ่อน)
-      </label>
-      <button id="debtNewSubmitBtn" class="manage-accounts-btn" style="width:100%; margin-top:4px;">บันทึกหนี้ใหม่</button>
+    <button class="v-btn-block" id="addDebtBtn" type="button">+ เพิ่มหนี้ใหม่</button>
+    <div class="debt-add-form v-debt-form" id="debtAddForm" style="display:none;">
+      <input class="text-input v-field" id="debtNewName" type="text" placeholder="ชื่อหนี้ เช่น กยศ." autocomplete="off" />
+      <input class="text-input v-field" id="debtNewAmount" type="number" inputmode="decimal" step="any" min="0" placeholder="ยอดคงค้างเริ่มต้น (บาท)" autocomplete="off" />
+      <label class="v-check"><input type="checkbox" id="debtNewGrace" checked /> อยู่ใน Grace Period (ยังไม่มีดอกเบี้ย/ยังไม่ต้องผ่อน)</label>
+      <button id="debtNewSubmitBtn" class="v-btn-solid" type="button">บันทึกหนี้ใหม่</button>
     </div>
   </div>
 </div>
@@ -773,8 +771,8 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="app.js?v=ds7"></script>
-<script src="ai.js?v=ds7"></script>
-<script src="ui.js?v=ds7"></script>
+<script src="app.js?v=ds8"></script>
+<script src="ai.js?v=ds8"></script>
+<script src="ui.js?v=ds8"></script>
 </body>
 </html>
