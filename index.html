@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds31">
-<link rel="stylesheet" href="ds.css?v=ds31">
+<link rel="stylesheet" href="style.css?v=ds32">
+<link rel="stylesheet" href="ds.css?v=ds32">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -347,24 +347,24 @@
         <span class="ai-status-label">สถานะ</span>
         <span class="ai-status-value" id="orStatus">ยังไม่ได้ตั้งค่า</span>
       </div>
-      <p class="ai-hint">ใช้เป็นตัวหลักของแชทที่ปรึกษา และเป็นตัวสำรองเมื่อโควต้า Gemini ฟรีเต็ม (สลับเองเบื้องหลัง ไม่แจ้ง) คีย์เก็บในเครื่องนี้เท่านั้น ไม่รวมในไฟล์สำรองข้อมูล</p>
+      <p class="ai-hint">ทุกงาน AI ใช้ Gemini ฟรีก่อน ถ้าโควต้าฟรีเต็มทุกคีย์ ระบบจะสลับมาใช้ OpenRouter เองเบื้องหลัง (ไม่แจ้ง) คีย์เก็บในเครื่องนี้เท่านั้น ไม่รวมในไฟล์สำรองข้อมูล</p>
       <label class="field-label">OpenRouter API key</label>
       <input class="text-input" id="orKeyInput" type="password" placeholder="วางคีย์ที่ขึ้นต้นด้วย sk-or-..." autocomplete="off" />
       <div class="ai-key-actions">
         <button id="orKeySave" type="button" style="background:var(--accent1); color:#fff; border:none; border-radius:12px; padding:10px 0; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">บันทึกคีย์</button>
         <button id="orKeyDel" type="button" class="danger-btn">ลบคีย์</button>
       </div>
-      <label class="field-label">โมเดลหลัก (แชทที่ปรึกษา)</label>
+      <label class="field-label">โมเดลสำรอง — แชทที่ปรึกษา</label>
       <button id="orModelBtn" type="button" class="v-btn-block">เลือกโมเดล</button>
       <div class="ai-hint" id="orModelInfo"></div>
-      <label class="field-label">โมเดลงานเล็ก (ไม่บังคับ) — ใช้ตอน Gemini ฟรีเต็ม</label>
+      <label class="field-label">โมเดลสำรอง — งานเล็ก (ไม่บังคับ)</label>
       <button id="orSmallBtn" type="button" class="v-btn-block">ใช้ตัวเดียวกับแชท</button>
       <div class="v-or-usage" id="orUsage"></div>
       <label class="field-label">เพดานค่า AI ต่อวัน (USD)</label>
       <input class="text-input" id="orCapDay" type="number" inputmode="decimal" min="0" step="0.5" placeholder="0 = ไม่จำกัด" />
       <label class="field-label">เพดานค่า AI ต่อเดือน (USD)</label>
       <input class="text-input" id="orCapMonth" type="number" inputmode="decimal" min="0" step="1" placeholder="0 = ไม่จำกัด" />
-      <p class="ai-hint">เพดานในแอป ถึงแล้วแอปจะไม่เรียก OpenRouter อีก (ใช้ Gemini ฟรีต่อ) กันการใช้เพลินได้ แต่ไม่กันกรณีคีย์หลุด ลิมิตแข็งจริงคือเครดิตที่เติมไว้ และวงเงินของคีย์ในเว็บ OpenRouter</p>
+      <p class="ai-hint">เพดานในแอป ถึงแล้วแอปจะไม่สลับไปใช้ OpenRouter อีก กันการใช้เพลินได้ แต่ไม่กันกรณีคีย์หลุด ลิมิตแข็งจริงคือเครดิตที่เติมไว้ และวงเงินของคีย์ในเว็บ OpenRouter</p>
     </div>
 
     <div class="settings-card">
@@ -765,10 +765,10 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds31"></script>
-<script src="app.js?v=ds31"></script>
-<script src="openrouter.js?v=ds31"></script>
-<script src="ai.js?v=ds31"></script>
-<script src="ui.js?v=ds31"></script>
+<script src="dialog.js?v=ds32"></script>
+<script src="app.js?v=ds32"></script>
+<script src="openrouter.js?v=ds32"></script>
+<script src="ai.js?v=ds32"></script>
+<script src="ui.js?v=ds32"></script>
 </body>
 </html>

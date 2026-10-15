@@ -371,16 +371,18 @@ const AI_RESPONSE_SCHEMA = {
 // 2) ถ้าคีย์เดิม retry แล้วยัง 429 อยู่ ให้สลับไปลองคีย์สำรองถัดไปในลิสต์ทันที (ถ้าตั้งค่าไว้หลายคีย์)
 // buildUrl: function(apiKey) => url เต็มพร้อม query key (เพราะแต่ละคีย์ต้องประกอบ url ใหม่)
 // ผู้ใช้จะไม่เห็น error 429 เลยถ้าคีย์ใดคีย์หนึ่งในลิสต์ผ่านได้ภายในเงื่อนไขนี้
+let geminiCooldownUntil = 0;   // หลังโควต้าฟรีเต็มทุกคีย์ แล้วสลับไป OpenRouter สำเร็จ → พักไม่ลอง Gemini ชั่วครู่ ไม่ให้ทุกข้อความต้องรอล้มก่อน
 async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, meta = {}){
+  // ทุกงาน (แชท การ์ดสรุป แปลงประโยค ฯลฯ) ใช้ Gemini ฟรีก่อนเสมอ
+  // ถ้าโควต้าฟรีเต็มทุกคีย์ และตั้ง OpenRouter ไว้ ค่อยสลับไป OpenRouter เงียบๆ (ไม่แจ้งผู้ใช้)
   const OR = window.vaultetOR, kind = meta.kind || "small";
   const stream = /streamGenerateContent/.test(buildUrl("x"));
-  let triedOR = false;
-  // แชท/ที่ปรึกษา: ถ้าตั้ง OpenRouter ไว้ ใช้ตัวนั้นก่อน (ถ้าไม่สำเร็จ ไปต่อที่ Gemini ฟรีเงียบๆ)
-  if(OR && kind === "chat" && OR.enabled()){
-    triedOR = true;
+  const orOn = !!(OR && OR.enabled());
+  if(orOn && Date.now() < geminiCooldownUntil){
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r) return r;
   }
+  const retries = orOn ? 0 : maxRetriesPerKey;   // มีตัวสำรองแล้ว ไม่ต้องรอ retry นาน
   const keys = getApiKeys();
   let res = null;
   for(let i = 0; i < keys.length; i++){
@@ -394,17 +396,16 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
         url = buildUrl(keys[i]);
         res = await fetch(url, options);
       }
-      if((res.status !== 429 && res.status !== 503) || attempt >= maxRetriesPerKey) break;
+      if((res.status !== 429 && res.status !== 503) || attempt >= retries) break;
       attempt++;
       await new Promise(r => setTimeout(r, 1500 * attempt)); // หน่วงเพิ่มขึ้นทีละรอบ: 1.5s, 3s
     }
     if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์อื่น
-    // คีย์นี้โควต้าเต็มแม้ retry แล้ว → ลองคีย์สำรองถัดไปทันที
+    // คีย์นี้โควต้าเต็ม → ลองคีย์สำรองถัดไปทันที
   }
-  // โควต้า Gemini ฟรีเต็มทุกคีย์ (หรือไม่มีคีย์) → สลับไป OpenRouter เงียบๆ ไม่แจ้งผู้ใช้
-  if(OR && !triedOR && OR.enabled()){
+  if(orOn){
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
-    if(r) return r;
+    if(r){ geminiCooldownUntil = Date.now() + 90000; return r; }
   }
   return res || new Response("no_ai_available", { status: 503 });
 }

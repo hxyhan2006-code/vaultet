@@ -60,26 +60,35 @@ const c1=await calls();
 ok('without OpenRouter the chat streams from Gemini 3.8 ('+c1.join(', ')+')', c1.some(c=>/GEM gemini-3\.8-flash stream/.test(c)) && !c1.some(c=>c.startsWith('OR')));
 ok('...and the reply is saved', (await lastModel())?.includes('ตอบจาก Gemini'));
 
-// 2) ตั้ง OpenRouter → แชทใช้ OpenRouter เป็นตัวหลัก (สตรีม) และไม่แตะ Gemini
+// 2) ตั้ง OpenRouter ไว้แล้ว แต่ Gemini ฟรียังใช้ได้ → ใช้ Gemini ฟรีก่อน ไม่แตะ OpenRouter เลย
 await setOR({key:'sk-or-test-123',model:'anthropic/claude-haiku-x'});
-await pg.evaluate(()=>{window.__m.orText='ตอบจาก |OpenRouter |ที่สตรีมมา ครับ\n@@MEMORY_ADD@@ ชอบใช้ OpenRouter';}); 
 await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
-await send('ทดสอบ OpenRouter'); await pg.waitForTimeout(2000);
+await send('ทดสอบ Gemini ก่อน'); await pg.waitForTimeout(1500);
 const c2=await calls();
-ok('chat goes to OpenRouter with the chosen model, streaming ('+c2.join(', ')+')', c2[0]==='OR anthropic/claude-haiku-x stream' && !c2.some(c=>c.startsWith('GEM')));
-const a2=await pg.evaluate(()=>window.__m.orAuth[0]); ok('the key is sent as a Bearer token', a2==='Bearer sk-or-test-123');
-const body2=await pg.evaluate(()=>window.__m.orBodies[0]);
-ok('request converted to OpenAI format (system + user messages)', body2.messages[0].role==='system' && body2.messages.at(-1).role==='user' && /ทดสอบ OpenRouter/.test(body2.messages.at(-1).content));
-const m2=await lastModel(); ok('streamed OpenRouter reply saved clean (no directive line)', m2 && m2.includes('ที่สตรีมมา') && !m2.includes('@@'));
-ok('memory directive from the OpenRouter reply was applied', (await pg.evaluate(()=>JSON.parse(localStorage.getItem('finance_tracker_ai_memory_v1')||'[]'))).some(x=>/ชอบใช้ OpenRouter/.test(x.text)));
+ok('free Gemini is used first even though OpenRouter is configured ('+c2.join(', ')+')', c2.some(c=>/GEM gemini-3\.8-flash stream/.test(c)) && !c2.some(c=>c.startsWith('OR')));
 
-// 3) OpenRouter ล้มเหลว → ไปที่ Gemini ฟรีเงียบๆ (ไม่มีกล่องแจ้ง)
-await pg.evaluate(()=>{window.__m.orFail=true;}); await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
-await send('ทดสอบ OpenRouter ล้ม'); await pg.waitForTimeout(2000);
+// 3) โควต้า Gemini ฟรีเต็มทุกคีย์ → แชทสลับไป OpenRouter เงียบๆ (สตรีม) ไม่มีกล่องแจ้ง
+await pg.evaluate(()=>{window.__m.gem429=true;window.__m.orText='ตอบจาก |OpenRouter |ที่สตรีมมา ครับ\n@@MEMORY_ADD@@ ชอบใช้ OpenRouter';});
+await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
+await send('ทดสอบโควต้าเต็ม'); await pg.waitForTimeout(2500);
 const c3=await calls();
-ok('OpenRouter failed → Gemini answered silently ('+c3.join(', ')+')', c3[0].startsWith('OR') && c3.some(c=>c.startsWith('GEM')) && (await lastModel())?.includes('ตอบจาก Gemini'));
-ok('no error box shown', !(await pg.isVisible('#aiChatError')));
-await pg.evaluate(()=>{window.__m.orFail=false;});
+ok('both free keys hit 429, then OpenRouter streamed the answer ('+c3.join(', ')+')', c3.filter(c=>c.startsWith('GEM')).length===2 && c3.at(-1)==='OR anthropic/claude-haiku-x stream');
+const a3=await pg.evaluate(()=>window.__m.orAuth[0]); ok('the key is sent as a Bearer token', a3==='Bearer sk-or-test-123');
+const body3=await pg.evaluate(()=>window.__m.orBodies[0]);
+ok('request converted to OpenAI format (system + user messages)', body3.messages[0].role==='system' && body3.messages.at(-1).role==='user' && /ทดสอบโควต้าเต็ม/.test(body3.messages.at(-1).content));
+const m3=await lastModel(); ok('streamed OpenRouter reply saved clean (no directive line)', m3 && m3.includes('ที่สตรีมมา') && !m3.includes('@@'));
+ok('memory directive from the OpenRouter reply was applied', (await pg.evaluate(()=>JSON.parse(localStorage.getItem('finance_tracker_ai_memory_v1')||'[]'))).some(x=>/ชอบใช้ OpenRouter/.test(x.text)));
+ok('no error box shown during the silent switch', !(await pg.isVisible('#aiChatError')));
+// ข้อความถัดไป: พัก Gemini ชั่วครู่ ไม่ต้องรอล้มซ้ำ
+await pg.evaluate(()=>{window.__m.orText='ตอบรอบสองจาก OpenRouter ที่ไม่ต้องรอ Gemini ล้ม ครับ';}); await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
+await send('ข้อความที่สอง'); await pg.waitForTimeout(2000);
+const c3b=await calls();
+ok('next message goes straight to OpenRouter during the cooldown ('+c3b.join(', ')+')', c3b.length===1 && c3b[0].startsWith('OR '));
+// ทั้งคู่ล้มเหลว → ขึ้นข้อความผิดพลาดปกติ
+await pg.evaluate(()=>{geminiCooldownUntil=0;window.__m.orFail=true;}); await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
+await send('ล้มทั้งคู่'); await pg.waitForTimeout(1800);
+ok('when both fail the usual error is shown and the input is usable again', (await pg.isVisible('#aiChatError')) && !(await pg.evaluate(()=>document.getElementById('aiChatInput').disabled)));
+await pg.evaluate(()=>{window.__m.orFail=false;window.__m.gem429=false;geminiCooldownUntil=0;});
 
 // 4) โควต้า Gemini ฟรีเต็มทุกคีย์ → งานเล็กสลับไป OpenRouter เงียบๆ + แปลง JSON mode
 await setOR({small:'openai/gpt-mini-x'});
@@ -92,14 +101,15 @@ const b4=await pg.evaluate(()=>window.__m.orBodies.at(-1));
 ok('JSON mode translated (response_format + schema hint in the system prompt)', b4.response_format?.type==='json_object' && /JSON/.test(b4.messages[0].content));
 await pg.evaluate(()=>{window.__m.gem429=false;});
 
-// 5) เพดานค่าใช้จ่าย: เกินแล้วไม่เรียก OpenRouter อีก (ใช้ Gemini ฟรีต่อ)
+// 5) เพดานค่าใช้จ่าย: เกินแล้วไม่สลับไป OpenRouter (แม้ Gemini ฟรีเต็ม)
 await setOR({caps:[0.40,0]}); await pg.evaluate(async()=>{await vaultetOR.refreshUsage(true);});
 ok('usage read from OpenRouter /key (today $0.43, month $2.51)', await pg.evaluate(()=>{const u=vaultetOR.usageCache();return u.day===0.43&&u.month===2.51}));
 ok('over the daily cap is detected', await pg.evaluate(()=>vaultetOR.overCap()));
-await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
+await pg.evaluate(()=>{window.__m.gem429=true;geminiCooldownUntil=0;}); await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); await reset();
 await send('ทดสอบเพดาน'); await pg.waitForTimeout(1800);
 const c5=await calls();
-ok('over the cap → no OpenRouter call, Gemini answers ('+c5.join(', ')+')', !c5.some(c=>c.startsWith('OR chat')) && !c5.some(c=>c.startsWith('OR ')) && c5.some(c=>c.startsWith('GEM')));
+ok('over the cap + free quota full → OpenRouter is NOT called ('+c5.join(', ')+')', !c5.some(c=>c.startsWith('OR ')) && c5.some(c=>c.startsWith('GEM')));
+await pg.evaluate(()=>{window.__m.gem429=false;});
 await setOR({caps:[0,0]});
 
 // 6) Gemini ยังไม่มีรุ่น 3.8 (404) → ถอยไป 3.6 เองครั้งเดียว

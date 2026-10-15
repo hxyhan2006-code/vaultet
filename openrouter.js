@@ -1,4 +1,4 @@
-// Vaultet — openrouter.js: ใช้ OpenRouter (AI หลายค่าย) เป็นตัวหลักของแชท และเป็นตัวสำรองเงียบๆ เมื่อโควต้า Gemini ฟรีเต็ม
+// Vaultet — openrouter.js: ใช้ OpenRouter (AI หลายค่าย) เป็นตัวสำรองเงียบๆ เมื่อโควต้า Gemini ฟรีเต็มทุกคีย์
 // หลักการ: แปลงคำขอรูปแบบ Gemini → รูปแบบ OpenAI แล้วแปลงคำตอบกลับเป็นรูปแบบ Gemini
 // ฟังก์ชัน AI เดิมทุกตัวจึงไม่ต้องรู้ว่าคำตอบมาจากค่ายไหน (ดู fetchGeminiWithRetry ใน ai.js)
 // คีย์เก็บในเครื่องเท่านั้น ไม่รวมในไฟล์สำรองข้อมูล
@@ -188,7 +188,7 @@
   api.statusText = function(){
     if(!api.hasKey()) return "ยังไม่ได้ตั้งค่า";
     if(!api.model()) return "ใส่คีย์แล้ว · ยังไม่ได้เลือกโมเดล";
-    return "ใช้งานอยู่ ✓ · " + api.model();
+    return "พร้อมสำรอง ✓ · " + api.model();
   };
   const usd = n => "$" + (Number(n) || 0).toFixed(2);
   function baht(n){ const fx = api.fxRate(); return fx ? " ≈ " + Math.round(n * fx).toLocaleString("en-US") + " บาท" : ""; }
@@ -199,7 +199,7 @@
     const btn = document.getElementById("orModelBtn"), sb = document.getElementById("orSmallBtn");
     btn.textContent = api.model() || "เลือกโมเดล";
     sb.textContent = api.smallModel() || "ใช้ตัวเดียวกับแชท";
-    info.textContent = api.model() ? "" : "ต้องเลือกโมเดลก่อน ระบบถึงจะเริ่มใช้ OpenRouter";
+    info.textContent = api.model() ? "" : "ต้องเลือกโมเดลก่อน ระบบถึงจะสลับมาใช้ OpenRouter ได้";
     if(api.model()){ const l = await api.models(false); const m = l && l.find(x => x.id === api.model()); info.textContent = m ? api.priceText(m) : "ราคา: ดูในหน้าโมเดลของ OpenRouter (รายการยังโหลดไม่ได้)"; }
     const cap = api.caps(); const dayI = document.getElementById("orCapDay"), monI = document.getElementById("orCapMonth");
     if(document.activeElement !== dayI) dayI.value = cap.day || ""; if(document.activeElement !== monI) monI.value = cap.month || "";
@@ -224,9 +224,9 @@
       if(!(await vaultetAsk("ลบคีย์", "ลบคีย์ OpenRouter ออกจากเครื่องนี้ใช่ไหม? (ไม่กระทบเครดิตในบัญชี OpenRouter)", true))) return;
       api.setKey(""); localStorage.removeItem(K.usage); renderOR();
     });
-    $("orModelBtn").addEventListener("click", async () => { const id = await api.pickModel("เลือกโมเดลหลัก (แชท)", api.model()); if(id){ api.setModel(id); renderOR(); } });
+    $("orModelBtn").addEventListener("click", async () => { const id = await api.pickModel("เลือกโมเดลสำรอง (แชท)", api.model()); if(id){ api.setModel(id); renderOR(); } });
     $("orSmallBtn").addEventListener("click", async () => {
-      const id = await api.pickModel("โมเดลงานเล็ก (สำรองตอน Gemini ฟรีเต็ม)", api.smallModel());
+      const id = await api.pickModel("โมเดลสำรอง — งานเล็ก", api.smallModel());
       if(id){ api.setSmallModel(id); renderOR(); }
     });
     $("orSmallBtn").addEventListener("contextmenu", e => { e.preventDefault(); api.setSmallModel(""); renderOR(); });
