@@ -28,6 +28,10 @@ ok('budget card visible', await pg.isVisible('#budgetDashboardCard'));
 ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent('#budgetDashboardRemaining')));
 ok('over-budget pill shows for คาเฟ่ (เกินงบ)', (await pg.textContent('#budgetDashboardRows')).includes('เกินงบ'));
 ok('safe rows have no pill (กิน is WATCH so check count>=1 and <rows)', (await pg.locator('#budgetDashboardRows .v-brow .v-pill').count())>=1);
+{ const c=pg.locator('#budgetDashboardRows details.v-brow-c'); const n=await c.count(); const h=await pg.evaluate(()=>document.querySelector('#budgetDashboardRows details.v-brow-c').getBoundingClientRect().height);
+  ok('budget rows compact ('+n+' rows, first '+Math.round(h)+'px)', n>=1 && h<110);
+  await c.first().locator('summary').click(); await pg.waitForTimeout(150);
+  ok('tapping a budget row shows details', await pg.isVisible('#budgetDashboardRows .v-brow-more >> nth=0')); }
 ok('emergency card visible', await pg.isVisible('#emergencyDashboardCard'));
 ok('duplicate spend card is gone from Plan', !(await pg.locator('#spendSummaryCard').count()));
 // manage budgets

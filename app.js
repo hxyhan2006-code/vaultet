@@ -3110,6 +3110,11 @@ function budgetRowHtml(r,manage){
   const pillCls = r.status==="OVER" ? "over" : (r.status==="WATCH"||r.status==="SAVING") ? "watch" : "safe";
   const proj = !sv && (r.status==="OVER"||r.status==="WATCH") ? `คาดทั้งเดือน ฿${fmt(r.projected)}` : "";
   const meta1 = [rem, pace].filter(Boolean).join(" · ");
+  if(!manage){
+    const hot = r.status==="OVER" || r.status==="WATCH";
+    const detail = [meta1, proj].filter(Boolean).join(" · ");
+    return `<details class="v-brow v-brow-c"><summary><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${w}%;background:${col}"></i></div>${hot||r.status==="DONE"?`<div class="v-brow-meta"><span>${escapeHtml(rem)}</span><span class="v-pill v-pill-${pillCls}">${m.label}</span></div>`:""}</summary><div class="v-brow-more">${escapeHtml(detail)}</div></details>`;
+  }
   return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${escapeHtml(meta1)}${proj?` · ${proj}`:""}</span>${showPill?`<span class="v-pill v-pill-${pillCls}">${m.label}</span>`:""}</div>${manage?`<div class="v-brow-actions"><button type="button" class="v-icon-btn budget-edit-btn" data-id="${escapeHtml(r.id)}" aria-label="แก้ไขงบ">แก้ไข</button><button type="button" class="v-icon-btn v-icon-danger budget-delete-btn" data-id="${escapeHtml(r.id)}" aria-label="ลบงบ">ลบ</button></div>`:""}</div>`;
 }
 function renderBudgetManager(){

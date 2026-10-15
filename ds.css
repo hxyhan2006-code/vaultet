@@ -239,7 +239,7 @@ html body #ux-plan > .ux-view-title, html body #ux-plan > .ux-view-sub { display
 .v-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .v-card-title { margin: 0; font-size: 15px; font-weight: 600; }
 .v-big-row { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 12px; flex-wrap: wrap; }
-.v-big { font-family: var(--v-mono); font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.v-big { font-family: var(--v-mono); font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .v-big-label { font-size: 13px; color: var(--v-muted); }
 .v-card-sub { margin-top: 10px; font-size: 13px; color: var(--v-muted); line-height: 1.5; }
 .v-card-sub:empty { display: none; }
@@ -499,3 +499,12 @@ body.v-single-account #analysisAccountFilter, body.v-single-account #compareAcco
 .v-trend-row { display: grid; grid-template-columns: 44px repeat(3, minmax(0, 1fr)); gap: 6px; padding: 7px 0; border-top: 1px solid var(--v-line); font-size: 12px; font-variant-numeric: tabular-nums; }
 .v-trend-m { color: var(--v-muted); }
 .v-trend-head { margin-top: 8px; border-top: 0; padding: 0 0 4px; font-size: 11px; color: var(--v-muted); }
+
+/* compact budget rows: tap to see pace / projection */
+.v-brow-c { padding: 0; }
+.v-brow-c summary { list-style: none; cursor: pointer; padding: 9px 0; }
+.v-brow-c summary::-webkit-details-marker { display: none; }
+.v-brow-c .v-bar-xs { height: 4px; margin: 6px 0 0; }
+.v-brow-c .v-brow-meta { margin-top: 5px; }
+.v-brow-more { padding: 0 0 10px; font-size: 12px; color: var(--v-muted); }
+.v-brow-c summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
