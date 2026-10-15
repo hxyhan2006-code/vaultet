@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds9";
+  const UI_VERSION = "ds10";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -27,6 +27,13 @@
     assets.open = get(K_ASSETS) === "1";
     assets.addEventListener("toggle", () => set(K_ASSETS, assets.open ? "1" : "0"));
   }
+
+  // ปุ่ม "เงินสำรอง" บนหน้าหลัก → ไปดูสถานะที่การ์ดเงินสำรองฉุกเฉินในแท็บแผน
+  const emg = document.getElementById("vEmergencyBtn");
+  if(emg) emg.addEventListener("click", () => {
+    if(window.vaultetGo) window.vaultetGo("plan");
+    setTimeout(() => document.getElementById("emergencyDashboardCard")?.scrollIntoView({ block: "start", behavior: "smooth" }), 120);
+  });
 
   // ---------- หน้าต่างตั้งค่าเดิม (#settingsOverlay) แยกเป็น 3 มุมมอง: AI / Google Drive / ราคาหุ้น ----------
   // ใช้การ์ดเดิมทั้งหมด (id เดิม ตัวจัดการเดิม) แค่เลือกว่าจะโชว์การ์ดไหน ตามจุดที่เปิดมา

@@ -477,3 +477,25 @@ html body #debtsOverlay .v-field:focus { outline: 2px solid var(--v-accent); out
 .v-dlg-choice:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 /* ฟอร์มยาว (เช่น ค่าใช้จ่ายประจำ): ปุ่มบันทึก/ยกเลิกติดขอบล่างของกล่อง ไม่ต้องเลื่อนหา */
 .v-dlg-actions { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px 20px; background: var(--v-surface); border-radius: 0 0 20px 20px; }
+
+/* =====================================================================
+   โหมดบัญชีเดียว: ซ่อนสิ่งที่ไม่จำเป็น (เพิ่มบัญชีที่สองเมื่อไหร่ ของพวกนี้กลับมาเอง)
+   ===================================================================== */
+html body.v-single-account #typeToggle .type-btn[data-type="transfer"] { display: none !important; }
+body.v-single-account #entryAccountWrap { display: none; }
+body.v-single-account .v-two { grid-template-columns: minmax(0, 1fr); }
+body.v-single-account .v-accounts { display: none; }
+body.v-single-account #analysisAccountFilter, body.v-single-account #compareAccountFilter { display: none; }
+
+/* เป้าหมายเก็บเงิน + กราฟแนวโน้ม (การ์ดของตัวเอง) */
+.v-goal-actions { display: inline-flex; gap: 14px; }
+.v-link-muted { color: var(--v-muted); }
+.v-trend-svg { display: block; width: 100%; height: auto; margin-top: 8px; }
+.v-tr-in { fill: var(--v-in); } .v-tr-out { fill: var(--v-out); } .v-tr-save { fill: var(--v-save); }
+.v-tr-txt { fill: var(--v-muted); } .v-tr-axis { stroke: var(--v-line); }
+.v-trend-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--v-muted); }
+.v-lg { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; }
+.v-lg-in { background: var(--v-in); } .v-lg-out { background: var(--v-out); } .v-lg-save { background: var(--v-save); }
+.v-trend-row { display: grid; grid-template-columns: 44px repeat(3, minmax(0, 1fr)); gap: 6px; padding: 7px 0; border-top: 1px solid var(--v-line); font-size: 12px; font-variant-numeric: tabular-nums; }
+.v-trend-m { color: var(--v-muted); }
+.v-trend-head { margin-top: 8px; border-top: 0; padding: 0 0 4px; font-size: 11px; color: var(--v-muted); }

@@ -328,9 +328,6 @@ let editingId = null;
 let searchAllMonths = false;
 let expandedBreakdown = { income:false, expense:false, saving:false }; // แต่ละบล็อก breakdown พับ/กางแยกกัน
 // ===== Phase 5: Cash Flow Forecast state =====
-let forecastRangePreset = "30"; // "7" | "30" | "60" | "90" | "custom"
-let forecastCustomDays = 30;
-let forecastTimelineExpanded = false;
 // (AI) aiProfileDraft ย้ายไป ai.js
 
 function makeId(){
@@ -807,13 +804,6 @@ function computeMonthlyRecurringCost(){
 
 // ===== Phase 5: Cash Flow Forecast — PURE CALCULATION, read-only =====
 // ห้ามแก้ accounts / entries / recurringExpenses / reservedItems ใดๆ ทั้งสิ้น — คำนวณจากข้อมูลปัจจุบันแล้ว render อย่างเดียว
-function getForecastDays(){
-  if(forecastRangePreset === "custom"){
-    const n = parseInt(forecastCustomDays);
-    return (n > 0 && n <= 3650) ? n : 30;
-  }
-  return parseInt(forecastRangePreset) || 30;
-}
 // occurrence ในอนาคตของ recurring ที่ active เท่านั้น ภายใน horizon (รวม overdue ที่ยังไม่ mark paid)
 //
 // หมายเหตุสำคัญเรื่อง day-31 rollover (แก้เฉพาะ Phase 5 เท่านั้น):
@@ -1410,6 +1400,8 @@ function vaultetAssets(){
   return {total,em,stock:pf.value,rest,assets:total+em+rest+pf.value};
 }
 function renderAccountsSummary(){
+  // มีบัญชีเดียว → ซ่อนช่องเลือกบัญชี/โอนเงิน/แยกตามบัญชี (เพิ่มบัญชีที่สองเมื่อไหร่ก็กลับมาเอง)
+  document.body.classList.toggle("v-single-account", accounts.length <= 1);
   const total = getTotalMoneyAllAccounts();
   const reserved = getTotalReserved();
   const A = vaultetAssets(), vis=(id,on)=>{ const el=document.getElementById(id); const r=el&&(el.classList.contains("v-row")?el:el.parentElement); if(r) r.style.display=on?"":"none"; };
@@ -3008,127 +3000,6 @@ document.getElementById("addRecurringBtn").addEventListener("click", async () =>
 });
 
 // ----- Forecast overlay: read-only cash flow projection (Phase 5) -----
-function renderForecastOverlay(){
-  document.getElementById("forecastRangeSelect").value = forecastRangePreset;
-  document.getElementById("forecastCustomRow").style.display = forecastRangePreset === "custom" ? "flex" : "none";
-  document.getElementById("forecastCustomDays").value = forecastCustomDays;
-
-  const days = getForecastDays();
-  const f = computeForecast(days);
-
-  document.getElementById("forecastSummary").innerHTML = `
-    <div class="networth-card" style="margin-top:4px;">
-      <div class="networth-top">
-        <span class="networth-label">เงินจริงตอนนี้ (ทุกบัญชี)</span>
-        <span class="mono networth-num">฿${fmt(f.current)}</span>
-      </div>
-      <div class="networth-sub"><span>ค่าใช้จ่ายประจำที่จะถึง (${f.occurrenceCount} รายการ)</span><span class="mono" style="color:var(--expense)">-฿${fmt(f.upcoming)}</span></div>
-      <div class="networth-sub" style="font-size:13.5px; font-weight:600; color:var(--ink); margin-top:10px; padding-top:10px; border-top:1px solid var(--line);">
-        <span>ยอดคาดการณ์ (${days} วัน)</span>
-        <span class="mono" style="color:${f.forecast<0?"var(--expense)":"var(--ink)"}">${f.forecast<0?"-":""}฿${fmt(Math.abs(f.forecast))}</span>
-      </div>
-      <div class="networth-sub"><span>กันไว้ (ไม่เปลี่ยนแปลง)</span><span class="mono">฿${fmt(f.reserved)}</span></div>
-      <div class="networth-sub"><span>คาดการณ์ใช้ได้จริง</span><span class="mono real">${f.forecastAvailable<0?"-":""}฿${fmt(Math.abs(f.forecastAvailable))}</span></div>
-    </div>
-  `;
-
-  const warnEl = document.getElementById("forecastWarnings");
-  let warnHtml = "";
-  f.negativeAccounts.forEach(p => {
-    warnHtml += `
-      <div class="forecast-warning">
-        <div style="font-weight:600; color:var(--expense);">⚠️ เงินอาจไม่พอ — ${escapeHtml(p.account.name)}</div>
-        <div class="list-note">คาดว่าจะติดลบวันที่ ${dayLabel(p.firstNegative.date)} · ยอดคาดการณ์ ${p.firstNegative.balance<0?"-":""}฿${fmt(Math.abs(p.firstNegative.balance))}</div>
-      </div>`;
-  });
-  if(f.totalNegative){
-    warnHtml += `
-      <div class="forecast-warning">
-        <div style="font-weight:600; color:var(--expense);">⚠️ ยอดรวมคาดการณ์อาจติดลบ</div>
-        <div class="list-note">ภายใน ${days} วัน ยอดรวมคาดการณ์ ${f.forecast<0?"-":""}฿${fmt(Math.abs(f.forecast))}</div>
-      </div>`;
-  }
-  warnEl.innerHTML = warnHtml;
-
-  const timelineEl = document.getElementById("forecastTimeline");
-  if(!f.timeline.length){
-    timelineEl.innerHTML = `<span class="section-label">ไทม์ไลน์</span><div class="empty-state">ไม่มีค่าใช้จ่ายประจำในช่วงนี้</div>`;
-  }else{
-    const TIMELINE_LIMIT = 8;
-    const visible = forecastTimelineExpanded ? f.timeline : f.timeline.slice(0, TIMELINE_LIMIT);
-    const hiddenCount = f.timeline.length - visible.length;
-    timelineEl.innerHTML = `
-      <span class="section-label">ไทม์ไลน์</span>
-      <div class="timeline-row">
-        <span class="timeline-date">วันนี้</span>
-        <div style="flex:1;"><div class="list-cat">เงินคงเหลือตอนนี้</div></div>
-        <span class="mono" style="font-weight:600;">฿${fmt(f.current)}</span>
-      </div>
-      ${visible.map(o => {
-        const accName = accounts.find(a=>a.id===o.accountId)?.name || "บัญชีที่ถูกลบ";
-        return `
-        <div class="timeline-row">
-          <span class="timeline-date">${dayLabel(o.date)}</span>
-          <div style="flex:1;">
-            <div class="list-cat">${o.isOverdue ? "⚠️ ค้างจ่าย · " : "🔁 "}${escapeHtml(o.name)}</div>
-            <div class="list-note">${escapeHtml(accName)}</div>
-          </div>
-          <span class="mono" style="text-align:right;">
-            <span style="display:block; color:var(--expense);">-฿${fmt(o.amount)}</span>
-            <span style="display:block; font-size:11px; color:var(--faint);">เหลือ ฿${fmt(o.runningTotal)}</span>
-          </span>
-        </div>`;
-      }).join("")}
-      ${forecastTimelineExpanded ? `<button class="breakdown-toggle" id="forecastTimelineToggle">ย่อ</button>` : (hiddenCount>0 ? `<button class="breakdown-toggle" id="forecastTimelineToggle">+ ดูอีก ${hiddenCount} รายการ</button>` : "")}
-    `;
-    const toggleBtn = document.getElementById("forecastTimelineToggle");
-    if(toggleBtn){
-      toggleBtn.addEventListener("click", () => {
-        forecastTimelineExpanded = !forecastTimelineExpanded;
-        renderForecastOverlay();
-      });
-    }
-  }
-
-  const accEl = document.getElementById("forecastByAccount");
-  accEl.innerHTML = `
-    <span class="section-label">แยกตามบัญชี</span>
-    <div style="margin-top:8px;">
-      ${f.perAccount.map(p => `
-        <div class="account-row" style="align-items:flex-start;">
-          <span class="acc-name" style="flex-direction:column; align-items:flex-start; display:flex;">
-            <span>${escapeHtml(p.account.name)}</span>
-            <span class="mono" style="font-size:12px;color:var(--faint)">ปัจจุบัน ฿${fmt(p.current)} · อนาคต -฿${fmt(p.future)}</span>
-          </span>
-          <span class="mono" style="font-weight:600; color:${p.forecast<0?"var(--expense)":"var(--ink)"}">${p.forecast<0?"-":""}฿${fmt(Math.abs(p.forecast))}</span>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-document.getElementById("openForecastBtn").addEventListener("click", () => {
-  forecastTimelineExpanded = false;
-  renderForecastOverlay();
-  document.getElementById("forecastOverlay").classList.add("open");
-});
-document.getElementById("closeForecastBtn").addEventListener("click", () => {
-  document.getElementById("forecastOverlay").classList.remove("open");
-});
-document.getElementById("forecastOverlay").addEventListener("click", () => {
-  document.getElementById("forecastOverlay").classList.remove("open");
-});
-document.getElementById("forecastRangeSelect").addEventListener("change", (e) => {
-  forecastRangePreset = e.target.value;
-  forecastTimelineExpanded = false;
-  renderForecastOverlay();
-});
-document.getElementById("forecastCustomDays").addEventListener("input", (e) => {
-  const n = parseInt(e.target.value);
-  forecastCustomDays = (n > 0 && n <= 3650) ? n : forecastCustomDays;
-  forecastTimelineExpanded = false;
-  renderForecastOverlay();
-});
 
 // ----- Mark as Paid: สร้าง Expense Transaction จริงเมื่อกดยืนยันเท่านั้น -----
 function openMarkPaid(id){
@@ -3335,41 +3206,7 @@ function getBrainBaseIncome(actualIncome){
   return {value:Number(actualIncome)||0,source:'actual'};
 }
 window.getBrainBaseIncome=getBrainBaseIncome;
-function renderFinancialBrainCard(){const card=document.getElementById("financialBrainCard");if(!card)return;if(typeof buildFinancialSnapshot!=="function")return;const s=buildFinancialSnapshot(),h=s.financialBrain,b=s.behaviorSummary;card.style.display="block";document.getElementById("brainScore").textContent=h.score;document.getElementById("brainFill").style.width=h.score+"%";const m=h.status==='CRITICAL'?{l:'ต้องจัดการเร่งด่วน',c:'critical'}:h.status==='WATCH'?{l:'ควรเฝ้าดู',c:'watch'}:{l:'สุขภาพดี ✓',c:'healthy'};const st=document.getElementById("brainStatus");st.className='brain-status '+m.c;st.textContent=m.l;
-const empty=s.thisMonth.income===0&&s.thisMonth.expense===0;
-document.getElementById("brainSub").textContent=empty?'เดือนนี้ยังไม่มีรายการ คะแนนจึงยังไม่สะท้อนความจริง — บันทึกรายรับ/รายจ่ายก่อน':'คะแนนเต็ม 100 ยิ่งสูงยิ่งดี คิดจาก 6 ข้อด้านล่าง (ของเดือนที่ดูอยู่)';
-const BT=getBrainTargets();const pct=x=>x==null?'—':fmt(x)+'%';const tm=Number(emergencyFundConfig.targetMonths)||3;
-const lv=(v,good,ok,rev)=>v==null?0:(rev?(v<=good?1:v<=ok?2:3):(v>=good?1:v>=ok?2:3));
-const net=s.thisMonth.netCashFlow;
-const baseIncome=getBrainBaseIncome(s.thisMonth.income).value;
-const __curKey=monthKey(todayISO()),__viewKey=(s.thisMonth&&s.thisMonth.month)||__curKey,__isCur=__viewKey===__curKey;
-const __now=new Date(),__day=__now.getDate(),__last=new Date(__now.getFullYear(),__now.getMonth()+1,0).getDate();
-let essPctShown=h.benchmark.essentialPct,essT=lv(h.benchmark.essentialPct,BT.essentialMaxPct,BT.essentialMaxPct+15,true);
-if(baseIncome>0){
-const essAmt=h.benchmark.essentialAmount!=null?Number(h.benchmark.essentialAmount):computeEssentialExpenseForMonth(__viewKey,getEmergencyEssentialCategories());
-const essCeil=baseIncome*(BT.essentialMaxPct/100);
-essPctShown=essAmt/baseIncome*100;
-essT=essAmt<=essCeil?1:lv(essPctShown,BT.essentialMaxPct,BT.essentialMaxPct+15,true);
-}
-const earlyOk=net<0&&__isCur&&__day<__last&&baseIncome>0&&Math.abs(net)<=baseIncome;
-const cashT=net<0?(earlyOk?2:3):1;
-const rows=[
-{k:'cash',l:'เงินเข้า − เงินออก',v:empty?'—':(net<0?'ติดลบ ':'เหลือ ')+'฿'+fmt(Math.abs(net)),t:empty?0:cashT,d:'รายรับลบรายจ่ายของเดือนนี้ ควรเป็นบวก',a:net<0?(earlyOk?'รายรับอาจยังเข้าไม่ครบ ยังอยู่ในกรอบรายได้ประมาณการ':'ลดรายจ่ายที่ไม่จำเป็นก่อน'):''},
-{k:'save',l:'อัตราออม',v:pct(b.savingsRate),t:h.savingsWaiting?2:lv(b.savingsRate,BT.savingsRatePct,BT.savingsRatePct/2),d:`ออมกี่ % ของรายรับ เป้าหมาย ${BT.savingsRatePct}% ขึ้นไป${BT.custom?' (ปรับเองเดือนนี้)':''}`,a:h.savingsWaiting?'รอรอบเงินเข้า ยังไม่ถึงงวดออม ไม่นับเป็นไฟแดง':''},
-{k:'ess',l:'ค่าใช้จ่ายจำเป็น',v:pct(essPctShown),t:essT,d:`ค่ากิน ค่าห้อง ค่าเดินทาง ฯลฯ ต่อรายได้ฐานของเดือน ไม่ควรเกิน ${BT.essentialMaxPct}%`,a:''},
-{k:'dis',l:'ค่าใช้จ่ายไม่จำเป็น',v:pct(h.benchmark.discretionaryPct),t:lv(h.benchmark.discretionaryPct,BT.discretionaryMaxPct,BT.discretionaryMaxPct+10,true),d:`ของชอบ ฟุ่มเฟือย ต่อรายรับ ไม่ควรเกิน ${BT.discretionaryMaxPct}%`,a:''},
-{k:'res',l:'เงินสำรองฉุกเฉิน',v:s.emergencyFund.monthlyEssentialExpense>0?fmt(s.emergencyFund.reserveCoverageMonths)+' เดือน':'—',t:s.emergencyFund.monthlyEssentialExpense>0?lv(s.emergencyFund.reserveCoverageMonths,tm,1):0,d:'ถ้าไม่มีรายได้ เงินที่มีอยู่อยู่ได้กี่เดือน เป้าหมาย '+tm+' เดือน',a:''},
-{k:'bud',l:'งบประมาณ',v:s.budgetSummary.budgetCount?`${s.budgetSummary.overCount} เกินงบ · ${s.budgetSummary.watchCount} ใกล้เต็ม`:'ยังไม่ได้ตั้ง',t:s.budgetSummary.budgetCount?(s.budgetSummary.overCount?3:s.budgetSummary.watchCount?2:1):0,d:'ตั้งงบรายหมวดได้ในหน้า "แผน"',a:''}];
-let hid=[];try{hid=JSON.parse(localStorage.getItem('vaultet_brain_hidden')||'[]')}catch(e){}
-const ic=['⚪','🟢','🟡','🔴'],co=['var(--faint)','#52b788','#e9c46a','#ef5350'];
-const shown=rows.filter(r=>!hid.includes(r.k));const edit=!!window.__brainEdit;const list=edit?rows:shown;
-const fe=document.getElementById("brainFactors");fe.style.gridTemplateColumns='1fr';
-fe.innerHTML=list.map(r=>{const off=hid.includes(r.k);return `<div class="brain-factor" style="${off?'opacity:.45':''}"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="brain-factor-label">${ic[r.t]} ${escapeHtml(r.l)}</div>${edit?`<button type="button" data-tog="${r.k}" class="quick-amount-btn" style="padding:4px 12px">${off?'แสดง':'ซ่อน'}</button>`:''}</div><div class="brain-factor-value" style="color:${co[r.t]}">${escapeHtml(String(r.v))}</div><div style="font-size:11px;color:var(--faint);margin-top:2px">${escapeHtml(r.d)}${r.a?' · '+escapeHtml(r.a):''}</div></div>`}).join('')+`<button type="button" id="brainEditBtn" class="manage-accounts-btn" style="width:100%">${edit?'✓ เสร็จ':'⚙ เลือกข้อที่แสดง'}</button>`;
-fe.querySelectorAll('[data-tog]').forEach(x=>x.onclick=()=>{const k=x.dataset.tog;hid=hid.includes(k)?hid.filter(y=>y!==k):[...hid,k];localStorage.setItem('vaultet_brain_hidden',JSON.stringify(hid));renderFinancialBrainCard()});
-document.getElementById('brainEditBtn').onclick=()=>{window.__brainEdit=!window.__brainEdit;renderFinancialBrainCard()};
-const bad=shown.filter(r=>r.t===3).map(r=>r.l);
-document.getElementById("brainInsight").innerHTML=empty?'🟢 ดี · 🟡 พอใช้ · 🔴 ควรแก้ · ⚪ ยังไม่มีข้อมูล':bad.length?`สิ่งที่ควรแก้ก่อน: ${escapeHtml(bad.join(', '))}`:'ตอนนี้ไม่มีข้อที่อยู่ในโซนแดง 👍';try{if(typeof renderTrendCard==='function')renderTrendCard()}catch(e){console.error(e)}}
-const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderBudgetDashboard();renderEmergencyDashboard();renderFinancialBrainCard();};renderBudgetDashboard();renderEmergencyDashboard();renderFinancialBrainCard();
+const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderBudgetDashboard();renderEmergencyDashboard();};renderBudgetDashboard();renderEmergencyDashboard();
 
 /* ===== Vaultet UX/UI navigation layer — single navigation system ===== */
 (function(){
@@ -3385,7 +3222,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   const proactive=page.querySelector('#aiProactiveCard');
   const budget=page.querySelector('#budgetDashboardCard');
   const emergency=page.querySelector('#emergencyDashboardCard');
-  const brain=page.querySelector('#financialBrainCard');
+  const goalsCard=page.querySelector('#goalsCard'), trendCard=page.querySelector('#trendCard');
   const notify=page.querySelector('#notificationDashboardCard');
   const backup=hero.querySelector('.backup-row');
 
@@ -3418,11 +3255,12 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   // สิ่งที่ควรรู้: การ์ดเดียวบนหน้าหลัก (ข้อเสนอจากระบบ + สรุปจาก AI ถ้ามี)
   if(notify){ home.append(notify); if(proactive) notify.append(proactive); }
   else if(proactive) home.append(proactive);
-  if(brain) plan.append(brain);
   if(budget) plan.append(budget);
   if(emergency) plan.append(emergency);
+  if(goalsCard) plan.append(goalsCard);
   if(backup) more.append(backup);
   // แท็บ "วิเคราะห์": สรุปตามหมวด + วิเคราะห์ตามช่วงเวลา + เปรียบเทียบ
+  if(trendCard) analysisV.append(trendCard);
   if(breakdown) analysisV.append(breakdown);
   analyses.forEach(a=>analysisV.append(a));
   // รายการทั้งหมด (ค้นหา/กรอง) อยู่ท้ายหน้าหลัก
@@ -3687,13 +3525,43 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   function esc(v){return typeof escapeHtml==='function'?escapeHtml(String(v||'')):String(v||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function profile(){return read();}
   window.vaultetUserProfile={read,write,KEY};
+  // ---- เป้าหมาย: ระบบเดียว = เป้าหมายเก็บเงินในแท็บแผน (vaultet_goals_v1) ----
+  const PLAN_GOALS_KEY='vaultet_goals_v1', GOALS_MERGED_FLAG='vaultet_goals_merged_v1', LEGACY_AI_PROFILE_KEY='finance_tracker_ai_profile_v1';
+  function readPlanGoals(){try{const g=JSON.parse(localStorage.getItem(PLAN_GOALS_KEY)||'[]');return Array.isArray(g)?g:[];}catch(e){return [];}}
+  function planGoalsForAI(){return readPlanGoals().filter(x=>x&&x.name).map(x=>({id:x.id,name:x.name,targetAmount:Number(x.target)||0,saved:Number(x.saved)||0,deadline:x.deadline||null}));}
+  window.vaultetPlanGoals=planGoalsForAI;
+  // ย้ายเป้าหมายเก่าจากโปรไฟล์มารวมในแท็บแผนครั้งเดียว (ไม่ซ้ำ ไม่หาย): ลบจากโปรไฟล์เฉพาะเมื่อเขียนฝั่งแผนสำเร็จและตรวจแล้ว
+  function migrateProfileGoalsToPlan(){
+    try{
+      if(localStorage.getItem(GOALS_MERGED_FLAG)) return;
+      const p=read(); let lg=null; try{lg=JSON.parse(localStorage.getItem(LEGACY_AI_PROFILE_KEY)||'null');}catch(e){}
+      const old=[...(p.financialGoals||[]),...((lg&&Array.isArray(lg.financialGoals))?lg.financialGoals:[])];
+      const plan=readPlanGoals(); let added=0;
+      old.forEach(g=>{
+        if(!g||!g.name) return;
+        const tgt=Number(g.targetAmount!=null?g.targetAmount:g.target)||0; if(tgt<=0) return;
+        const dup=plan.some(x=>String(x.name).trim().toLowerCase()===String(g.name).trim().toLowerCase()&&Math.round(Number(x.target))===Math.round(tgt));
+        if(dup) return;
+        plan.push({id:(g.id?String(g.id):Date.now().toString(36))+'m'+added,name:String(g.name),target:tgt,saved:Number(g.saved)||0,deadline:g.deadline||''}); added++;
+      });
+      if(added){
+        localStorage.setItem(PLAN_GOALS_KEY,JSON.stringify(plan));
+        const back=readPlanGoals(); if(back.length!==plan.length) return; // เขียนไม่สำเร็จ: ไม่แตะของเดิม ลองใหม่รอบหน้า
+      }
+      if((p.financialGoals||[]).length){ p.financialGoals=[]; if(!write(p)) return; }
+      if(lg&&Array.isArray(lg.financialGoals)&&lg.financialGoals.length){ lg.financialGoals=[]; localStorage.setItem(LEGACY_AI_PROFILE_KEY,JSON.stringify(lg)); }
+      localStorage.setItem(GOALS_MERGED_FLAG,'1');
+      if(added){ setTimeout(()=>{ try{renderTrendCard();}catch(e){} },0); }
+    }catch(e){ console.error(e); }
+  }
+  migrateProfileGoalsToPlan();
   // Upgrade the existing AI profile storage without breaking existing data.
   (window.__vaultetAiPatches=window.__vaultetAiPatches||[]).push(function(){
   const oldLoad=window.loadAIProfile;
   window.loadAIProfile=function(){
     const canonicalRaw=localStorage.getItem(KEY);
     const base=oldLoad?oldLoad():null;
-    if(!canonicalRaw){ return base || null; }
+    if(!canonicalRaw){ if(base) base.financialGoals=planGoalsForAI(); return base || null; }
     const p=read();
     const q=p.permissions||DEFAULT.permissions;
     const out={};
@@ -3702,11 +3570,11 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     // blank value could resurrect stale data from finance_tracker_ai_profile_v1.
     if(q.identity){out.nickname=p.nickname||'';out.firstName=p.firstName||'';out.lastName=p.lastName||'';out.age=p.age??null;} else {out.nickname='';out.firstName='';out.lastName='';out.age=null;}
     if(q.life){out.statuses=Array.isArray(p.statuses)?p.statuses:[];out.occupation=p.occupation||'';out.workType=p.workType||'';out.education=p.education||'';out.location=p.location||'';} else {out.statuses=[];out.occupation='';out.workType='';out.education='';out.location='';}
-    if(q.financial){out.monthlyIncomeEstimate=p.monthlyIncomeEstimate??null;out.minReserveTarget=p.minReserveTarget??null;out.financialGoals=Array.isArray(p.financialGoals)?p.financialGoals:[];} else {out.monthlyIncomeEstimate=null;out.minReserveTarget=null;out.financialGoals=[];}
+    if(q.financial){out.monthlyIncomeEstimate=p.monthlyIncomeEstimate??null;out.minReserveTarget=p.minReserveTarget??null;out.financialGoals=planGoalsForAI();} else {out.monthlyIncomeEstimate=null;out.minReserveTarget=null;out.financialGoals=[];}
     if(q.personal){out.notes=p.notes||'';out.personalContext=p.personalContext||'';out.priorities=Array.isArray(p.priorities)?p.priorities:[];out.habits=p.habits||'';out.aiHelp=p.aiHelp||'';} else {out.notes='';out.personalContext='';out.priorities=[];out.habits='';out.aiHelp='';}
     out.permissions=q;
     // Deterministically mirror the canonical profile into the legacy key for compatibility.
-    if(typeof saveAIProfile==='function') saveAIProfile({nickname:out.nickname,monthlyIncomeEstimate:out.monthlyIncomeEstimate,minReserveTarget:out.minReserveTarget,financialGoals:out.financialGoals,notes:[out.notes,out.personalContext,out.habits,out.aiHelp].filter(Boolean).join(' | '),userProfile:p});
+    if(typeof saveAIProfile==='function') saveAIProfile({nickname:out.nickname,monthlyIncomeEstimate:out.monthlyIncomeEstimate,minReserveTarget:out.minReserveTarget,financialGoals:[],notes:[out.notes,out.personalContext,out.habits,out.aiHelp].filter(Boolean).join(' | '),userProfile:p});
     return out;
   };
   });
@@ -3718,28 +3586,27 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     set('vpFirst',p.firstName);set('vpLast',p.lastName);set('vpNick',p.nickname);set('vpAge',p.age);set('vpOccupation',p.occupation);set('vpWorkType',p.workType);set('vpEducation',p.education);set('vpLocation',p.location);set('vpIncome',p.monthlyIncomeEstimate);set('vpReserve',p.minReserveTarget);set('vpNotes',p.notes);set('vpContext',p.personalContext);set('vpHabits',p.habits);set('vpHelp',p.aiHelp);
     document.querySelectorAll('[data-vp-status]').forEach(x=>x.checked=(p.statuses||[]).includes(x.value));
     document.querySelectorAll('[data-vp-priority]').forEach(x=>x.checked=(p.priorities||[]).includes(x.value));
-    document.querySelectorAll('[data-vp-perm]').forEach(x=>x.checked=p.permissions[x.dataset.vpPerm]!==false); renderGoals();
+    document.querySelectorAll('[data-vp-perm]').forEach(x=>x.checked=p.permissions[x.dataset.vpPerm]!==false);
     ov.classList.add('open');
   }
   function save(){const old=profile();const val=id=>document.getElementById(id)?.value?.trim()||'';const num=id=>{const n=parseFloat(document.getElementById(id)?.value);return Number.isFinite(n)&&n>=0?n:null};
     const p=Object.assign({},old,{firstName:val('vpFirst'),lastName:val('vpLast'),nickname:val('vpNick'),age:num('vpAge'),occupation:val('vpOccupation'),workType:val('vpWorkType'),education:val('vpEducation'),location:val('vpLocation'),monthlyIncomeEstimate:num('vpIncome'),minReserveTarget:num('vpReserve'),notes:val('vpNotes'),personalContext:val('vpContext'),habits:val('vpHabits'),aiHelp:val('vpHelp'),statuses:[...document.querySelectorAll('[data-vp-status]:checked')].map(x=>x.value),priorities:[...document.querySelectorAll('[data-vp-priority]:checked')].map(x=>x.value),permissions:Object.fromEntries([...document.querySelectorAll('[data-vp-perm]')].map(x=>[x.dataset.vpPerm,x.checked]))});
-    p.financialGoals=old.financialGoals||[];
+    p.financialGoals=[]; // เป้าหมายอยู่ที่แท็บแผนแล้ว (ระบบเดียว)
     if(!write(p)){ if(typeof showToast==='function')showToast('บันทึกโปรไฟล์ไม่สำเร็จ — พื้นที่จัดเก็บอาจเต็ม'); return; }
     // Keep the legacy AI profile key in sync only after the canonical write succeeds.
-    if(typeof saveAIProfile==='function') saveAIProfile({nickname:p.nickname||[p.firstName,p.lastName].filter(Boolean).join(' '),monthlyIncomeEstimate:p.monthlyIncomeEstimate,minReserveTarget:p.minReserveTarget,financialGoals:p.financialGoals,notes:[p.notes,p.personalContext,p.habits,p.aiHelp].filter(Boolean).join(' | '),userProfile:p});
+    if(typeof saveAIProfile==='function') saveAIProfile({nickname:p.nickname||[p.firstName,p.lastName].filter(Boolean).join(' '),monthlyIncomeEstimate:p.monthlyIncomeEstimate,minReserveTarget:p.minReserveTarget,financialGoals:[],notes:[p.notes,p.personalContext,p.habits,p.aiHelp].filter(Boolean).join(' | '),userProfile:p});
     refreshTrigger(); if(typeof refreshAIProfileStatus==='function')refreshAIProfileStatus(); if(typeof refreshProactiveCard==='function')refreshProactiveCard(true); document.getElementById('vaultetProfileOverlay')?.classList.remove('open'); if(typeof showToast==='function')showToast('บันทึกโปรไฟล์แล้ว');
   }
-  function renderGoals(){const p=profile(),el=document.getElementById('vpGoalsList');if(!el)return;const gs=p.financialGoals||[];el.innerHTML=gs.length?gs.map(g=>`<div class="profile-permission"><span>${esc(g.name)}<small>เป้าหมาย ฿${typeof fmt==='function'?fmt(g.targetAmount):Number(g.targetAmount||0).toLocaleString('th-TH')}</small></span><button type="button" class="icon-btn vp-del-goal" data-id="${esc(g.id)}">🗑</button></div>`).join(''):'<div class="hint">ยังไม่มีเป้าหมาย — เพิ่มได้ด้านล่าง</div>';el.querySelectorAll('.vp-del-goal').forEach(b=>b.onclick=()=>{const x=profile();x.financialGoals=(x.financialGoals||[]).filter(g=>g.id!==b.dataset.id);write(x);renderGoals();refreshTrigger();if(typeof refreshProactiveCard==='function')refreshProactiveCard(true);});}
   function build(){
     const ov=document.createElement('div');ov.id='vaultetProfileOverlay';ov.className='profile-overlay';ov.innerHTML=`<div class="profile-sheet" role="dialog" aria-modal="true" aria-label="โปรไฟล์ของฉัน"><div class="profile-head"><div class="profile-big-avatar">👤</div><div><h2>โปรไฟล์ของฉัน</h2><p>ข้อมูลนี้ช่วยให้ Vaultet และ AI เข้าใจคุณมากขึ้น</p></div><button class="icon-btn profile-close" id="vpClose" aria-label="ปิด">✕</button></div><div class="profile-grid">
       <section class="profile-card"><h3>👤 ตัวตน</h3><div class="profile-fields two"><label><span class="profile-label">ชื่อ</span><input class="profile-input" id="vpFirst" placeholder="ชื่อจริง"></label><label><span class="profile-label">นามสกุล</span><input class="profile-input" id="vpLast" placeholder="นามสกุล"></label><label><span class="profile-label">ชื่อที่อยากให้เรียก</span><input class="profile-input" id="vpNick" placeholder="เช่น กอล์ฟ"></label><label><span class="profile-label">อายุ</span><input class="profile-input" id="vpAge" type="number" min="0" max="120" inputmode="numeric" placeholder="ปี"></label></div></section>
       <section class="profile-card"><h3>🎓 ชีวิตตอนนี้</h3><div class="profile-checks"><label class="profile-check"><input type="checkbox" data-vp-status value="นักเรียน">นักเรียน</label><label class="profile-check"><input type="checkbox" data-vp-status value="นักศึกษา">นักศึกษา</label><label class="profile-check"><input type="checkbox" data-vp-status value="ทำงาน">ทำงาน</label><label class="profile-check"><input type="checkbox" data-vp-status value="Freelance">Freelance</label><label class="profile-check"><input type="checkbox" data-vp-status value="ธุรกิจส่วนตัว">ธุรกิจส่วนตัว</label></div><div class="profile-fields two" style="margin-top:9px"><label><span class="profile-label">อาชีพ / งาน</span><input class="profile-input" id="vpOccupation" placeholder="เช่น Developer"></label><label><span class="profile-label">รูปแบบงาน</span><input class="profile-input" id="vpWorkType" placeholder="Full-time / Part-time"></label><label><span class="profile-label">การศึกษา</span><input class="profile-input" id="vpEducation" placeholder="มหาวิทยาลัย / คณะ"></label><label><span class="profile-label">พื้นที่ที่อยู่ (ไม่บังคับ)</span><input class="profile-input" id="vpLocation" placeholder="จังหวัด / ประเทศ"></label></div></section>
-      <section class="profile-card"><h3>💰 การเงิน</h3><div class="profile-fields two"><label><span class="profile-label">รายได้ประมาณต่อเดือน</span><input class="profile-input" id="vpIncome" type="number" min="0" inputmode="decimal" placeholder="บาท"></label><label><span class="profile-label">เงินสำรองขั้นต่ำ</span><input class="profile-input" id="vpReserve" type="number" min="0" inputmode="decimal" placeholder="บาท"></label></div><div id="vpGoalsList" class="profile-fields" style="margin-top:10px"></div><div class="profile-fields two" style="margin-top:9px"><label><span class="profile-label">เพิ่มเป้าหมาย</span><input class="profile-input" id="vpGoalName" placeholder="เช่น เงินสำรอง / ซื้อรถ"></label><label><span class="profile-label">ยอดเป้าหมาย</span><input class="profile-input" id="vpGoalAmount" type="number" min="0" inputmode="decimal" placeholder="บาท"></label></div><button type="button" class="profile-save" id="vpAddGoal" style="margin-top:9px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">+ เพิ่มเป้าหมาย</button><p class="hint" style="margin-top:9px">ข้อมูลบัญชีและธุรกรรมจริงยังอยู่ในระบบการเงินเดิม และ AI ใช้ประกอบคำแนะนำได้ตามสิทธิ์ที่ตั้งไว้</p></section>
+      <section class="profile-card"><h3>💰 การเงิน</h3><div class="profile-fields two"><label><span class="profile-label">รายได้ประมาณต่อเดือน</span><input class="profile-input" id="vpIncome" type="number" min="0" inputmode="decimal" placeholder="บาท"></label><label><span class="profile-label">เงินสำรองขั้นต่ำ</span><input class="profile-input" id="vpReserve" type="number" min="0" inputmode="decimal" placeholder="บาท"></label></div><p class="hint" style="margin-top:12px">เป้าหมายเก็บเงินอยู่ที่แท็บ "แผน" (มียอดที่เก็บแล้วและวันที่ต้องการ) AI เห็นเป้าหมายเหล่านั้นด้วย</p><button type="button" class="profile-save" id="vpGoalsLink" style="margin-top:9px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">ไปที่เป้าหมายเก็บเงิน</button><p class="hint" style="margin-top:9px">ข้อมูลบัญชีและธุรกรรมจริงยังอยู่ในระบบการเงินเดิม และ AI ใช้ประกอบคำแนะนำได้ตามสิทธิ์ที่ตั้งไว้</p></section>
       <section class="profile-card"><h3>🧭 สิ่งสำคัญสำหรับฉัน</h3><div class="profile-checks"><label class="profile-check"><input type="checkbox" data-vp-priority value="ความมั่นคง">ความมั่นคง</label><label class="profile-check"><input type="checkbox" data-vp-priority value="เก็บเงิน">เก็บเงิน</label><label class="profile-check"><input type="checkbox" data-vp-priority value="ลงทุน">ลงทุน</label><label class="profile-check"><input type="checkbox" data-vp-priority value="ท่องเที่ยว">ท่องเที่ยว</label><label class="profile-check"><input type="checkbox" data-vp-priority value="ครอบครัว">ครอบครัว</label></div></section>
       <section class="profile-card full"><h3>🧠 ให้ AI รู้จักฉัน</h3><p class="hint">ใส่บริบทที่ช่วยให้คำแนะนำเข้ากับชีวิตจริงของคุณ เช่น นิสัย เป้าหมายระยะยาว หรือสิ่งที่อยากให้ AI ช่วย</p><div class="profile-fields"><label><span class="profile-label">เกี่ยวกับฉัน</span><textarea class="profile-textarea" id="vpContext" placeholder="เช่น กำลังเรียนและทำงานพาร์ตไทม์ ปีนี้อยากเก็บเงินไปเที่ยว..."></textarea></label><label><span class="profile-label">นิสัยการใช้เงิน</span><textarea class="profile-textarea" id="vpHabits" placeholder="เช่น เวลาเครียดมักซื้อของออนไลน์..."></textarea></label><label><span class="profile-label">สิ่งที่อยากให้ AI ช่วย</span><textarea class="profile-textarea" id="vpHelp" placeholder="เช่น ช่วยเตือนเมื่อใช้เงินเกิน และช่วยวางแผนก่อนสิ้นเดือน..."></textarea></label><label><span class="profile-label">ข้อจำกัด / หมายเหตุทางการเงิน</span><textarea class="profile-textarea" id="vpNotes" placeholder="เช่น ห้ามแตะเงินออม..."></textarea></label></div></section>
       <section class="profile-card full"><h3>🤖 ข้อมูลที่ AI เข้าถึงได้</h3><p class="hint">คุณควบคุมได้ว่า AI จะนำข้อมูลประเภทไหนไปปรับคำตอบ ข้อมูลที่ปิดจะไม่ถูกใส่เป็นบริบทโปรไฟล์ของ AI</p><label class="profile-permission"><span>ตัวตน<small>ชื่อ อายุ และชื่อที่อยากให้เรียก</small></span><input class="profile-switch" type="checkbox" data-vp-perm="identity"></label><label class="profile-permission"><span>ชีวิต / การเรียน / งาน<small>สถานะ อาชีพ การศึกษา และรูปแบบงาน</small></span><input class="profile-switch" type="checkbox" data-vp-perm="life"></label><label class="profile-permission"><span>การเงินและเป้าหมาย<small>รายได้ เงินสำรอง และเป้าหมายจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="financial"></label><label class="profile-permission"><span>บริบทส่วนตัว<small>ความสนใจ นิสัย ลำดับความสำคัญ และสิ่งที่อยากให้ช่วย</small></span><input class="profile-switch" type="checkbox" data-vp-perm="personal"></label><label class="profile-permission"><span>Memory จากบทสนทนา<small>ความจำที่ AI บันทึกไว้แยกจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="memory"></label></section>
       </div><button class="profile-save" id="vpSave">บันทึกโปรไฟล์</button><button class="profile-danger" id="vpClear">ล้างข้อมูลโปรไฟล์ของฉัน</button></div>`;document.body.append(ov);
-    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpAddGoal').onclick=()=>{const n=document.getElementById('vpGoalName').value.trim(),a=parseFloat(document.getElementById('vpGoalAmount').value);if(!n||!Number.isFinite(a)||a<=0){if(typeof showToast==='function')showToast('กรอกชื่อและยอดเป้าหมายให้ถูกต้อง');return;}const x=profile();x.financialGoals=x.financialGoals||[];x.financialGoals.push({id:(typeof makeId==='function'?makeId():Date.now().toString(36)),name:n,targetAmount:a,deadline:null});if(!write(x)){if(typeof showToast==='function')showToast('บันทึกเป้าหมายไม่สำเร็จ — พื้นที่จัดเก็บอาจเต็ม');return;}document.getElementById('vpGoalName').value='';document.getElementById('vpGoalAmount').value='';renderGoals();if(typeof showToast==='function')showToast('เพิ่มเป้าหมายแล้ว');};
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpGoalsLink').onclick=()=>{ov.classList.remove('open');if(window.vaultetGo)window.vaultetGo('plan');setTimeout(()=>document.getElementById('goalsCard')?.scrollIntoView({block:'start'}),80);};
   }
   window.vaultetOpenProfile=open;
   function init(){build();const top=document.querySelector('.ux-topbar');if(top){const b=document.createElement('button');b.className='ux-profile-trigger';b.id='uxProfileTrigger';b.innerHTML='<div class="ux-profile-avatar">👤</div><div class="ux-profile-mini"><strong>โปรไฟล์ของฉัน</strong><span>ตั้งค่าข้อมูลส่วนตัว</span></div>';b.onclick=open;top.insertBefore(b,top.querySelector('.ux-month')||null);refreshTrigger();}}
@@ -3756,7 +3623,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     const statuses=(p.statuses||[]).map(x=>statusLabels[x]||x).filter(Boolean);
     if(p.occupation && !statuses.includes(p.occupation)) statuses.push(p.occupation);
     const meta=statuses.slice(0,2).join(' · ')||'เพิ่มข้อมูลเกี่ยวกับตัวคุณได้ในโปรไฟล์';
-    const goal=(p.financialGoals||[]).find(x=>x&&x.name);
+    const goal=((typeof window.vaultetPlanGoals==='function'?window.vaultetPlanGoals():p.financialGoals)||[]).find(x=>x&&x.name);
     return {name,meta,goal:goal?`เป้าหมาย: ${goal.name}`:''};
   }
   function ensureContext(viewId){
@@ -4108,9 +3975,7 @@ async function mergeCategories(){
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mergeCatBtn"))mergeCategories();},true);
 
 function renderTrendCard(){
-  const card=document.getElementById("financialBrainCard");if(!card)return;
-  let box=document.getElementById("trendBox");
-  if(!box){box=document.createElement("div");box.id="trendBox";box.style.cssText="margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2a2a2e)";card.appendChild(box);}
+  const card=document.getElementById("trendCard");if(!card)return;
   const TH=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
   const now=new Date(),keys=[];
   for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);keys.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));}
@@ -4122,17 +3987,16 @@ function renderTrendCard(){
     return r;});
   const mx=Math.max(1,...rows.flatMap(r=>[r.inc,r.exp,r.sav]));
   const W=340,base=135,top=10,gw=W/Math.max(rows.length,4),bw=14;
-  const bar=(v,x,c)=>{const h=Math.round((v/mx)*(base-top));return `<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="3" fill="${c}"/>`;};
-  const svg=`<svg viewBox="0 0 ${W} 155" style="width:100%;height:auto">`+rows.map((r,i)=>{const x=i*gw+(gw-bw*3-4)/2;const m=Number(r.k.slice(5))-1;
-    return bar(r.inc,x,"#52b788")+bar(r.exp,x+bw+2,"#ef5350")+bar(r.sav,x+2*(bw+2),"#7aa2f7")+`<text x="${i*gw+gw/2}" y="150" text-anchor="middle" font-size="11" fill="#8a8a93">${TH[m]}</text>`;}).join("")+`<line x1="0" x2="${W}" y1="${base}" y2="${base}" stroke="#2a2a2e"/></svg>`;
+  const bar=(v,x,cls)=>{const h=Math.round((v/mx)*(base-top));return `<rect class="${cls}" x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="3"/>`;};
+  const svg=`<svg class="v-trend-svg" viewBox="0 0 ${W} 155" role="img" aria-label="กราฟรายรับ รายจ่าย และออมรายเดือน">`+rows.map((r,i)=>{const x=i*gw+(gw-bw*3-4)/2;const m=Number(r.k.slice(5))-1;
+    return bar(r.inc,x,"v-tr-in")+bar(r.exp,x+bw+2,"v-tr-out")+bar(r.sav,x+2*(bw+2),"v-tr-save")+`<text class="v-tr-txt" x="${i*gw+gw/2}" y="150" text-anchor="middle" font-size="11">${TH[m]}</text>`;}).join("")+`<line class="v-tr-axis" x1="0" x2="${W}" y1="${base}" y2="${base}"/></svg>`;
   const f=n=>"฿"+Math.round(n).toLocaleString("en-US");
-  const cur=rows[rows.length-1];
-  const list=rows.slice().reverse().map(r=>{const m=Number(r.k.slice(5))-1;return `<div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:6px;font-size:12px;padding:4px 0;border-top:1px solid #1d1d21"><span style="color:#8a8a93">${TH[m]}</span><span style="color:#52b788">${f(r.inc)}</span><span style="color:#ef5350">${f(r.exp)}</span><span style="color:#7aa2f7">${f(r.sav)}</span></div>`;}).join("");
+  const list=rows.slice().reverse().map(r=>{const m=Number(r.k.slice(5))-1;return `<div class="v-trend-row"><span class="v-trend-m">${TH[m]}</span><span class="v-tone-in">${f(r.inc)}</span><span>${f(r.exp)}</span><span class="v-tone-save">${f(r.sav)}</span></div>`;}).join("");
   const repTotal=rows.reduce((a,r)=>a+r.rep,0);
-  box.innerHTML=`<div style="font-weight:700;margin-bottom:2px">📈 แนวโน้มรายเดือน (สูงสุด 6 เดือน)</div>
-  <div style="font-size:12px;color:var(--faint);margin-bottom:6px"><span style="color:#52b788">■</span> รายรับจริง <span style="color:#ef5350">■</span> รายจ่าย <span style="color:#7aa2f7">■</span> ออม</div>${svg}
-  <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:6px;font-size:11px;color:#8a8a93;margin-top:6px"><span></span><span>รับจริง</span><span>จ่าย</span><span>ออม</span></div>${list}
-  <div style="font-size:12px;color:var(--faint);margin-top:8px">รายรับจริง = ไม่รวมเงินที่คนอื่นคืนค่ายืม (รวม ${f(repTotal)} ตามรายการ "เงินคืนจากการยืม" ซึ่งเป็นเงินเดิมที่ให้ยืมไป ไม่ใช่รายได้ใหม่) และเงินที่ถอนจากเงินออม</div>`;
+  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">แนวโน้มรายเดือน</h2></div>
+  <div class="v-trend-legend"><span><i class="v-lg v-lg-in"></i>รายรับจริง</span><span><i class="v-lg v-lg-out"></i>รายจ่าย</span><span><i class="v-lg v-lg-save"></i>ออม</span></div>${svg}
+  <div class="v-trend-row v-trend-head"><span></span><span>รับจริง</span><span>จ่าย</span><span>ออม</span></div>${list}
+  <div class="v-hint">รายรับจริง = ไม่รวมเงินที่คนอื่นคืนค่ายืม (รวม ${f(repTotal)} ตามรายการ "เงินคืนจากการยืม" ซึ่งเป็นเงินเดิมที่ให้ยืมไป ไม่ใช่รายได้ใหม่)</div>`;
 }
 
 (function(){
@@ -4170,12 +4034,12 @@ document.addEventListener("click",async e=>{
 },true);
 renderTpl();
 const _sft=setFormType;setFormType=function(){const r=_sft.apply(this,arguments);renderTpl();return r;};
-/* ===== เป้าหมายเก็บเงิน ===== */
+/* ===== เป้าหมายเก็บเงิน (ระบบเดียวของแอป — AI อ่านจากที่นี่ด้วย) ===== */
 function renderGoalsBox(){
-  const card=document.getElementById("financialBrainCard");if(!card)return;
-  let box=document.getElementById("goalsBox");
-  if(!box){box=document.createElement("div");box.id="goalsBox";box.style.cssText="margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2a2a2e)";card.appendChild(box);
-    box.addEventListener("click",async ev=>{
+  const card=document.getElementById("goalsCard");if(!card)return;
+  if(!card.dataset.bound){
+    card.dataset.bound="1";
+    card.addEventListener("click",async ev=>{
       const g=jget(GK);
       if(ev.target.closest("#goalAdd")){
         const gv=await vaultetForm({title:"เพิ่มเป้าหมายเก็บเงิน",okText:"เพิ่ม",fields:[
@@ -4185,23 +4049,23 @@ function renderGoalsBox(){
           {key:"dl",label:"วันที่อยากได้ครบ (ไม่บังคับ)",type:"date"}
         ]});
         if(!gv)return;
-        const name=gv.name,target=gv.target,saved=gv.saved||0,dl=gv.dl||"";
-        g.push({id:Date.now().toString(36),name,target,saved,deadline:dl});jput(GK,g);renderGoalsBox();return;}
+        g.push({id:Date.now().toString(36),name:gv.name,target:gv.target,saved:gv.saved||0,deadline:gv.dl||""});jput(GK,g);renderGoalsBox();return;}
       const add=ev.target.closest("[data-gadd]"),del=ev.target.closest("[data-gdel]");
       if(add){const x=g.find(y=>y.id===add.dataset.gadd);if(!x)return;
         const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:"ใส่ค่าติดลบถ้าจะเอาเงินออก"}]});
         const v=gv?gv.v:0;
         if(!v)return;x.saved=Math.max(0,(x.saved||0)+v);jput(GK,g);renderGoalsBox();
       }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(x&&(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`, true))){jput(GK,g.filter(y=>y.id!==x.id));renderGoalsBox();}}
-    });}
+    });
+  }
   const g=jget(GK),today=new Date();today.setHours(0,0,0,0);
   const items=g.map(x=>{
     const left=Math.max(0,x.target-(x.saved||0)),pct=Math.min(100,Math.round((x.saved||0)/x.target*100));
-    let info=left===0?"🎉 ครบเป้าแล้ว!":"ขาดอีก ฿"+num(left);
+    let info=left===0?"ครบเป้าแล้ว":"ขาดอีก ฿"+num(left);
     if(left>0&&x.deadline){const days=Math.ceil((new Date(x.deadline+"T00:00:00")-today)/86400000);
       info+=days<=0?" · เลยกำหนดแล้ว":` · เหลือ ${days} วัน ต้องเก็บวันละ ฿${num(left/days)}`+(days>=30?` (เดือนละ ฿${num(left/(days/30))})`:"");}
-    return `<div style="padding:10px 0;border-top:1px solid #1d1d21"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${esc2(x.name)}</b><span><button type="button" data-gadd="${x.id}" class="quick-amount-btn">＋เงิน</button> <button type="button" data-gdel="${x.id}" style="background:none;border:0;color:var(--faint)">🗑</button></span></div><div style="height:8px;border-radius:6px;background:#26262b;margin:8px 0 4px"><div style="height:8px;border-radius:6px;width:${pct}%;background:#52b788"></div></div><div style="font-size:12px;color:var(--faint)">฿${num(x.saved||0)} / ฿${num(x.target)} (${pct}%) · ${esc2(info)}</div></div>`;}).join("");
-  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">🎯 เป้าหมายเก็บเงิน</div><button type="button" id="goalAdd" class="quick-amount-btn">+ เพิ่ม</button></div>${items||'<div style="font-size:12px;color:var(--faint);margin-top:8px">ยังไม่มีเป้าหมาย กด + เพิ่ม ได้เลย</div>'}<div style="font-size:11px;color:var(--faint);margin-top:8px">ยอดในเป้าหมายจดเองด้วยปุ่ม ＋เงิน ไม่ได้ผูกกับยอดบัญชี</div>`;
+    return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${esc2(x.name)}</span><span class="v-brow-amt">฿${num(x.saved||0)}<small> / ฿${num(x.target)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${left===0?"var(--v-accent)":"var(--v-save)"}"></i></div><div class="v-brow-meta"><span>${pct}% · ${esc2(info)}</span><span class="v-goal-actions"><button type="button" class="v-link" data-gadd="${x.id}">+ เงิน</button><button type="button" class="v-link v-link-muted" data-gdel="${x.id}" aria-label="ลบเป้าหมาย">ลบ</button></span></div></div>`;}).join("");
+  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">เป้าหมายเก็บเงิน</h2><button type="button" id="goalAdd" class="v-link">+ เพิ่ม</button></div>${items||'<div class="v-card-sub">ยังไม่มีเป้าหมาย กด "+ เพิ่ม" เพื่อตั้งเป้าแรก (เช่น ซื้อโน้ตบุ๊ก)</div>'}<div class="v-hint">ยอดที่เก็บแล้วจดเองด้วยปุ่ม "+ เงิน" ไม่ได้ผูกกับยอดบัญชี · AI เห็นเป้าหมายเหล่านี้ด้วย</div>`;
 }
 const _rt=renderTrendCard;renderTrendCard=function(){_rt();renderGoalsBox();};
 })();
@@ -4466,6 +4330,22 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     return {value:r.rows.reduce((q,x)=>q+(x.valueTHB!==null?x.valueTHB:x.cost),0),cost:r.total.costAll};
   };
   function realized(){ return getSells().reduce((q,x)=>q+(Number(x.proceeds)||0)-(Number(x.cost)||0),0); }
+  // ข้อมูลพอร์ตแบบย่อสำหรับส่งให้ AI (ไม่มีคีย์/ข้อมูลลับ) — ว่างถ้ายังไม่มีหุ้น
+  window.vaultetPortfolioForAI=function(){
+    const c=readCache(), fx=c.fx?c.fx.rate:null, r=pfComputeHoldings(lotsByTicker(),c.quotes,fx);
+    const un=untagged();
+    if(!r.rows.length && !un.count) return null;
+    const rd=(n,d)=>{ if(n===null||n===undefined||!Number.isFinite(n)) return null; const k=Math.pow(10,d===undefined?2:d); return Math.round(n*k)/k; };
+    return {
+      note:'priceUSD = ราคาต่อหุ้นเป็นดอลลาร์; costTHB/valueTHB/plTHB เป็นบาท; ต้นทุนมาจากรายการออม/ลงทุนที่ระบุหุ้นและจำนวนหุ้น รวมยอดยกมา; plPct เป็นเปอร์เซ็นต์',
+      fxUSDTHB:rd(fx,2),
+      pricesUpdatedAt:c.fetchedAt?new Date(c.fetchedAt).toISOString().slice(0,16):null,
+      holdings:r.rows.map(x=>({ticker:x.ticker,shares:rd(x.shares,6),costTHB:rd(x.cost,0),avgCostTHB:rd(x.avgCost,2),priceUSD:rd(x.price,2),valueTHB:rd(x.valueTHB,0),plTHB:rd(x.plTHB,0),plPct:rd(x.plPct,1),allocationPct:rd(x.alloc,1)})),
+      totals:{valueTHB:rd(r.total.value,0),costTHB:rd(r.total.costAll,0),plTHB:rd(r.total.pl,0),plPct:rd(r.total.plPct,1)},
+      realizedPLTHB:rd(realized(),0),
+      untaggedInvestments:un.count?{count:un.count,totalTHB:rd(un.total,0)}:null
+    };
+  };
   function untagged(){
     const list=entries.filter(e=>e.type==='saving'&&e.category===INVEST_CAT&&!(e.ticker&&Number(e.shares)>0));
     return {count:list.length,total:list.reduce((s,e)=>s+(Number(e.amount)||0),0)};

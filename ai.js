@@ -605,6 +605,33 @@ function buildBudgetSummaryBothSides(){
   };
 }
 
+// เป้าหมายเก็บเงิน (หน้าแผน) สำหรับส่งให้ AI — เดิมโค้ดอ่านตัวแปร goals ที่ไม่มีอยู่จริง เลยส่งรายการว่างเสมอ
+function getGoalsForAI(){
+  try{
+    const g=JSON.parse(localStorage.getItem("vaultet_goals_v1")||"[]");
+    if(!Array.isArray(g)) return [];
+    const today=new Date(); today.setHours(0,0,0,0);
+    return g.filter(x=>x&&x.name).map(x=>{
+      const target=Number(x.target)||0, saved=Number(x.saved)||0, remaining=Math.max(0,target-saved);
+      const o={ name:String(x.name), targetAmount:target, saved, remaining, progressPct:target>0?Math.min(100,Math.round(saved/target*100)):null };
+      if(x.deadline){ o.deadline=x.deadline; const d=Math.ceil((new Date(x.deadline+"T00:00:00")-today)/86400000); if(isFinite(d)) o.daysLeft=d; }
+      return o;
+    });
+  }catch(e){ return []; }
+}
+// สรุปรายเดือนย้อนหลัง 6 เดือนที่ครบแล้ว แยกหมวดรายจ่าย (ย่อ: 8 หมวดแรกต่อเดือน) — ให้ AI ตอบเรื่องแนวโน้มได้โดยไม่ต้องส่งรายการดิบ
+function buildMonthlyHistory(n){
+  const out=[], now=new Date();
+  for(let i=1;i<=n;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1), b=monthBoundsISO(d.getFullYear(),d.getMonth());
+    const a=computePeriodAnalysisForRange(b.start,b.end,null);
+    if(!a.count) continue;
+    const cats={}; (a.breakdown||[]).slice(0,8).forEach(r=>{ cats[r.cat]=r.amount; });
+    out.push({ month:b.start.slice(0,7), income:a.income, expense:a.expense, saving:a.saving, netCashFlow:a.netCashFlow, expenseByCategory:cats });
+  }
+  return out;
+}
+
 function buildFinancialSnapshot(){
   const today = todayISO();
   const now = new Date();
@@ -703,7 +730,9 @@ function buildFinancialSnapshot(){
     budgetSummary: budgetBoth,
     emergencyFund: computeEmergencyFund(),
     recurringExpenses: { monthlyEstimated:computeMonthlyRecurringCost(), upcoming:getUpcomingSummary() },
-    goals: typeof goals!=='undefined' ? goals : [],
+    goals: getGoalsForAI(),
+    portfolio: (window.vaultetPortfolioForAI && window.vaultetPortfolioForAI()) || null,
+    monthlyHistory: buildMonthlyHistory(6),
   };
   // Round 12: normalized intelligence context. Keep calculations deterministic and local;
   // the LLM receives this structured result instead of reconstructing finance from raw entries.
@@ -951,8 +980,9 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
     "โครงสร้างตามธรรมชาติ: คำตอบตรงๆ → เหตุผลสั้นๆ ถ้าจำเป็น → สิ่งที่ควรทำต่อถ้ามี; ไม่จำเป็นต้องมีครบทุกส่วนทุกครั้ง",
     "ถ้าการเงินปกติ ให้บอกสั้นๆ ว่าปกติ/ยังไม่มีอะไรน่ากังวล และอย่าสร้างปัญหาเพื่อให้ดูฉลาด",
     "ใช้ **ข้อความ** ล้อมรอบตัวเลขเงินหรือประเด็นสำคัญที่ต้องการเน้นให้ผู้ใช้เห็นชัด",
+    "Snapshot มีข้อมูลเหล่านี้ให้ใช้ตอบได้ตรงๆ: portfolio (พอร์ตหุ้น: holdings, ต้นทุน, ราคา, กำไรขาดทุน, สัดส่วน), goals (เป้าหมายเก็บเงิน พร้อม saved/remaining/daysLeft), monthlyHistory (สรุปรายเดือนย้อนหลัง 6 เดือนแยกหมวด) นอกเหนือจากยอดเงิน งบ หนี้ เงินสำรอง และรายการล่าสุด 40 รายการ",
     "ถ้าคำถามของผู้ใช้ต้องการข้อมูลที่ไม่มีอยู่ใน Snapshot ให้บอกตรงๆ ว่าไม่มีข้อมูลส่วนนั้น อย่าสร้างตัวเลขขึ้นมาเอง",
-    `เกณฑ์สุขภาพการเงินของเดือนนี้ในระบบ (หน้า Financial Brain ใช้ค่านี้): ออม ≥${getBrainTargets().savingsRatePct}% , จำเป็น ≤${getBrainTargets().essentialMaxPct}% , ไม่จำเป็น ≤${getBrainTargets().discretionaryMaxPct}% ของรายรับ`,
+    `เกณฑ์สุขภาพการเงินของเดือนนี้ในระบบ (ระบบใช้ค่านี้ประเมินสุขภาพการเงิน): ออม ≥${getBrainTargets().savingsRatePct}% , จำเป็น ≤${getBrainTargets().essentialMaxPct}% , ไม่จำเป็น ≤${getBrainTargets().discretionaryMaxPct}% ของรายรับ`,
     "ถ้า queryContext.mode=income_allocation (ผู้ใช้สมมติรายรับ) ใช้ queryContext.plan เป็นฐาน แต่ปรับสัดส่วนให้เหมาะกับสถานการณ์ได้ (เช่น เงินสำรองยังไม่ถึงเป้า → ออมมากขึ้น) โดยต้องบอกเปอร์เซ็นต์ที่ใช้ชัดเจน และต้องเสนอ action set_brain_targets ให้หน้า Brain ตรงกับแผนที่เสนอ",
     `การสั่งแก้ระบบ: ถ้าผู้ใช้ขอให้ตั้ง/ปรับ/ลบงบประมาณหรือเกณฑ์ Brain ให้ **เสนอ** การเปลี่ยนแปลงด้วยการเพิ่มบรรทัดท้ายคำตอบ รูปแบบ JSON บรรทัดเดียว ต่อ 1 action: @@ACTION@@ {"type":"set_budget","month":"YYYY-MM","name":"ชื่อกลุ่ม(ไม่บังคับ)","categories":["หมวด1","หมวด2"],"amount":3720} | {"type":"delete_budget","month":"YYYY-MM","categories":[...]} | {"type":"set_brain_targets","month":"YYYY-MM","savingsRatePct":20,"essentialMaxPct":50,"discretionaryMaxPct":30} | {"type":"reset_brain_targets","month":"YYYY-MM"} | {"type":"add_entry","entryType":"income|expense","category":"หมวด","amount":123,"date":"YYYY-MM-DD","note":"","account":"ชื่อบัญชี(ไม่บังคับ)"} | {"type":"edit_entry","id":"รหัสรายการ","amount":123,"category":"หมวด","date":"YYYY-MM-DD","note":""(ใส่เฉพาะช่องที่จะแก้)} | {"type":"delete_entry","id":"รหัสรายการ"} | {"type":"add_recurring","name":"ชื่อ","amount":199,"category":"หมวดรายจ่าย","frequency":"weekly|monthly|bimonthly|quarterly|yearly","nextDueDate":"YYYY-MM-DD"} | {"type":"set_emergency_target","targetMonths":3}. add_entry ใช้เมื่อผู้ใช้บอกชัดว่ามีรายการเกิดขึ้นจริงให้บันทึก (ไม่ใช่การสมมติ) และ categories ของรายรับ: ${JSON.stringify(CATS_BY_TYPE.income||[])}; ห้ามเดาจำนวนเงินหรือวันที่ที่ผู้ใช้ไม่ได้บอก ถ้าไม่ชัดให้ถามก่อน`,
     `- เดือนปัจจุบัน ${monthKey(todayISO())}; categories ต้องเป็นชื่อหมวดรายจ่ายที่มีจริงเท่านั้น: ${JSON.stringify(CATS_BY_TYPE.expense||[])}; 1 หมวดอยู่ได้แค่งบเดียวต่อเดือน; ออม+จำเป็น+ไม่จำเป็นรวมกันต้องไม่เกิน 100%`,
@@ -3146,7 +3176,6 @@ document.getElementById("aiConfirmSubmitBtn").addEventListener("click", () => {
 // ===== คำสั่งบูตที่ย้ายมาจาก app.js (ต้องรันหลังประกาศทุกอย่างครบ) =====
 refreshApiKeyStatus();
 refreshProactiveCard();
-try{renderFinancialBrainCard();}catch(e){console.error(e);}
 try{ if(typeof renderVaultetNotifications==="function") renderVaultetNotifications(); }catch(_){}
 try{ initWeeklyAudit(); }catch(e){ console.error(e); }
 
