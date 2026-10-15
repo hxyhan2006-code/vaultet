@@ -141,6 +141,16 @@ ok('caps saved from the UI', await pg.evaluate(()=>{const c=vaultetOR.caps();ret
 await pg.evaluate(async()=>{await vaultetOR.refreshUsage(true);}); await pg.waitForTimeout(400);
 ok('usage rows show real usage against the caps', (await pg.textContent('#orUsage')).includes('$0.43 / $5.00') && (await pg.textContent('#orUsage')).includes('$2.51 / $20.00'));
 await pg.screenshot({path:shots+'or-card.png'});
+// ค่า AI โชว์บนหน้าตั้งค่าเลย ไม่ต้องกดเข้า OpenRouter
+await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'))); await pg.waitForTimeout(300);
+await pg.evaluate(()=>vaultetGo('home')); await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(700);
+ok('settings page shows the AI cost directly (visible without opening anything)', await pg.isVisible('#vSetAiCost'));
+const costTxt=await pg.textContent('#vSetAiCost');
+ok('...today $0.43 / $5.00 and month $2.51 / $20.00 ('+costTxt.replace(/\s+/g,' ').trim()+')', costTxt.includes('$0.43 / $5.00') && costTxt.includes('$2.51 / $20.00'));
+await pg.screenshot({path:shots+'or-settings-cost.png'});
+await pg.evaluate(()=>{vaultetOR.setKey('');}); await pg.evaluate(()=>vaultetGo('home')); await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(500);
+ok('without an OpenRouter key the cost block is hidden', !(await pg.isVisible('#vSetAiCost')));
+
 ok('no native browser dialogs ('+native.msgs.join(' | ')+')', native.n===0);
 console.log(errs.join('\n')||'no js errors');
 await b.close();srv.close()})();

@@ -775,3 +775,10 @@ html body .overlay .v-loan-rep .icon-btn { width: 32px; height: 32px; }
 .v-or-name { display: block; font-size: 15px; font-weight: 500; }
 .v-or-id { display: block; font-size: 12px; color: var(--v-muted); overflow-wrap: anywhere; }
 .v-or-price { display: block; font-size: 12px; color: var(--v-in); margin-top: 2px; }
+
+/* AI cost shown on the Settings page */
+.v-set-cost { background: none; }
+.v-set-cost .v-or-urow { padding: 14px 16px; border-top: 0; border-bottom: 1px solid var(--v-line); }
+.v-set-cost .v-or-urow small { color: var(--v-muted); font-size: 12px; margin-left: 4px; }
+.v-set-cost-note { color: var(--v-muted); font-size: 13px; }
+.v-set-cost[hidden] { display: none; }

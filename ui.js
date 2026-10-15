@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds30";
+  const UI_VERSION = "ds31";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -212,6 +212,8 @@
     const drive = rowBtn("vSetDrive", "Google Drive", "", () => openSettingsSheet("drive"));
     const notif = rowBtn("vSetNotif", "การแจ้งเตือน", "ประวัติและเลือกว่าจะให้เตือนเรื่องอะไร", () => { if(typeof openVaultetNotificationCenter === "function") openVaultetNotificationCenter(); });
     const aikey = rowBtn("vSetAiKey", "Gemini API Key", "", () => openSettingsSheet("aikey"));
+    // ค่า AI วันนี้/เดือนนี้ แสดงบนหน้านี้เลย ไม่ต้องกดเข้าไปดู (เฉพาะดูอย่างเดียว)
+    const costBox = document.createElement("div"); costBox.id = "vSetAiCost"; costBox.className = "v-set-cost"; costBox.hidden = true;
     const orRow = rowBtn("vSetOR", "OpenRouter · AI หลายค่าย", "", () => openSettingsSheet("or"));
     const stock = rowBtn("vSetStock", "ราคาหุ้น (Twelve Data)", "", () => openSettingsSheet("stock"));
 
@@ -229,7 +231,7 @@
     const groups = [
       group("สำรองข้อมูล", backupNow, exp, imp, drive),
       group("การแจ้งเตือน", notif),
-      group("AI", aikey, orRow),
+      group("AI", costBox, aikey, orRow),
       lockCard ? group("ความปลอดภัย", lockCard) : null,
       group("การแสดงผลและข้อมูล", ...[decRow, stock].filter(Boolean))
     ].filter(Boolean);
@@ -238,6 +240,20 @@
     refreshSettings();
     return true;
   }
+  function renderAiCost(){
+    const box = document.getElementById("vSetAiCost"), R = window.vaultetOR;
+    if(!box) return;
+    if(!R || !R.hasKey()){ box.hidden = true; return; }
+    const u = R.usageCache(), cap = R.caps(), fx = R.fxRate();
+    const usd = n => "$" + (Number(n) || 0).toFixed(2);
+    const pill = (v, c) => '<b class="v-or-pill' + (c > 0 && v >= c ? " is-over" : "") + '">' + usd(v) + (c > 0 ? " / " + usd(c) : "") + "</b>";
+    box.hidden = false;
+    if(!u || u.error){ box.innerHTML = '<div class="v-or-urow"><span>ค่า AI</span><span class="v-set-cost-note">' + (u && u.error ? "ดึงยอดไม่ได้ (เช็กคีย์)" : "กำลังดึงยอดใช้…") + "</span></div>"; return; }
+    box.innerHTML = '<div class="v-or-urow"><span>ค่า AI วันนี้</span>' + pill(u.day, cap.day) + '</div>'
+      + '<div class="v-or-urow"><span>ค่า AI เดือนนี้' + (fx ? '<small> ≈ ' + Math.round(u.month * fx).toLocaleString("en-US") + " บาท</small>" : "") + "</span>" + pill(u.month, cap.month) + "</div>";
+  }
+  document.addEventListener("vaultet-or-usage", renderAiCost);
+  new MutationObserver(() => { if(document.body.classList.contains("ux-more-active")){ renderAiCost(); if(window.vaultetOR && window.vaultetOR.hasKey()) window.vaultetOR.refreshUsage(false); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   function refreshSettings(){
     const set = (id, text, side) => { const el = document.getElementById(id); if(!el) return; const s = el.querySelector(".v-set-sub"); if(s && text != null) s.textContent = text; const sd = el.querySelector(".v-set-side"); if(sd && side != null) sd.innerHTML = side; };
     const n = unreadCount();
@@ -250,6 +266,7 @@
     const last = document.getElementById("gdriveLastSyncStatus")?.textContent || "";
     set("vSetDrive", last && !/ยังไม่เคย/.test(last) ? conn + " · สำรองขึ้น Drive ล่าสุด " + last : conn);
     set("vSetStock", document.getElementById("pfKeyStatus2")?.textContent || "");
+    renderAiCost();
     set("vSetAiKey", document.getElementById("apiKeyStatus")?.textContent || "");
     set("vSetOR", window.vaultetOR && window.vaultetOR.statusText ? window.vaultetOR.statusText() : "");
   }
