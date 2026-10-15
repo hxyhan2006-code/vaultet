@@ -225,3 +225,22 @@ window.vaultetChoice = function(opts){
     });
   })();
 };
+
+// ---------- ไอคอนแทนอีโมจิ (เส้นเดียวกับไอคอนอื่นในแอป) ----------
+(function(){
+  const P = {
+    alert:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/>',
+    warn:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.01"/>',
+    info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/>',
+    check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
+    cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    bell:'<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/>',
+    gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+    chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>'
+  };
+  const MAP = { "🚨":"alert","⚠️":"warn","⚠":"warn","💡":"info","✅":"check","🎉":"check","🗓":"cal","📅":"cal","🔔":"bell","⚙️":"gear","⚙":"gear","📊":"chart" };
+  window.vaultetIcon = function(e){
+    const k = P[MAP[String(e||"").trim()] || "bell"];
+    return '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true">' + k + '</svg>';
+  };
+})();

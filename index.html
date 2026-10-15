@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds15">
-<link rel="stylesheet" href="ds.css?v=ds15">
+<link rel="stylesheet" href="style.css?v=ds17">
+<link rel="stylesheet" href="ds.css?v=ds17">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -94,7 +94,7 @@
     <div class="networth-card" id="aiProactiveCard" style="display:none; padding:14px 40px 14px 16px; border-width:1.5px;">
       <button class="icon-btn ai-icon-btn" id="aiProactiveRefreshBtn" type="button" aria-label="รีเฟรชการวิเคราะห์" title="รีเฟรชการวิเคราะห์" style="position:absolute; top:8px; right:8px;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.7-4L4 9"/><path d="M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14.7 4L20 15"/><path d="M20 19v-4h-4"/></svg></button>
       <div style="display:flex; gap:8px; align-items:flex-start;">
-        <span id="aiProactiveIcon" style="font-size:16px; line-height:1.5;">💡</span>
+        <span id="aiProactiveIcon" style="display:inline-flex;line-height:1.5;"></span>
         <div id="aiProactiveBody" style="font-size:13px; line-height:1.55; color:var(--ink); flex:1; min-width:0;"></div>
       </div>
     </div>
@@ -710,7 +710,7 @@
 
       <section class="notification-settings-section" aria-labelledby="notificationSettingsTitle">
         <button type="button" class="notification-settings-toggle" id="notificationSettingsToggle" onclick="toggleNotificationSettings()" aria-expanded="false" aria-controls="notificationSettingsPanel">
-          <span class="notification-settings-label"><span class="notification-settings-icon">⚙️</span><span><strong id="notificationSettingsTitle">การตั้งค่า</strong><small>ปรับประเภทการแจ้งเตือน 8 ตัวเลือก</small></span></span>
+          <span class="notification-settings-label"><span class="notification-settings-icon"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span><span><strong id="notificationSettingsTitle">การตั้งค่า</strong><small>ปรับประเภทการแจ้งเตือน 8 ตัวเลือก</small></span></span>
           <span class="notification-settings-chevron" aria-hidden="true">⌄</span>
         </button>
         <div class="notification-settings-panel" id="notificationSettingsPanel" hidden>
@@ -732,8 +732,6 @@
           </div>
         </div>
       </section>
-
-      <div class="notification-privacy">ความเป็นส่วนตัว: notification payload ไม่ควรมี API Key หรือข้อมูลการเงินละเอียดเกินจำเป็น หากเปิด Web Push ในอนาคต ให้ส่งเพียง notification ID/ชนิด แล้วดึงรายละเอียดจากบัญชีที่ยืนยันตัวตน</div>
     </div>
   </div>
 
@@ -743,9 +741,9 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds15"></script>
-<script src="app.js?v=ds15"></script>
-<script src="ai.js?v=ds15"></script>
-<script src="ui.js?v=ds15"></script>
+<script src="dialog.js?v=ds17"></script>
+<script src="app.js?v=ds17"></script>
+<script src="ai.js?v=ds17"></script>
+<script src="ui.js?v=ds17"></script>
 </body>
 </html>

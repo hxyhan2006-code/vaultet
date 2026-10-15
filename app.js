@@ -1439,7 +1439,7 @@ function txListHtml(list){
     }else{
       const tone = e.type==="income" ? "in" : e.type==="saving" ? "save" : "out";
       const sign = e.type==="income" ? "+" : e.type==="saving" ? "" : "−";
-      const glyph = e.recurringId ? "🔁" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
+      const glyph = e.recurringId ? "↻" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
       const accName = accounts.find(a=>a.id===e.accountId)?.name || "";
       const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ") || "&nbsp;";
       rows.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
@@ -1996,9 +1996,9 @@ function promptRestore(data,label){
     <div style="font-size:12px;color:var(--faint,#8E8E93);margin-bottom:8px;">สำรองเมื่อ ${escapeHtml(when)}</div>
     <div style="font-size:12.5px;margin-bottom:10px;">${vtxt}</div>
     <div style="font-size:12.5px;border:1px solid var(--line,#2a2a2e);border-radius:12px;padding:8px 10px;"><div style="display:flex;justify-content:space-between;color:var(--faint,#8E8E93);"><span></span><span>ในไฟล์ / ตอนนี้</span></div>${rows.map(r=>`<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>${r[0]}</span><span class="mono">${r[1]} / ${r[2]}</span></div>`).join("")}</div>
-    <button type="button" id="rsReplace" ${canReplace?"":"disabled"} style="${bs}border:none;background:${canReplace?"var(--accent1,#1DB954)":"#333"};color:${canReplace?"#0A0A0C":"#777"};">♻️ แทนที่ทั้งหมด (ให้ตรงไฟล์เป๊ะ)</button>
+    <button type="button" id="rsReplace" ${canReplace?"":"disabled"} style="${bs}border:none;background:${canReplace?"var(--accent1,#1DB954)":"#333"};color:${canReplace?"#0A0A0C":"#777"};">แทนที่ทั้งหมด (ให้ตรงไฟล์เป๊ะ)</button>
     <div style="font-size:11px;color:var(--faint,#8E8E93);margin:4px 2px 0;">${canReplace?"ข้อมูลปัจจุบันจะถูกดาวน์โหลดเก็บไว้เป็นไฟล์ก่อนเสมอ แล้วแอปจะโหลดใหม่":"ใช้ไม่ได้: ไฟล์ไม่มีข้อมูลสถานะแอป หรือรหัสตรวจไม่ตรง"}</div>
-    <button type="button" id="rsMerge" style="${bs}border:1px solid var(--line,#2a2a2e);background:var(--surface-2,#1c1c1f);color:var(--ink,#F5F5F7);">➕ รวมเข้ากับข้อมูลเดิม (ไม่ลบอะไร)</button>
+    <button type="button" id="rsMerge" style="${bs}border:1px solid var(--line,#2a2a2e);background:var(--surface-2,#1c1c1f);color:var(--ink,#F5F5F7);">รวมเข้ากับข้อมูลเดิม (ไม่ลบอะไร)</button>
     <button type="button" id="rsCancel" style="${bs}border:none;background:transparent;color:var(--faint,#8E8E93);">ยกเลิก</button></div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
@@ -3233,7 +3233,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     <button class="ux-back" id="uxBackBtn" type="button" aria-label="ย้อนกลับ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="ux-brand"><div class="ux-brand-name">Vaultet</div><div class="ux-brand-page" id="uxPageName">ภาพรวม</div></div>
     <select class="ux-month" id="uxMonthSelect" aria-label="เลือกเดือน"></select>
-    <button class="ux-bell" id="uxBellBtn" aria-label="การแจ้งเตือน" aria-expanded="false">🔔<i class="ux-bell-dot" id="uxBellDot" style="display:none"></i></button>
+    <button class="ux-bell" id="uxBellBtn" aria-label="การแจ้งเตือน" aria-expanded="false">${vaultetIcon("🔔")}<i class="ux-bell-dot" id="uxBellDot" style="display:none"></i></button>
     <button class="ux-avatar" id="uxAvatarBtn" type="button" aria-label="ตั้งค่า"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-7 8-7s8 2.600 8 7"/></svg></button>
   </div>`;
   page.insertBefore(shell,page.firstChild);
@@ -3274,7 +3274,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     aiPanel.classList.add('ux-chat-panel');
     const note=document.createElement('div');
     note.className='ux-chat-mode-note';
-    note.textContent='💬 คุย ถาม วิเคราะห์ และขอคำแนะนำเรื่องการเงินได้โดยตรง';
+    note.textContent='คุย ถาม วิเคราะห์ และขอคำแนะนำเรื่องการเงินได้โดยตรง';
     const body=aiPanel.querySelector('#aiAnalystBody');
     if(body) aiPanel.insertBefore(note,body);
     chatV.append(aiPanel);
@@ -3599,7 +3599,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     refreshTrigger(); if(typeof refreshAIProfileStatus==='function')refreshAIProfileStatus(); if(typeof refreshProactiveCard==='function')refreshProactiveCard(true); document.getElementById('vaultetProfileOverlay')?.classList.remove('open'); if(typeof showToast==='function')showToast('บันทึกโปรไฟล์แล้ว');
   }
   function build(){
-    const ov=document.createElement('div');ov.id='vaultetProfileOverlay';ov.className='profile-overlay';ov.innerHTML=`<div class="profile-sheet" role="dialog" aria-modal="true" aria-label="โปรไฟล์ของฉัน"><div class="profile-head"><div class="profile-big-avatar">👤</div><div><h2>โปรไฟล์ของฉัน</h2><p>ข้อมูลนี้ช่วยให้ Vaultet และ AI เข้าใจคุณมากขึ้น</p></div><button class="icon-btn profile-close" id="vpClose" aria-label="ปิด">✕</button></div><div class="profile-grid">
+    const ov=document.createElement('div');ov.id='vaultetProfileOverlay';ov.className='profile-overlay';ov.innerHTML=`<div class="profile-sheet" role="dialog" aria-modal="true" aria-label="โปรไฟล์ของฉัน"><div class="profile-head"><div class="profile-big-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div><h2>โปรไฟล์ของฉัน</h2><p>ข้อมูลนี้ช่วยให้ Vaultet และ AI เข้าใจคุณมากขึ้น</p></div><button class="icon-btn profile-close" id="vpClose" aria-label="ปิด">✕</button></div><div class="profile-grid">
       <section class="profile-card"><h3>ตัวตน</h3><div class="profile-fields two"><label><span class="profile-label">ชื่อ</span><input class="profile-input" id="vpFirst" placeholder="ชื่อจริง"></label><label><span class="profile-label">นามสกุล</span><input class="profile-input" id="vpLast" placeholder="นามสกุล"></label><label><span class="profile-label">ชื่อที่อยากให้เรียก</span><input class="profile-input" id="vpNick" placeholder="เช่น กอล์ฟ"></label><label><span class="profile-label">อายุ</span><input class="profile-input" id="vpAge" type="number" min="0" max="120" inputmode="numeric" placeholder="ปี"></label></div></section>
       <section class="profile-card"><h3>ชีวิตตอนนี้</h3><div class="profile-checks"><label class="profile-check"><input type="checkbox" data-vp-status value="นักเรียน">นักเรียน</label><label class="profile-check"><input type="checkbox" data-vp-status value="นักศึกษา">นักศึกษา</label><label class="profile-check"><input type="checkbox" data-vp-status value="ทำงาน">ทำงาน</label><label class="profile-check"><input type="checkbox" data-vp-status value="Freelance">Freelance</label><label class="profile-check"><input type="checkbox" data-vp-status value="ธุรกิจส่วนตัว">ธุรกิจส่วนตัว</label></div><div class="profile-fields two" style="margin-top:9px"><label><span class="profile-label">อาชีพ / งาน</span><input class="profile-input" id="vpOccupation" placeholder="เช่น Developer"></label><label><span class="profile-label">รูปแบบงาน</span><input class="profile-input" id="vpWorkType" placeholder="Full-time / Part-time"></label><label><span class="profile-label">การศึกษา</span><input class="profile-input" id="vpEducation" placeholder="มหาวิทยาลัย / คณะ"></label><label><span class="profile-label">พื้นที่ที่อยู่ (ไม่บังคับ)</span><input class="profile-input" id="vpLocation" placeholder="จังหวัด / ประเทศ"></label></div></section>
       <section class="profile-card"><h3>การเงิน</h3><div class="profile-fields two"><label><span class="profile-label">รายได้ประมาณต่อเดือน</span><input class="profile-input" id="vpIncome" type="number" min="0" inputmode="decimal" placeholder="บาท"></label><label><span class="profile-label">เงินสำรองขั้นต่ำ</span><input class="profile-input" id="vpReserve" type="number" min="0" inputmode="decimal" placeholder="บาท"></label></div><p class="hint" style="margin-top:12px">เป้าหมายเก็บเงินอยู่ที่แท็บ "แผน" (มียอดที่เก็บแล้วและวันที่ต้องการ) AI เห็นเป้าหมายเหล่านั้นด้วย</p><button type="button" class="profile-save" id="vpGoalsLink" style="margin-top:9px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">ไปที่เป้าหมายเก็บเงิน</button><p class="hint" style="margin-top:9px">ข้อมูลบัญชีและธุรกรรมจริงยังอยู่ในระบบการเงินเดิม และ AI ใช้ประกอบคำแนะนำได้ตามสิทธิ์ที่ตั้งไว้</p></section>
@@ -3610,7 +3610,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpGoalsLink').onclick=()=>{ov.classList.remove('open');if(window.vaultetGo)window.vaultetGo('plan');setTimeout(()=>document.getElementById('goalsCard')?.scrollIntoView({block:'start'}),80);};
   }
   window.vaultetOpenProfile=open;
-  function init(){build();const top=document.querySelector('.ux-topbar');if(top){const b=document.createElement('button');b.className='ux-profile-trigger';b.id='uxProfileTrigger';b.innerHTML='<div class="ux-profile-avatar">👤</div><div class="ux-profile-mini"><strong>โปรไฟล์ของฉัน</strong><span>ตั้งค่าข้อมูลส่วนตัว</span></div>';b.onclick=open;top.insertBefore(b,top.querySelector('.ux-month')||null);refreshTrigger();}}
+  function init(){build();const top=document.querySelector('.ux-topbar');if(top){const b=document.createElement('button');b.className='ux-profile-trigger';b.id='uxProfileTrigger';b.innerHTML='<div class="ux-profile-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div class="ux-profile-mini"><strong>โปรไฟล์ของฉัน</strong><span>ตั้งค่าข้อมูลส่วนตัว</span></div>';b.onclick=open;top.insertBefore(b,top.querySelector('.ux-month')||null);refreshTrigger();}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 
@@ -3631,7 +3631,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     if(!['plan','more'].includes(viewId)) return;
     const view=document.getElementById('ux-'+viewId); if(!view||view.querySelector('.ux-user-context')) return;
     const card=document.createElement('div'); card.className='ux-user-context';
-    card.innerHTML='<div class="ux-user-context-avatar">👤</div><div class="ux-user-context-main"><div class="ux-user-context-name"></div><div class="ux-user-context-meta"></div><div class="ux-user-context-goal"></div></div>';
+    card.innerHTML='<div class="ux-user-context-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div class="ux-user-context-main"><div class="ux-user-context-name"></div><div class="ux-user-context-meta"></div><div class="ux-user-context-goal"></div></div>';
     const title=view.querySelector('.ux-view-title');
     if(title) title.after(card); else view.prepend(card);
   }
@@ -3888,7 +3888,7 @@ const get=()=>{try{return JSON.parse(localStorage.getItem(K))}catch(e){return nu
 const put=v=>{try{localStorage.setItem(K,JSON.stringify(v))}catch(e){}};
 const ov=document.createElement("div");
 ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#0a0a0c;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;color:#fff";
-ov.innerHTML='<div style="font-size:42px">🔒</div><div style="font-size:18px;font-weight:700">Vaultet</div><input id="lockPin" type="password" inputmode="numeric" maxlength="6" placeholder="รหัส 6 หลัก" autocomplete="off" style="width:200px;text-align:center;font-size:24px;letter-spacing:8px;padding:10px;border-radius:12px;border:1px solid #333;background:#151518;color:#fff"><div id="lockMsg" style="color:#ef5350;min-height:18px;font-size:13px"></div><button id="lockForgot" style="background:none;border:0;color:#9aa;font-size:14px;text-decoration:underline">ลืมรหัส?</button>';
+ov.innerHTML='<div style="color:var(--v-muted)"><svg class="v-ic" style="width:42px;height:42px" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><div style="font-size:18px;font-weight:700">Vaultet</div><input id="lockPin" type="password" inputmode="numeric" maxlength="6" placeholder="รหัส 6 หลัก" autocomplete="off" style="width:200px;text-align:center;font-size:24px;letter-spacing:8px;padding:10px;border-radius:12px;border:1px solid #333;background:#151518;color:#fff"><div id="lockMsg" style="color:#ef5350;min-height:18px;font-size:13px"></div><button id="lockForgot" style="background:none;border:0;color:#9aa;font-size:14px;text-decoration:underline">ลืมรหัส?</button>';
 document.body.appendChild(ov);
 const pin=ov.querySelector("#lockPin"),msg=ov.querySelector("#lockMsg");
 const show=()=>{const c=get();if(!c||!c.on)return;ov.style.display="flex";pin.value="";msg.textContent="";setTimeout(()=>pin.focus(),50);};
@@ -4010,7 +4010,7 @@ const num=n=>Number(n||0).toLocaleString("en-US",{maximumFractionDigits:0});
 function renderTpl(){
   const row=document.getElementById("tplRow");if(!row)return;
   const t=jget(TK), mine=t.filter(x=>x.type===formType);
-  row.innerHTML=t.map((x,i)=>x.type!==formType?"":`<span class="v-chip-wrap"><button type="button" class="v-chip" data-use="${i}">⚡ ${esc2(x.name)} ฿${num(x.amount)}</button><button type="button" class="v-chip-x" data-del="${i}" aria-label="ลบเทมเพลต">×</button></span>`).join("")+`<button type="button" class="v-chip v-chip-add v-manage-only" id="tplSave">+ บันทึกเป็นเทมเพลต</button>`;
+  row.innerHTML=t.map((x,i)=>x.type!==formType?"":`<span class="v-chip-wrap"><button type="button" class="v-chip" data-use="${i}">${esc2(x.name)} ฿${num(x.amount)}</button><button type="button" class="v-chip-x" data-del="${i}" aria-label="ลบเทมเพลต">×</button></span>`).join("")+`<button type="button" class="v-chip v-chip-add v-manage-only" id="tplSave">+ บันทึกเป็นเทมเพลต</button>`;
   // ไม่มีเทมเพลตของประเภทนี้ → ซ่อนหัวข้อ (ปุ่มบันทึกเป็นเทมเพลตยังโผล่ในโหมดจัดการ)
   document.getElementById("tplHead").classList.toggle("v-has-none", mine.length===0);
 }
@@ -4176,11 +4176,11 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   window.vaultetRenderAdvisorPreview=function(list){
     items=(list||[]).slice(0,3);
     const target=document.getElementById('notificationPreviewList'); if(!target)return;
-    if(!items.length){target.innerHTML='<div class="notification-empty">ตอนนี้ไม่มีเรื่องสำคัญที่ต้องลงมือทำ 🎉</div>';return;}
+    if(!items.length){target.innerHTML='<div class="notification-empty">ตอนนี้ไม่มีเรื่องสำคัญที่ต้องลงมือทำ</div>';return;}
     target.innerHTML=items.map((it,i)=>{
       const h=human(it), acked=isAcked(it);
       const icon=acked?'✅':(it.severity==='critical'?'🚨':'⚠️');
-      return `<div class="notification-item ${(!acked&&it.severity==='critical')?'unread':''} ${acked?'acked':''}" data-adv-idx="${i}"><div class="notification-icon">${icon}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(h.title)}</div><div class="notification-item-body">${escapeHtml(h.summary)}</div></div><div class="adv-chevron">›</div></div>`;
+      return `<div class="notification-item ${(!acked&&it.severity==='critical')?'unread':''} ${acked?'acked':''}" data-adv-idx="${i}"><div class="notification-icon">${vaultetIcon(icon)}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(h.title)}</div><div class="notification-item-body">${escapeHtml(h.summary)}</div></div><div class="adv-chevron">›</div></div>`;
     }).join('');
   };
 
@@ -4583,7 +4583,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     if(lsGet(DIRTY_DISMISSED_KEY)===today) return;
     if(!isDirty()) return;
     bn.classList.add('show','first');
-    bn.innerHTML=`<span><b>☁️ มีข้อมูลที่ยังไม่ได้สำรองขึ้น Google Drive</b><small>กดสำรองเลย หน้าต่าง Google จะแวบขึ้นมาแป๊บเดียว</small></span>`
+    bn.innerHTML=`<span><b>มีข้อมูลที่ยังไม่ได้สำรองขึ้น Google Drive</b><small>กดสำรองเลย หน้าต่าง Google จะแวบขึ้นมาแป๊บเดียว</small></span>`
       +`<span style="display:flex;gap:6px;align-items:center"><button type="button" id="ddNow">สำรองเลย</button><button type="button" class="dismiss" id="ddX" aria-label="ปิด">✕</button></span>`;
   }
   bn.addEventListener('click',e=>{

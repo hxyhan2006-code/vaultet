@@ -71,7 +71,7 @@ function renderApiKeyList(){
           <div class="memory-row-text">คีย์ที่ ${i+1}${i === 0 ? " (หลัก)" : " (สำรอง)"}</div>
           <div class="memory-row-meta">${escapeHtml(maskApiKey(k))}</div>
         </div>
-        <button class="icon-btn delete-api-key-btn" data-index="${i}" aria-label="ลบคีย์นี้">🗑</button>
+        <button class="icon-btn delete-api-key-btn" data-index="${i}" aria-label="ลบคีย์นี้">${ICON_TRASH}</button>
       </div>
     `).join("");
     el.querySelectorAll(".delete-api-key-btn").forEach(btn => {
@@ -226,7 +226,7 @@ function renderAIMemoryList(){
         <div class="memory-row-meta">${m.createdAt ? chatTimeLabel(m.createdAt) : ""}</div>
       </div>
       <div style="display:flex;align-items:center;gap:4px;">
-        <button class="icon-btn ai-icon-btn edit-ai-memory-btn" data-id="${m.id}" aria-label="แก้ไขความจำนี้">✏️</button>
+        <button class="icon-btn ai-icon-btn edit-ai-memory-btn" data-id="${m.id}" aria-label="แก้ไขความจำนี้">${ICON_EDIT}</button>
         <button class="icon-btn ai-icon-btn delete-ai-memory-btn" data-id="${m.id}" aria-label="ลบความจำนี้"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 10v8M12 10v8M16 10v8M6 7l1 14h10l-1-14"/></svg></button>
       </div>
     </div>
@@ -1378,7 +1378,7 @@ function renderAiActionCard(m,idx){
   if(!Array.isArray(m.actions)||!m.actions.length) return "";
   const st={pending:"",done:" ✓ ทำแล้ว",cancelled:" (ยกเลิก)",revised:" (ขอปรับ — พิมพ์ข้อเสนอของคุณด้านล่าง)",undone:" (ย้อนกลับแล้ว)",failed:" ✗ ทำไม่ได้"};
   const btn=(op,ai,t)=>`<button type="button" data-aiact="${op}" data-mi="${idx}" data-ai="${ai}" style="padding:9px 14px;min-height:38px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:13px;cursor:pointer;position:relative;z-index:3;pointer-events:auto;touch-action:manipulation;">${t}</button>`;
-  return `<div style="margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:12.5px;"><div style="font-weight:700;margin-bottom:6px;">🛠 สิ่งที่ AI เสนอให้ปรับ</div>${m.actions.map((a,ai)=>`<div style="padding:6px 0;border-top:1px solid var(--line);"><div>${escapeHtml(describeAiAction(a))}<span style="color:var(--faint)">${st[a.status]||""}</span>${a.msg?`<div style="color:var(--expense)">${escapeHtml(a.msg)}</div>`:""}</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${a.status==="pending"?btn("ok",ai,"✓ ยืนยัน")+btn("rev",ai,"💬 เสนอแก้")+btn("no",ai,"ยกเลิก"):a.status==="done"?btn("undo",ai,"↩ ย้อนกลับ"):""}</div></div>`).join("")}</div>`;
+  return `<div style="margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:12.5px;"><div style="font-weight:700;margin-bottom:6px;">สิ่งที่ AI เสนอให้ปรับ</div>${m.actions.map((a,ai)=>`<div style="padding:6px 0;border-top:1px solid var(--line);"><div>${escapeHtml(describeAiAction(a))}<span style="color:var(--faint)">${st[a.status]||""}</span>${a.msg?`<div style="color:var(--expense)">${escapeHtml(a.msg)}</div>`:""}</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${a.status==="pending"?btn("ok",ai,"✓ ยืนยัน")+btn("rev",ai,"เสนอแก้")+btn("no",ai,"ยกเลิก"):a.status==="done"?btn("undo",ai,"↩ ย้อนกลับ"):""}</div></div>`).join("")}</div>`;
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest("[data-aiact]"); if(!b) return;
@@ -2172,14 +2172,14 @@ function ensureWeeklyAuditModal(){
     <div class="wa-sheet">
       <div class="wa-head">
         <div>
-          <div class="wa-title" id="weeklyAuditTitle">📊 รายงานรอบสัปดาห์ (Weekly Audit)</div>
+          <div class="wa-title" id="weeklyAuditTitle">รายงานรอบสัปดาห์</div>
           <div class="wa-sub" id="weeklyAuditSub"></div>
         </div>
         <button type="button" class="wa-close" id="weeklyAuditCloseBtn" aria-label="ปิด">✕</button>
       </div>
       <div class="wa-stats" id="weeklyAuditStats"></div>
       <div class="wa-body" id="weeklyAuditBody"></div>
-      <button type="button" class="wa-refresh" id="weeklyAuditRefreshBtn">🔄 วิเคราะห์ใหม่</button>
+      <button type="button" class="wa-refresh" id="weeklyAuditRefreshBtn">วิเคราะห์ใหม่</button>
     </div>`;
   document.body.appendChild(ov);
   ov.addEventListener("click", (e) => { if(e.target === ov) closeWeeklyAuditModal(); });
@@ -2224,11 +2224,11 @@ function waRenderView(v){
     body.innerHTML = `<span class="wa-muted">ยังไม่มีรายการรายรับ/รายจ่ายใน 7 วันที่ผ่านมา เลยยังไม่มีอะไรให้ตรวจ</span>`;
   }else if(v.status === "needsApiKey"){
     body.innerHTML = (rec ? simpleMarkdownToHtml(rec.text) + "<br><br>" : "")
-      + `<span class="wa-muted">ตั้งค่า API Key (⚙️) ก่อน เพื่อให้ AI วิเคราะห์รอบใหม่ได้</span>`;
+      + `<span class="wa-muted">ตั้งค่า API Key ก่อน เพื่อให้ AI วิเคราะห์รอบใหม่ได้</span>`;
   }else if(v.status === "error"){
     const r = v.result || {};
     const codeLine = r.error ? ` (โค้ด: ${escapeHtml(r.error)}${r.status ? " HTTP " + r.status : ""})` : "";
-    body.innerHTML = (rec ? simpleMarkdownToHtml(rec.text) + `<div class="wa-stale">⚠️ นี่คือรายงานรอบก่อน (${escapeHtml(waShortDate(rec.generatedAt))}) — รอบใหม่ยังไม่สำเร็จ</div>` : "")
+    body.innerHTML = (rec ? simpleMarkdownToHtml(rec.text) + `<div class="wa-stale">นี่คือรายงานรอบก่อน (${escapeHtml(waShortDate(rec.generatedAt))}) — รอบใหม่ยังไม่สำเร็จ</div>` : "")
       + `<div class="wa-err">${escapeHtml(aiErrorLabel(r))}${codeLine}</div>`;
   }else{
     body.innerHTML = simpleMarkdownToHtml(rec ? rec.text : "");
@@ -2322,7 +2322,7 @@ function mountWeeklyAuditEntryPoints(){
       btn.className = "icon-btn ai-icon-btn";
       btn.title = "รายงานรอบสัปดาห์";
       btn.setAttribute("aria-label", "รายงานรอบสัปดาห์");
-      btn.textContent = "📊";
+      btn.innerHTML = vaultetIcon("📊");
       btn.addEventListener("click", (e) => { e.stopPropagation(); openWeeklyAuditModal(); });
       anchor.insertAdjacentElement("beforebegin", btn);
     }
@@ -2337,7 +2337,7 @@ function mountWeeklyAuditEntryPoints(){
       banner.id = "weeklyAuditBanner";
       banner.className = "wa-banner";
       banner.innerHTML = `
-        <span aria-hidden="true">📊</span>
+        <span aria-hidden="true">${vaultetIcon("📊")}</span>
         <div class="wa-banner-text">สัปดาห์ใหม่แล้ว — ดูรายงานสุขภาพการเงินรอบ 7 วันที่ผ่านมา</div>
         <button type="button" class="wa-banner-open" id="weeklyAuditBannerOpenBtn">ดูรายงาน</button>
         <button type="button" class="wa-banner-x" id="weeklyAuditBannerDismissBtn" aria-label="ปิดแจ้งเตือน">✕</button>`;
@@ -2452,7 +2452,7 @@ function addVaultetNotification(f,states){
 function renderVaultetNotifications(){
   const a=loadVaultetNotifications(),unread=a.filter(n=>!n.read).length,badge=document.getElementById("notificationUnreadBadge"),dot=document.getElementById("uxBellDot");
   if(badge){badge.textContent=unread;badge.style.display=unread?"flex":"none"}if(dot)dot.style.display=unread?"block":"none";
-  const draw=(arr,target)=>{if(!target)return;target.innerHTML=arr.length?arr.map(n=>`<div class="notification-item ${n.read?"":"unread"}" data-notif-id="${escapeHtml(n.id)}"><div class="notification-icon">${n.icon||"🔔"}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(n.title)}</div><div class="notification-item-body">${escapeHtml(n.body)}</div></div><div class="notification-time">${escapeHtml((n.day||todayISO())===todayISO() ? (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}) : "ตอนนี้") : dayLabel(n.day||todayISO()))}</div></div>`).join(""):"<div class=\"notification-empty\">ตอนนี้ยังไม่มีเรื่องสำคัญที่ต้องแจ้ง 🎉</div>";target.querySelectorAll("[data-notif-id]").forEach(el=>el.onclick=()=>{const x=loadVaultetNotifications(),n=x.find(v=>v.id===el.dataset.notifId);if(n)n.read=true;saveVaultetNotifications(x);renderVaultetNotifications()})};
+  const draw=(arr,target)=>{if(!target)return;target.innerHTML=arr.length?arr.map(n=>`<div class="notification-item ${n.read?"":"unread"}" data-notif-id="${escapeHtml(n.id)}"><div class="notification-icon">${vaultetIcon(n.icon)}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(n.title)}</div><div class="notification-item-body">${escapeHtml(n.body)}</div></div><div class="notification-time">${escapeHtml((n.day||todayISO())===todayISO() ? (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}) : "ตอนนี้") : dayLabel(n.day||todayISO()))}</div></div>`).join(""):"<div class=\"notification-empty\">ตอนนี้ยังไม่มีเรื่องสำคัญที่ต้องแจ้ง</div>";target.querySelectorAll("[data-notif-id]").forEach(el=>el.onclick=()=>{const x=loadVaultetNotifications(),n=x.find(v=>v.id===el.dataset.notifId);if(n)n.read=true;saveVaultetNotifications(x);renderVaultetNotifications()})};
   const active=loadVaultetAdvisorActive();
   const current=active.slice(0,3);
   const dashboardTarget=document.getElementById("notificationPreviewList");
@@ -2470,7 +2470,7 @@ function renderAdvisorReviewCard(snapshot,profile){
   if(sub)sub.textContent=current.length?`คัดมา ${current.length} เรื่องที่มีผลกระทบสูงสุด`:'ตอนนี้ไม่มีเรื่องสำคัญที่ต้องลงมือทำ';
   const target=document.getElementById('notificationPreviewList');
   if(!target)return;
-  if(!current.length){target.innerHTML='<div class="notification-empty">ตอนนี้ทุกอย่างค่อนข้างเสถียร — ไม่มีเรื่องที่ต้องจัดการเป็นพิเศษ 🎉</div>';return;}
+  if(!current.length){target.innerHTML='<div class="notification-empty">ตอนนี้ทุกอย่างค่อนข้างเสถียร — ไม่มีเรื่องที่ต้องจัดการเป็นพิเศษ</div>';return;}
   if(window.vaultetRenderAdvisorPreview) window.vaultetRenderAdvisorPreview(current.map(f=>({type:f.id,severity:f.severity,evidence:f.evidence||[],action:f.action||'',data:f.data||{}})));
 }
 function checkVaultetNotifications(){try{
@@ -2540,7 +2540,7 @@ function renderProactiveCard(severity, text, state, errorInfo){
   const meta = PROACTIVE_SEVERITY_META[severity] || PROACTIVE_SEVERITY_META.positive;
   card.style.display = "block";
   card.style.borderColor = meta.color;
-  document.getElementById("aiProactiveIcon").textContent = meta.icon;
+  document.getElementById("aiProactiveIcon").innerHTML = vaultetIcon(meta.icon);
 
   const bodyEl = document.getElementById("aiProactiveBody");
   if(state === "loading"){
@@ -2552,7 +2552,7 @@ function renderProactiveCard(severity, text, state, errorInfo){
     const label = (errorInfo && AI_ERROR_MESSAGES[errorInfo.error]) || "เรียก AI ไม่สำเร็จ";
     const codeLine = errorInfo && errorInfo.error ? `<br><span style="font-size:11px;opacity:0.65;">โค้ด: ${escapeHtml(errorInfo.error)}${errorInfo.status ? " (HTTP " + errorInfo.status + ")" : ""}</span>` : "";
     const detailLine = errorInfo && errorInfo.detail ? `<br><span style="font-size:11px;opacity:0.65;">${escapeHtml(errorInfo.detail)}</span>` : "";
-    bodyEl.innerHTML = `<span style="color:var(--faint)">${label} — กด 🔄 เพื่อลองใหม่${codeLine}${detailLine}</span>`;
+    bodyEl.innerHTML = `<span style="color:var(--faint)">${label} — กดปุ่มรีเฟรชเพื่อลองใหม่${codeLine}${detailLine}</span>`;
   }else if(text){
     bodyEl.innerHTML = simpleMarkdownToHtml(text);
   }else{
@@ -2902,7 +2902,7 @@ document.getElementById("aiChatInput").addEventListener("keydown", (e) => {
 });
 syncAiChatSendBtnVisibility();
 
-// ใช้ตอนกด "🔄 ตอบใหม่" — ตัดคำตอบ AI อันเดิมทิ้ง แล้วยิงคำถามเดิมซ้ำ
+// ใช้ตอนกด "ตอบใหม่" — ตัดคำตอบ AI อันเดิมทิ้ง แล้วยิงคำถามเดิมซ้ำ
 async function regenerateLastReply(priorHistory, userText){
   const errBox = document.getElementById("aiChatError");
   errBox.style.display = "none";
