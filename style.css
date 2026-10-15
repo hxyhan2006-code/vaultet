@@ -4136,10 +4136,6 @@ select,
   border-color: rgba(29,185,84,.45) !important;
 }
 
-#openForecastBtn {
-  grid-column: 1/-1 !important;
-}
-
 .ai-advisor-settings-panel {
   display: none;
   margin: 8px 0 10px;
@@ -4615,10 +4611,6 @@ body.ux-nonhome #uxBellBtn {
 
 #ux-home>.hero-cards>.networth-card:first-child .management-grid .manage-accounts-btn {
   display: flex !important;
-}
-
-.management-grid #openForecastBtn {
-  grid-column: auto !important;
 }
 
 .management-grid {

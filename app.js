@@ -369,6 +369,13 @@ function dayLabel(iso){
   const [y,m,d] = iso.split("-").map(Number);
   return `${d} ${THAI_MONTHS_SHORT[m-1]}`;
 }
+// หัวกลุ่มวันในรายการ: วันนี้ / เมื่อวาน / "15 ต.ค."
+function dayHeading(iso){
+  const t = new Date(); t.setHours(0,0,0,0);
+  const [y,m,d] = iso.split("-").map(Number);
+  const diff = Math.round((t - new Date(y, m-1, d)) / 86400000);
+  return diff===0 ? "วันนี้" : diff===1 ? "เมื่อวาน" : dayLabel(iso);
+}
 function escapeHtml(s){
   const d = document.createElement("div");
   d.textContent = s == null ? "" : String(s);
@@ -1405,7 +1412,7 @@ function vaultetAssets(){
 function renderAccountsSummary(){
   const total = getTotalMoneyAllAccounts();
   const reserved = getTotalReserved();
-  const A = vaultetAssets(), vis=(id,on)=>{ const el=document.getElementById(id); const r=el&&(el.classList.contains("networth-sub")?el:el.parentElement); if(r) r.style.display=on?"":"none"; };
+  const A = vaultetAssets(), vis=(id,on)=>{ const el=document.getElementById(id); const r=el&&(el.classList.contains("v-row")?el:el.parentElement); if(r) r.style.display=on?"":"none"; };
   document.getElementById("totalMoneyNum").textContent = "฿" + fmt(A.assets);
   document.getElementById("inAccountsNum").textContent = "฿" + fmt(total);
   document.getElementById("inAccLabel").textContent = reserved > 0 ? "ในบัญชี" : "ในบัญชี (ใช้ได้จริง)";
@@ -1449,8 +1456,7 @@ function render(){
   // มูลค่าสุทธิที่แท้จริง = เงินรวมทุกบัญชี (นับรวมเงินออม/เงินลงทุนที่อยู่ในบัญชีอยู่แล้ว) + เงินที่คนอื่นติดค้างเรา − หนี้สินรวม (Milestone 5)
   // ไม่ใช่รายรับลบรายจ่ายของเดือนนี้ ซึ่งเป็นคนละความหมายกัน (นั่นคือกระแสเงินสดของเดือน ไม่ใช่มูลค่าสุทธิสะสม)
   const netWorth = getTotalMoneyAllAccounts() + (vaultetAssets().assets-getTotalMoneyAllAccounts()) + getTotalReceivablesOutstanding() - getTotalDebts();
-  document.getElementById("netWorthNum").textContent =
-    "มูลค่าสุทธิรวม (สินทรัพย์รวม + เงินให้ยืม − หนี้สิน): " + (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
+  document.getElementById("netWorthNum").textContent = (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
   document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
@@ -1509,47 +1515,33 @@ function render(){
     listContainer.innerHTML = `<div class="empty-state">ยังไม่มีรายการในเดือนนี้ — กดปุ่ม + เพื่อเริ่มจด</div>`;
   }else{
     const meVisible = me.slice(0, txVisibleLimit);
-    listContainer.innerHTML = `<ul class="list">
-      ${meVisible.map(e => {
-        if(e.type === "transfer"){
-          const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
-          const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
-          return `<li class="list-item" data-id="${e.id}">
-            <div class="list-item-left">
-              <span class="list-icon" style="background:var(--transfer-soft);color:var(--transfer)">⇄</span>
-              <div>
-                <div class="list-cat transfer-label">โอน: ${escapeHtml(fromName)} → ${escapeHtml(toName)}</div>
-                <div class="list-note">${dayLabel(e.date)}${e.note ? " · "+escapeHtml(e.note) : ""}</div>
-              </div>
-            </div>
-            <div class="list-item-right">
-              <span class="mono" style="font-weight:700;color:var(--transfer)">฿${fmt(e.amount)}</span>
-              <button class="icon-btn edit-btn" data-id="${e.id}" aria-label="แก้ไข">✏️</button>
-              <button class="icon-btn delete-btn" data-id="${e.id}" aria-label="ลบ">🗑</button>
-            </div>
-          </li>`;
-        }
-        const color = e.type==="income" ? "var(--income)" : e.type==="saving" ? "var(--saving)" : "var(--expense)";
-        const soft = e.type==="income" ? "var(--income-soft)" : e.type==="saving" ? "var(--saving-soft)" : "var(--expense-soft)";
-        const sign = e.type==="income" ? "+" : e.type==="saving" ? "→" : "−";
-        const glyph = e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
-        return `<li class="list-item" data-id="${e.id}">
-          <div class="list-item-left">
-            <span class="list-icon" style="background:${soft};color:${color}">${e.recurringId ? "🔁" : glyph}</span>
-            <div>
-              <div class="list-cat">${escapeHtml(e.category)}</div>
-              <div class="list-note">${dayLabel(e.date)}${e.note ? " · "+escapeHtml(e.note) : ""}</div>
-            </div>
-          </div>
-          <div class="list-item-right">
-            <span class="mono" style="font-weight:700;color:${color}">${sign}฿${fmt(e.amount)}</span>
-            <button class="icon-btn edit-btn" data-id="${e.id}" aria-label="แก้ไข">✏️</button>
-            <button class="icon-btn delete-btn" data-id="${e.id}" aria-label="ลบ">🗑</button>
-          </div>
-        </li>`;
-      }).join("")}
-    </ul>` + (me.length > txVisibleLimit
-      ? `<button type="button" class="manage-accounts-btn" id="loadMoreTxBtn" style="width:100%;margin-top:10px;">ดูเพิ่มเติม (เหลืออีก ${me.length - txVisibleLimit} รายการ)</button>`
+    const TRASH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
+    const txRow = (e, glyph, tone, title, sub, amount) => `<li class="v-tx" data-id="${e.id}">
+        <span class="v-tx-ic v-tone-${tone}">${glyph}</span>
+        <div class="v-tx-main"><div class="v-tx-t">${title}</div><div class="v-tx-s">${sub}</div></div>
+        <span class="v-tx-a v-sens v-tone-${tone}">${amount}</span>
+        <button type="button" class="v-tx-del delete-btn" data-id="${e.id}" aria-label="ลบรายการ">${TRASH_SVG}</button>
+      </li>`;
+    const rowsHtml = [];
+    let lastDate = null;
+    meVisible.forEach(e => {
+      if(e.date !== lastDate){ lastDate = e.date; rowsHtml.push(`<li class="v-day">${dayHeading(e.date)}</li>`); }
+      const note = e.note ? escapeHtml(e.note) : "";
+      if(e.type === "transfer"){
+        const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
+        const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
+        rowsHtml.push(txRow(e, "⇄", "xfer", "โอนเงิน", `${escapeHtml(fromName)} → ${escapeHtml(toName)}${note ? " · "+note : ""}`, "฿"+fmt(e.amount)));
+      }else{
+        const tone = e.type==="income" ? "in" : e.type==="saving" ? "save" : "out";
+        const sign = e.type==="income" ? "+" : e.type==="saving" ? "" : "−";
+        const glyph = e.recurringId ? "🔁" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
+        const accName = accounts.find(a=>a.id===e.accountId)?.name || "";
+        const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ") || "&nbsp;";
+        rowsHtml.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
+      }
+    });
+    listContainer.innerHTML = `<ul class="v-txlist">${rowsHtml.join("")}</ul>` + (me.length > txVisibleLimit
+      ? `<button type="button" class="v-more-btn" id="loadMoreTxBtn">ดูเพิ่มเติม (เหลืออีก ${me.length - txVisibleLimit} รายการ)</button>`
       : "");
     const loadMoreTxBtn = document.getElementById("loadMoreTxBtn");
     if(loadMoreTxBtn){
@@ -1575,14 +1567,7 @@ function render(){
         render();
       });
     });
-    listContainer.querySelectorAll(".edit-btn").forEach(btn => {
-      btn.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        const entry = entries.find(e => e.id === btn.dataset.id);
-        if(entry) openForm(entry);
-      });
-    });
-    listContainer.querySelectorAll(".list-item").forEach(li => {
+    listContainer.querySelectorAll(".v-tx").forEach(li => {
       li.addEventListener("click", () => {
         const entry = entries.find(e => e.id === li.dataset.id);
         if(entry) openForm(entry);
@@ -3330,7 +3315,6 @@ document.addEventListener("click",e=>{
   if(!r.ok){ showToast(r.msg||"บันทึกไม่สำเร็จ"); return; }
   render(); showToast("ย้ายไปออมแล้ว ✓ (ลบได้ที่รายการออมถ้ากดผิด)");
 });
-document.getElementById("manageBudgetsBtn")?.addEventListener("click",openBudgetManager);
 document.getElementById("budgetDashboardManageBtn")?.addEventListener("click",openBudgetManager);
 document.getElementById("closeBudgetBtn")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
 document.getElementById("budgetOverlay")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
@@ -3474,11 +3458,11 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   bottom.className='ux-bottom-nav';
   bottom.setAttribute('aria-label','เมนูหลัก');
   bottom.innerHTML=`
-    <button class="ux-bottom-item" data-page="home"><span class="ico">⌂</span>ภาพรวม</button>
-    <button class="ux-bottom-item" data-page="plan"><span class="ico">◫</span>แผน</button>
-    <button class="ux-bottom-item" data-page="brain"><span class="ico">◉</span>Brain</button>
-    <button class="ux-bottom-item" data-page="chat"><span class="ico">✦</span>ที่ปรึกษา AI</button>
-    <button class="ux-bottom-item" data-page="more"><span class="ico">•••</span>อื่นๆ</button>`;
+    <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>ภาพรวม</button>
+    <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>แผน</button>
+    <button class="ux-bottom-item" data-page="brain"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Brain</button>
+    <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>ที่ปรึกษา AI</button>
+    <button class="ux-bottom-item" data-page="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>อื่นๆ</button>`;
   document.body.append(bottom);
 
   const names={home:'ภาพรวม',transactions:'รายการเงิน',plan:'วางแผนการเงิน',brain:'Financial Brain',chat:'ที่ปรึกษา AI',more:'เพิ่มเติม'};
@@ -4660,8 +4644,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   };
 
   /* ---------- ปุ่มหน้าแรก: งบ → พอร์ตหุ้น ---------- */
-  const old=document.getElementById('manageBudgetsBtn');
-  if(old){ const nb=old.cloneNode(true); nb.id='openPortfolioBtn'; nb.textContent='📈 พอร์ตหุ้น'; old.replaceWith(nb); nb.addEventListener('click',openPf); }
+  document.getElementById('openPortfolioBtn')?.addEventListener('click',openPf);
 
   /* ---------- ดึงราคาเองตอนเปิดแอป (ถ้าราคาล่าสุดเก่าเกิน 20 นาที) ---------- */
   setTimeout(()=>{
