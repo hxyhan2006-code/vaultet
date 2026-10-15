@@ -1022,9 +1022,6 @@ function renderPeriodAnalysis(){
       ${statBox("รายจ่าย", money(a.expense), "var(--expense)")}
       ${statBox("ออม/ลงทุน", money(a.saving), "var(--saving)")}
       ${statBox("Net Cash Flow", money(a.netCashFlow), a.netCashFlow<0?"var(--expense)":"var(--ink)")}
-      ${statBox("จำนวนรายการ", a.count + " รายการ")}
-      ${statBox("รายจ่ายเฉลี่ย/รายการ", money(a.avgExpensePerTxn))}
-      ${statBox("รายรับเฉลี่ย/วัน", money(a.avgIncomePerDay))}
       ${statBox("รายจ่ายเฉลี่ย/วัน", money(a.avgExpensePerDay))}
     </div>
     <div style="margin-top:16px">
@@ -1506,7 +1503,6 @@ function render(){
   const breakdownSection = document.getElementById("breakdownSection");
   const blocks = [
     { key:"income", label:"รายรับตามหมวด", color:"var(--income)" },
-    { key:"expense", label:"รายจ่ายตามหมวด", color:"var(--expense)" },
     { key:"saving", label:"ออม/ลงทุนตามหมวด", color:"var(--saving)" },
   ];
   const BREAKDOWN_LIMIT = 5;
@@ -4086,41 +4082,6 @@ document.addEventListener("click",async e=>{
 render();
 try{renderTrendCard();}catch(e){console.error(e);}
 })();
-
-function renderSpendCard(){
-  const plan=document.getElementById("ux-plan");if(!plan)return;
-  let card=document.getElementById("spendSummaryCard");
-  if(!card){card=document.createElement("div");card.id="spendSummaryCard";
-    card.className="v-card";card.style.display="block";
-    const bud=document.getElementById("budgetDashboardCard");
-    if(bud&&bud.parentNode===plan)bud.after(card);else plan.appendChild(card);}
-  const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const f=n=>"฿"+Math.round(n).toLocaleString("en-US");
-  const mk=selectedMonth,[y,m]=mk.split("-").map(Number);
-  const pk=new Date(y,m-2,1);const prevKey=pk.getFullYear()+"-"+String(pk.getMonth()+1).padStart(2,"0");
-  const inM=k=>entries.filter(e=>e.type==="expense"&&e.date&&e.date.slice(0,7)===k);
-  const ex=inM(mk),total=ex.reduce((a,e)=>a+(Number(e.amount)||0),0),prev=inM(prevKey).reduce((a,e)=>a+(Number(e.amount)||0),0);
-  const now=new Date(),isCur=now.getFullYear()===y&&now.getMonth()+1===m;
-  const days=isCur?now.getDate():new Date(y,m,0).getDate();
-  const head=`<div class="v-card-head"><h2 class="v-card-title">รายจ่ายเดือนนี้ไปไหนบ้าง</h2></div><div class="v-big-row"><span class="v-big">${f(total)}</span><span class="v-big-label">รวมรายจ่าย</span></div>`;
-  if(!ex.length){card.innerHTML=head+'<div class="v-card-sub">ยังไม่มีรายจ่ายในเดือนนี้</div>';return;}
-  const cats={};
-  ex.forEach(e=>{const c=e.category||"อื่นๆ",a=Number(e.amount)||0;const o=cats[c]||(cats[c]={sum:0,n:0,items:{}});o.sum+=a;o.n++;
-    const nm=(e.note||"").trim()||"(ไม่มีโน้ต)";const it=o.items[nm.toLowerCase()]||(o.items[nm.toLowerCase()]={name:nm,sum:0,n:0});it.sum+=a;it.n++;});
-  const list=Object.entries(cats).sort((a,b)=>b[1].sum-a[1].sum);
-  const big=ex.reduce((a,e)=>(Number(e.amount)||0)>(Number(a.amount)||0)?e:a,ex[0]);
-  const byDay={};ex.forEach(e=>byDay[e.date]=(byDay[e.date]||0)+(Number(e.amount)||0));
-  const bd=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
-  const diff=prev>0?Math.round((total-prev)/prev*100):null;
-  const cmp=prev>0?`เดือนก่อน ${f(prev)} (${diff>0?"▲ +":diff<0?"▼ ":""}${diff}%)`:"ยังไม่มีข้อมูลเดือนก่อนให้เทียบ";
-  const NCOL=6;
-  const rows=list.map(([c,o],i)=>{const pct=Math.round(o.sum/total*100),col=`var(--v-cat-${Math.min(i,NCOL-1)+1})`;
-    const items=Object.values(o.items).sort((a,b)=>b.sum-a.sum).map(it=>`<div class="v-srow-item"><span>${esc(it.name)} · ${it.n} ครั้ง</span><span>${f(it.sum)}</span></div>`).join("");
-    return `<details class="v-srow"><summary><div class="v-brow-top"><span class="v-brow-name">${esc(c)}</span><span class="v-brow-amt">${f(o.sum)}</span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${col}"></i></div><div class="v-brow-meta"><span>${o.n} ครั้ง · เฉลี่ยครั้งละ ${f(o.sum/o.n)}</span><span>${pct}%</span></div></summary><div class="v-srow-items">${items}</div></details>`;}).join("");
-  card.innerHTML=head+`<div class="v-card-sub">${ex.length} ครั้ง · เฉลี่ยวันละ ${f(total/days)} · ${cmp}</div><div class="v-rows">${rows}</div>`+
-   `<div class="v-facts"><span>รายการใหญ่สุด</span><b>${esc((big.note||"").trim()||big.category||"-")} ${f(big.amount)}</b></div><div class="v-facts"><span>วันที่ใช้เยอะสุด</span><b>${bd[0].slice(8)}/${bd[0].slice(5,7)} (${f(bd[1])})</b></div><div class="v-hint">แตะที่หมวดเพื่อดูว่าใช้กับรายการอะไรบ้าง</div>`;
-}
-(function(){const _r=render;render=function(){_r();try{renderSpendCard()}catch(e){console.error(e)}};setTimeout(()=>{try{renderSpendCard()}catch(e){console.error(e)}},600);})();
 
 try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorage.removeItem("vaultet_restored"); setTimeout(()=>{ try{ showToast(__m); }catch(e){} },700); }}catch(e){}
 

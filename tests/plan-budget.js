@@ -29,11 +29,7 @@ ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent
 ok('over-budget pill shows for คาเฟ่ (เกินงบ)', (await pg.textContent('#budgetDashboardRows')).includes('เกินงบ'));
 ok('safe rows have no pill (กิน is WATCH so check count>=1 and <rows)', (await pg.locator('#budgetDashboardRows .v-brow .v-pill').count())>=1);
 ok('emergency card visible', await pg.isVisible('#emergencyDashboardCard'));
-ok('spend card visible', await pg.isVisible('#spendSummaryCard'));
-// drill down
-await pg.click('#spendSummaryCard .v-srow summary >> nth=0'); await pg.waitForTimeout(200);
-ok('spend row expands', await pg.isVisible('#spendSummaryCard .v-srow-item >> nth=0'));
-await pg.screenshot({path:shots+'plan-drill.png'});
+ok('duplicate spend card is gone from Plan', !(await pg.locator('#spendSummaryCard').count()));
 // manage budgets
 await pg.click('#budgetDashboardManageBtn'); await pg.waitForTimeout(400);
 const rows=await pg.locator('#budgetManageList .v-brow').count();
