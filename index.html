@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds2">
-<link rel="stylesheet" href="ds.css?v=ds2">
+<link rel="stylesheet" href="style.css?v=ds3">
+<link rel="stylesheet" href="ds.css?v=ds3">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -99,23 +99,23 @@
       </div>
     </div>
 
-    <div class="budget-dashboard-card" id="budgetDashboardCard" style="display:none;">
-      <div class="budget-dashboard-top"><div><div class="budget-title">🎯 งบประมาณเดือนนี้</div><div class="budget-sub" id="budgetDashboardSub">ยังไม่ได้ตั้งงบประมาณ</div></div><div class="budget-summary-number mono" id="budgetDashboardRemaining">฿0</div></div>
-      <div class="budget-total-track"><div class="budget-total-fill" id="budgetDashboardFill" style="width:0%"></div></div>
-      <div id="budgetDashboardRows"></div>
-      <div class="budget-actions"><button class="manage-accounts-btn" id="budgetDashboardManageBtn">จัดการงบประมาณ</button></div>
-    </div>
+    <section class="v-card" id="budgetDashboardCard" style="display:none;">
+      <div class="v-card-head"><h2 class="v-card-title">งบประมาณเดือนนี้</h2><button type="button" class="v-link" id="budgetDashboardManageBtn">จัดการ</button></div>
+      <div class="v-big-row"><span class="v-big" id="budgetDashboardRemaining">฿0</span><span class="v-big-label">คงเหลือ</span></div>
+      <div class="v-bar"><i id="budgetDashboardFill" style="width:0%"></i></div>
+      <div class="v-card-sub" id="budgetDashboardSub">ยังไม่ได้ตั้งงบประมาณ</div>
+      <div class="v-rows" id="budgetDashboardRows"></div>
+    </section>
 
-    <div class="emergency-dashboard-card" id="emergencyDashboardCard" style="display:none;">
-      <div class="emergency-top"><div><div class="emergency-title">🛟 เงินสำรองฉุกเฉิน</div><div class="emergency-sub" id="emergencyDashboardSub">ยังไม่ได้ตั้งค่าเป้าหมาย</div><div class="emergency-sub" id="emergencyDashboardSplit"></div></div><div class="emergency-number mono" id="emergencyDashboardAmount">฿0</div></div>
-      <div class="emergency-track"><div class="emergency-fill" id="emergencyDashboardFill" style="width:0%"></div></div>
-      <div id="emergencyDashboardStatus"></div>
-      <div class="emergency-stats">
-        <div class="emergency-stat"><div class="emergency-stat-label">เป้าหมายแนะนำ</div><div class="emergency-stat-value mono" id="emergencyDashboardTarget">฿0</div></div>
-        <div class="emergency-stat"><div class="emergency-stat-label">ครอบคลุมค่าใช้จ่าย</div><div class="emergency-stat-value mono" id="emergencyDashboardCoverage">0 เดือน</div></div>
-      </div>
-      <div class="budget-actions"><button class="manage-accounts-btn" id="emergencyDashboardManageBtn">ตั้งค่าเงินสำรอง</button></div>
-    </div>
+    <section class="v-card" id="emergencyDashboardCard" style="display:none;">
+      <div class="v-card-head"><h2 class="v-card-title">เงินสำรองฉุกเฉิน</h2><button type="button" class="v-link" id="emergencyDashboardManageBtn">ตั้งค่า</button></div>
+      <div class="v-big-row"><span class="v-big" id="emergencyDashboardAmount">฿0</span><span class="v-big-label">จากเป้า <span id="emergencyDashboardTarget">฿0</span></span></div>
+      <div class="v-bar"><i id="emergencyDashboardFill" style="width:0%"></i></div>
+      <div id="emergencyDashboardStatus" class="v-status-line"></div>
+      <div class="v-card-sub" id="emergencyDashboardSub">ยังไม่ได้ตั้งค่าเป้าหมาย</div>
+      <div class="v-card-sub" id="emergencyDashboardSplit"></div>
+      <div class="v-facts"><span>ครอบคลุมค่าใช้จ่าย</span><b id="emergencyDashboardCoverage">0 เดือน</b></div>
+    </section>
 
     <div class="financial-brain-card" id="financialBrainCard" style="display:none;">
       <div class="brain-top"><div><div class="brain-title">🧠 สุขภาพการเงิน</div><div class="brain-sub" id="brainSub">กำลังประเมินจากข้อมูลของคุณ</div></div><div class="brain-score-wrap"><span class="brain-score mono" id="brainScore">—</span><span class="brain-score-label">/100</span></div></div>
@@ -770,8 +770,8 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="app.js?v=ds2"></script>
-<script src="ai.js?v=ds2"></script>
-<script src="ui.js?v=ds2"></script>
+<script src="app.js?v=ds3"></script>
+<script src="ai.js?v=ds3"></script>
+<script src="ui.js?v=ds3"></script>
 </body>
 </html>

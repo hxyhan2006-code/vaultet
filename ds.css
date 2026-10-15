@@ -224,3 +224,65 @@ html body #overlay #investFields { padding: 14px !important; margin: 0 !importan
 html body #overlay #investFields .field-label { display: block; margin: 0 0 6px !important; font-size: 13px; font-weight: 400; color: var(--v-muted); text-transform: none; letter-spacing: 0; }
 html body #overlay #investFields input { width: 100%; height: 46px; padding: 0 14px !important; margin: 0 0 12px !important; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px; }
 html body #overlay #investFields .hint, html body #overlay #investFields p { margin: 0; font-size: 12px; color: var(--v-muted); }
+
+/* =====================================================================
+   หน้า "แผน" และการ์ดข้อมูล (v-card)
+   ===================================================================== */
+:root {
+  /* สีหมวดในกราฟแท่ง (เรียงจากหมวดที่ใช้มากสุด) */
+  --v-cat-1: #ff6b60; --v-cat-2: #f4a261; --v-cat-3: #e9c46a; --v-cat-4: #52b788; --v-cat-5: #7aa2f7; --v-cat-6: #8b9098;
+}
+html body #ux-plan { display: flex; flex-direction: column; gap: 14px; padding-left: 16px !important; padding-right: 16px !important; }
+html body #ux-plan.active { display: flex; }
+html body #ux-plan > .ux-view-title, html body #ux-plan > .ux-view-sub { display: none; }
+
+.v-card { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-lg); padding: 16px !important; margin: 0 !important; box-shadow: none !important; }
+.v-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.v-card-title { margin: 0; font-size: 15px; font-weight: 600; }
+.v-big-row { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 12px; flex-wrap: wrap; }
+.v-big { font-family: var(--v-mono); font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.v-big-label { font-size: 13px; color: var(--v-muted); }
+.v-card-sub { margin-top: 10px; font-size: 13px; color: var(--v-muted); line-height: 1.5; }
+.v-card-sub:empty { display: none; }
+.v-bar { height: 8px; border-radius: 999px; background: var(--v-surface-2); overflow: hidden; }
+.v-bar > i { display: block; height: 100%; border-radius: inherit; background: var(--v-accent); }
+.v-bar-sm { height: 6px; margin: 8px 0 6px; }
+@media (prefers-reduced-motion: no-preference) { .v-bar > i { transition: width .4s ease; } }
+
+.v-rows { display: flex; flex-direction: column; margin-top: 8px; }
+.v-brow { padding: 12px 0; border-top: 1px solid var(--v-line); }
+.v-brow-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.v-brow-name { font-size: 14px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.v-brow-amt { font-family: var(--v-mono); font-size: 14px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.v-brow-amt small { font-size: 12px; font-weight: 500; color: var(--v-muted); }
+.v-brow-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--v-muted); }
+.v-brow-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.v-subhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--v-line); font-size: 13px; font-weight: 600; }
+.v-subhead + .v-brow { border-top: 0; padding-top: 6px; }
+.v-subhead-r { font-family: var(--v-mono); font-weight: 500; color: var(--v-save); font-size: 12px; }
+
+/* ป้ายสถานะ: ใช้เฉพาะตอนต้องสนใจ */
+.v-pill { display: inline-block; flex: none; font-size: 11px; font-weight: 500; line-height: 1.6; padding: 0 8px; border-radius: 999px; }
+.v-pill-safe { color: var(--v-in); background: color-mix(in srgb, var(--v-in) 14%, transparent); }
+.v-pill-watch { color: var(--v-xfer); background: color-mix(in srgb, var(--v-xfer) 14%, transparent); }
+.v-pill-over { color: var(--v-out); background: color-mix(in srgb, var(--v-out) 14%, transparent); }
+.v-status-line { margin-top: 10px; }
+.v-status-line:empty { display: none; }
+
+.v-note { margin: 12px 0 4px; padding: 10px 12px; background: var(--v-surface-2); border-radius: var(--v-r-md); font-size: 13px; line-height: 1.6; color: var(--v-muted); }
+.v-note-title { color: var(--v-fg); font-weight: 600; margin-bottom: 2px; }
+.v-facts { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0 0; margin-top: 10px; border-top: 1px solid var(--v-line); font-size: 13px; color: var(--v-muted); }
+.v-facts b { color: var(--v-fg); font-weight: 500; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.v-hint { margin-top: 10px; font-size: 12px; color: var(--v-muted); }
+.v-btn-block { width: 100%; margin-top: 10px; padding: 11px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); font: inherit; font-size: 14px; cursor: pointer; }
+.v-icon-btn { background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: 8px; padding: 4px 12px; color: var(--v-fg); font: inherit; font-size: 12px; cursor: pointer; }
+.v-icon-danger { color: var(--v-out); }
+
+/* สรุปรายจ่ายตามหมวด (กางดูรายการย่อยได้) */
+.v-srow { border-top: 1px solid var(--v-line); }
+.v-srow summary { list-style: none; cursor: pointer; padding: 12px 0; }
+.v-srow summary::-webkit-details-marker { display: none; }
+.v-srow-items { padding: 0 0 10px; }
+.v-srow-item { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0 6px 12px; font-size: 12px; color: var(--v-muted); border-left: 2px solid var(--v-line); margin-bottom: 4px; }
+.v-srow-item span:last-child { font-family: var(--v-mono); color: var(--v-fg); white-space: nowrap; }
+.v-btn-block:focus-visible, .v-icon-btn:focus-visible, .v-srow summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }

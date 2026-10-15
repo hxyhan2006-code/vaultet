@@ -3233,8 +3233,8 @@ function renderEmergencyDashboard(){
   document.getElementById("emergencyDashboardTarget").textContent="฿"+fmt(e.recommendedEmergencyFund);
   document.getElementById("emergencyDashboardCoverage").textContent=e.monthlyEssentialExpense>0?fmt(e.reserveCoverageMonths)+" เดือน":"ยังประเมินไม่ได้";
   document.getElementById("emergencyDashboardSub").textContent=e.recommendedEmergencyFund>0?`เป้าหมาย ${fmt(e.targetMonths)} เดือน · ค่าใช้จ่ายจำเป็นเฉลี่ย ฿${fmt(e.monthlyEssentialExpense)}`:"ยังไม่มีข้อมูลค่าใช้จ่ายจำเป็นเพียงพอ";
-  const fill=document.getElementById("emergencyDashboardFill"); fill.style.width=Math.min(100,Math.max(0,e.reserveProgressPercent))+"%"; fill.style.background=e.status==="CRITICAL"?"var(--expense)":e.status==="WATCH"?"#d99a00":"var(--income)";
-  document.getElementById("emergencyDashboardStatus").innerHTML=`<span class="emergency-status ${meta.cls}">${meta.label}${e.reserveShortfall>0?` · ขาด ฿${fmt(e.reserveShortfall)}`:""}</span>`;
+  const fill=document.getElementById("emergencyDashboardFill"); fill.style.width=Math.min(100,Math.max(0,e.reserveProgressPercent))+"%"; fill.style.background=e.status==="CRITICAL"?"var(--v-out)":e.status==="WATCH"?"var(--v-xfer)":"var(--v-accent)";
+  document.getElementById("emergencyDashboardStatus").innerHTML=`<span class="v-pill v-pill-${meta.cls==="critical"?"over":meta.cls==="watch"?"watch":"safe"}">${meta.label}${e.reserveShortfall>0?` · ขาด ฿${fmt(e.reserveShortfall)}`:""}</span>`;
 }
 document.getElementById("emergencyDashboardManageBtn")?.addEventListener("click",openEmergencyManager);
 document.getElementById("closeEmergencyBtn")?.addEventListener("click",()=>document.getElementById("emergencyOverlay").classList.remove("open"));
@@ -3261,12 +3261,15 @@ function getBudgetSelectedCats(){ return Array.from(document.querySelectorAll("#
 function openBudgetManager(){ budgetEditingId=null; budgetFormKind="expense"; document.getElementById("budgetMonthInput").value=monthKey(todayISO()); document.getElementById("budgetAmountInput").value=""; document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ"; renderBudgetCategorySelect([]); document.getElementById("budgetNameInput").value=""; updateBudgetKindUI(); renderBudgetManager(); document.getElementById("budgetOverlay").classList.add("open"); }
 function budgetRowHtml(r,manage){
   const sv=r.kind==="saving", m=budgetStatusMeta(r.status), w=Math.min(100,Math.max(0,r.pct));
-  const col=sv?"var(--saving)":(r.status==="OVER"?"var(--expense)":r.status==="WATCH"?"#d99a00":"var(--income)");
-  const rem=sv?(r.remaining<=0?`เกินเป้า ฿${fmt(Math.abs(r.remaining))} 🎉`:`อีก ฿${fmt(r.remaining)} ถึงเป้า`):(r.remaining<0?`เกิน ฿${fmt(Math.abs(r.remaining))}`:`เหลือ ฿${fmt(r.remaining)}`);
-  const left=sv?`ออมแล้ว ฿${fmt(r.spent)} / ฿${fmt(r.budget)}`:`฿${fmt(r.spent)} / ฿${fmt(r.budget)}`;
-  const pace=sv?(r.remainingDays>0&&r.remaining>0?`ออมเฉลี่ย ฿${fmt(r.remaining/r.remainingDays)}/วัน ที่เหลือ`:(r.remaining>0?"หมดเดือนแล้ว ยังไม่ถึงเป้า":"ถึงเป้าแล้ว")):(r.remainingDays>0?`ใช้ได้เฉลี่ย ฿${fmt(r.dailyAllowance)}/วัน`:(r.projected>r.budget?"pace สูงกว่างบ":"ครบช่วงเดือนแล้ว"));
-  const tail=sv?`${fmt(r.pct)}%`:`คาดทั้งเดือน ฿${fmt(r.projected)}`;
-  return `<div class="budget-row"><div class="budget-row-top"><span style="font-weight:700;">${sv?"🌱 ":""}${escapeHtml(r.category)}</span><span class="budget-status ${m.cls}">${m.label}${manage?"":" · "+fmt(r.pct)+"%"}</span></div><div class="budget-row-meta"><span>${left}</span><span>${escapeHtml(rem)}</span></div><div class="budget-mini-track"><div class="budget-mini-fill" style="width:${w}%;background:${col}"></div></div><div class="budget-row-meta"><span>${escapeHtml(pace)}</span><span>${tail}</span></div>${manage?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:5px;"><button class="icon-btn budget-edit-btn" data-id="${escapeHtml(r.id)}">✏️</button><button class="icon-btn budget-delete-btn" data-id="${escapeHtml(r.id)}">🗑</button></div>`:""}</div>`;
+  const col=sv?"var(--v-save)":(r.status==="OVER"?"var(--v-out)":r.status==="WATCH"?"var(--v-xfer)":"var(--v-accent)");
+  const rem=sv?(r.remaining<=0?`เกินเป้า ฿${fmt(Math.abs(r.remaining))}`:`อีก ฿${fmt(r.remaining)} ถึงเป้า`):(r.remaining<0?`เกิน ฿${fmt(Math.abs(r.remaining))}`:`เหลือ ฿${fmt(r.remaining)}`);
+  const pace=sv?(r.remainingDays>0&&r.remaining>0?`ออมเฉลี่ย ฿${fmt(r.remaining/r.remainingDays)}/วัน`:(r.remaining>0?"หมดเดือนแล้ว ยังไม่ถึงเป้า":"")):(r.remainingDays>0?`ใช้ได้เฉลี่ย ฿${fmt(r.dailyAllowance)}/วัน`:(r.projected>r.budget?"pace สูงกว่างบ":""));
+  // เตือนเฉพาะที่ต้องสนใจ: เฝ้าดู/เกินงบ/ครบเป้า (โหมดจัดการแสดงสถานะทุกแถว)
+  const showPill = manage || r.status==="OVER" || r.status==="WATCH" || r.status==="DONE";
+  const pillCls = r.status==="OVER" ? "over" : (r.status==="WATCH"||r.status==="SAVING") ? "watch" : "safe";
+  const proj = !sv && (r.status==="OVER"||r.status==="WATCH") ? `คาดทั้งเดือน ฿${fmt(r.projected)}` : "";
+  const meta1 = [rem, pace].filter(Boolean).join(" · ");
+  return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${escapeHtml(meta1)}${proj?` · ${proj}`:""}</span>${showPill?`<span class="v-pill v-pill-${pillCls}">${m.label}</span>`:""}</div>${manage?`<div class="v-brow-actions"><button type="button" class="v-icon-btn budget-edit-btn" data-id="${escapeHtml(r.id)}" aria-label="แก้ไขงบ">แก้ไข</button><button type="button" class="v-icon-btn v-icon-danger budget-delete-btn" data-id="${escapeHtml(r.id)}" aria-label="ลบงบ">ลบ</button></div>`:""}</div>`;
 }
 function renderBudgetManager(){
   const month=document.getElementById("budgetMonthInput")?.value||monthKey(todayISO()), s=computeBudgetSummary(month), sv=computeBudgetSummary(month,"saving"), summaryEl=document.getElementById("budgetManageSummary"), listEl=document.getElementById("budgetManageList");
@@ -3288,22 +3291,22 @@ function renderBudgetDashboard(){
   if(!s.budgetCount&&!sv.budgetCount&&!bf){card.style.display="none";return;}card.style.display="block";
   const rem=document.getElementById("budgetDashboardRemaining"), sub=document.getElementById("budgetDashboardSub"), fill=document.getElementById("budgetDashboardFill");
   if(s.budgetCount){
-    rem.textContent=(s.totalRemaining<0?"-":"")+"฿"+fmt(Math.abs(s.totalRemaining));rem.style.color=s.totalRemaining<0?"var(--expense)":"var(--ink)";
+    rem.textContent=(s.totalRemaining<0?"-":"")+"฿"+fmt(Math.abs(s.totalRemaining));rem.style.color=s.totalRemaining<0?"var(--v-out)":"";
     sub.textContent=`ใช้ ฿${fmt(s.totalSpent)} จาก ฿${fmt(s.totalBudget)} · ${s.overCount?`เกินงบ ${s.overCount} หมวด`:s.watchCount?`ควรเฝ้าดู ${s.watchCount} หมวด`:"อยู่ในกรอบงบ"} · เหลือ ${s.remainingDays} วัน`;
-    fill.style.width=Math.min(100,Math.max(0,s.totalPct))+"%";fill.style.background=s.totalRemaining<0?"var(--expense)":s.totalPct>=80?"#d99a00":"var(--income)";
+    fill.style.width=Math.min(100,Math.max(0,s.totalPct))+"%";fill.style.background=s.totalRemaining<0?"var(--v-out)":s.totalPct>=80?"var(--v-xfer)":"var(--v-accent)";
   } else {
-    rem.textContent="฿"+fmt(sv.totalSpent);rem.style.color="var(--saving)";
+    rem.textContent="฿"+fmt(sv.totalSpent);rem.style.color="var(--v-save)";
     sub.textContent=`ออมแล้ว ฿${fmt(sv.totalSpent)} จากเป้า ฿${fmt(sv.totalBudget)} · เหลือ ${sv.remainingDays} วัน`;
-    fill.style.width=Math.min(100,Math.max(0,sv.totalPct))+"%";fill.style.background="var(--saving)";
+    fill.style.width=Math.min(100,Math.max(0,sv.totalPct))+"%";fill.style.background="var(--v-save)";
   }
   const order={OVER:0,WATCH:1,SAFE:2};
   let html=s.rows.slice().sort((a,b)=>order[a.status]-order[b.status]).map(r=>budgetRowHtml(r,false)).join("");
   if(sv.budgetCount){
-    html+=`<div style="margin:14px 0 6px;font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;"><span>🌱 งบรายออมเดือนนี้</span><span class="mono" style="color:var(--saving)">฿${fmt(sv.totalSpent)} / ฿${fmt(sv.totalBudget)} · ${fmt(sv.totalPct)}%</span></div>`+sv.rows.map(r=>budgetRowHtml(r,false)).join("");
+    html+=`<div class="v-subhead"><span>เป้าออมเดือนนี้</span>${sv.rows.length>1?`<span class="v-subhead-r">฿${fmt(sv.totalSpent)} / ฿${fmt(sv.totalBudget)} · ${fmt(sv.totalPct)}%</span>`:""}</div>`+sv.rows.map(r=>budgetRowHtml(r,false)).join("");
   }
   if(bf){
-    const low=bf.remaining<0, col=low?"var(--expense)":"var(--income)", w=bf.amount>0?Math.min(100,Math.max(0,bf.used/bf.amount*100)):0;
-    html+=`<div class="budget-row" style="margin-top:12px;"><div class="budget-row-top"><span style="font-weight:700;">🛟 เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="budget-status ${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="budget-row-meta"><span>ใช้ไปนอกงบ ฿${fmt(bf.used)} / ฿${fmt(bf.amount)}</span><span>${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))}</span></div><div class="budget-mini-track"><div class="budget-mini-fill" style="width:${w}%;background:${col}"></div></div><div class="budget-row-meta"><span>${bf.swept>0?`ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:"ถ้าสิ้นเดือนเหลือ ย้ายไปออมได้เลย"}</span><span></span></div>${bf.remaining>0?`<button type="button" id="bufferSweepBtn" class="quick-amount-btn" style="width:100%;margin-top:8px;padding:10px 0;">➡️ ย้ายเศษ ฿${fmt(bf.remaining)} ไปเป็นเงินออม</button>`:""}</div>`;
+    const low=bf.remaining<0, col=low?"var(--v-out)":"var(--v-accent)", w=bf.amount>0?Math.min(100,Math.max(0,bf.used/bf.amount*100)):0;
+    html+=`<div class="v-subhead"><span>เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="v-pill v-pill-${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">ใช้ไปนอกงบ</span><span class="v-brow-amt">฿${fmt(bf.used)}<small> / ฿${fmt(bf.amount)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))} · ${bf.swept>0?`ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:"ถ้าสิ้นเดือนเหลือ ย้ายไปออมได้"}</span></div>${bf.remaining>0?`<button type="button" id="bufferSweepBtn" class="v-btn-block">ย้ายเศษ ฿${fmt(bf.remaining)} ไปเป็นเงินออม</button>`:""}</div>`;
   }
   // เตือนช่วงท้ายเดือน (เหลือ ≤5 วัน)
   if(s.remainingDays<=5){
@@ -3313,7 +3316,7 @@ function renderBudgetDashboard(){
     if(sv.budgetCount&&sv.totalRemaining>0) tips.push(`เป้าออมยังขาด ฿${fmt(sv.totalRemaining)}`);
     if(s.overCount) tips.push(`เกินงบ ${s.overCount} หมวด`);
     if(tips.length){
-      html=`<div style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:12.5px;line-height:1.6;"><div style="font-weight:700;margin-bottom:2px;">🗓 ใกล้สิ้นเดือน (เหลือ ${s.remainingDays} วัน)</div>${tips.map(t=>"• "+escapeHtml(t)).join("<br>")}</div>`+html;
+      html=`<div class="v-note"><div class="v-note-title">ใกล้สิ้นเดือน (เหลือ ${s.remainingDays} วัน)</div>${tips.map(t=>escapeHtml(t)).join("<br>")}</div>`+html;
       try{
         const mk=monthKey(todayISO()), nid="monthend-"+mk, list=loadVaultetNotifications();
         if(!list.some(n=>n.id===nid)){ list.unshift({id:nid,icon:"🗓",title:"ใกล้สิ้นเดือนแล้ว",body:tips.join(" · "),read:false,day:todayISO(),createdAt:new Date().toISOString()}); saveVaultetNotifications(list); if(typeof renderVaultetNotifications==="function") renderVaultetNotifications(); }
@@ -4213,7 +4216,7 @@ function renderSpendCard(){
   const plan=document.getElementById("ux-plan");if(!plan)return;
   let card=document.getElementById("spendSummaryCard");
   if(!card){card=document.createElement("div");card.id="spendSummaryCard";
-    const ref=document.getElementById("emergencyDashboardCard");card.className=ref?ref.className:"";card.style.display="block";
+    card.className="v-card";card.style.display="block";
     const bud=document.getElementById("budgetDashboardCard");
     if(bud&&bud.parentNode===plan)bud.after(card);else plan.appendChild(card);}
   const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -4224,8 +4227,8 @@ function renderSpendCard(){
   const ex=inM(mk),total=ex.reduce((a,e)=>a+(Number(e.amount)||0),0),prev=inM(prevKey).reduce((a,e)=>a+(Number(e.amount)||0),0);
   const now=new Date(),isCur=now.getFullYear()===y&&now.getMonth()+1===m;
   const days=isCur?now.getDate():new Date(y,m,0).getDate();
-  const head=`<div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-weight:700;font-size:16px">📊 เงินเดือนนี้ไปไหนบ้าง</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--expense,#ef5350)">${f(total)}</div></div>`;
-  if(!ex.length){card.innerHTML=head+'<div style="font-size:12px;color:var(--faint);margin-top:8px">ยังไม่มีรายจ่ายในเดือนนี้</div>';return;}
+  const head=`<div class="v-card-head"><h2 class="v-card-title">รายจ่ายเดือนนี้ไปไหนบ้าง</h2></div><div class="v-big-row"><span class="v-big">${f(total)}</span><span class="v-big-label">รวมรายจ่าย</span></div>`;
+  if(!ex.length){card.innerHTML=head+'<div class="v-card-sub">ยังไม่มีรายจ่ายในเดือนนี้</div>';return;}
   const cats={};
   ex.forEach(e=>{const c=e.category||"อื่นๆ",a=Number(e.amount)||0;const o=cats[c]||(cats[c]={sum:0,n:0,items:{}});o.sum+=a;o.n++;
     const nm=(e.note||"").trim()||"(ไม่มีโน้ต)";const it=o.items[nm.toLowerCase()]||(o.items[nm.toLowerCase()]={name:nm,sum:0,n:0});it.sum+=a;it.n++;});
@@ -4235,12 +4238,12 @@ function renderSpendCard(){
   const bd=Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0];
   const diff=prev>0?Math.round((total-prev)/prev*100):null;
   const cmp=prev>0?`เดือนก่อน ${f(prev)} (${diff>0?"▲ +":diff<0?"▼ ":""}${diff}%)`:"ยังไม่มีข้อมูลเดือนก่อนให้เทียบ";
-  const pal=["#ef5350","#f4a261","#e9c46a","#52b788","#7aa2f7","#b388eb","#8a8a93"];
-  const rows=list.map(([c,o],i)=>{const pct=Math.round(o.sum/total*100),col=pal[Math.min(i,pal.length-1)];
-    const items=Object.values(o.items).sort((a,b)=>b.sum-a.sum).map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:5px 0 0;color:var(--faint)"><span>${esc(it.name)} · ${it.n} ครั้ง</span><span class="mono">${f(it.sum)}</span></div>`).join("");
-    return `<details style="padding:10px 0;border-top:1px solid var(--line,#26262b)"><summary style="list-style:none;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(c)}</b><span class="mono">${f(o.sum)}</span></div><div style="height:7px;border-radius:5px;background:#26262b;margin:6px 0 3px"><div style="height:7px;border-radius:5px;width:${pct}%;background:${col}"></div></div><div style="font-size:11px;color:var(--faint)">${o.n} ครั้ง · เฉลี่ยครั้งละ ${f(o.sum/o.n)} · ${pct}% ของรายจ่าย ▾</div></summary>${items}</details>`;}).join("");
-  card.innerHTML=head+`<div style="font-size:12px;color:var(--faint);margin:4px 0 10px">${ex.length} ครั้ง · เฉลี่ยวันละ ${f(total/days)} · ${cmp}</div>`+rows+
-   `<div style="font-size:12px;color:var(--faint);border-top:1px solid var(--line,#26262b);padding-top:10px;margin-top:2px;line-height:1.7">💸 ก้อนใหญ่สุด: ${esc((big.note||"").trim()||big.category||"-")} ${f(big.amount)}<br>📅 วันที่ใช้เยอะสุด: ${bd[0].slice(8)}/${bd[0].slice(5,7)} (${f(bd[1])})</div><div style="font-size:11px;color:var(--faint);margin-top:6px">แตะที่หมวดเพื่อดูว่าใช้กับรายการอะไรบ้าง</div>`;
+  const NCOL=6;
+  const rows=list.map(([c,o],i)=>{const pct=Math.round(o.sum/total*100),col=`var(--v-cat-${Math.min(i,NCOL-1)+1})`;
+    const items=Object.values(o.items).sort((a,b)=>b.sum-a.sum).map(it=>`<div class="v-srow-item"><span>${esc(it.name)} · ${it.n} ครั้ง</span><span>${f(it.sum)}</span></div>`).join("");
+    return `<details class="v-srow"><summary><div class="v-brow-top"><span class="v-brow-name">${esc(c)}</span><span class="v-brow-amt">${f(o.sum)}</span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${col}"></i></div><div class="v-brow-meta"><span>${o.n} ครั้ง · เฉลี่ยครั้งละ ${f(o.sum/o.n)}</span><span>${pct}%</span></div></summary><div class="v-srow-items">${items}</div></details>`;}).join("");
+  card.innerHTML=head+`<div class="v-card-sub">${ex.length} ครั้ง · เฉลี่ยวันละ ${f(total/days)} · ${cmp}</div><div class="v-rows">${rows}</div>`+
+   `<div class="v-facts"><span>รายการใหญ่สุด</span><b>${esc((big.note||"").trim()||big.category||"-")} ${f(big.amount)}</b></div><div class="v-facts"><span>วันที่ใช้เยอะสุด</span><b>${bd[0].slice(8)}/${bd[0].slice(5,7)} (${f(bd[1])})</b></div><div class="v-hint">แตะที่หมวดเพื่อดูว่าใช้กับรายการอะไรบ้าง</div>`;
 }
 (function(){const _r=render;render=function(){_r();try{renderSpendCard()}catch(e){console.error(e)}};setTimeout(()=>{try{renderSpendCard()}catch(e){console.error(e)}},600);})();
 
