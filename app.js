@@ -1431,6 +1431,56 @@ function renderAccountsSummary(){
   `).join("");
 }
 
+// แถวรายการ (ใช้ทั้งหน้าหลักและแท็บ "รายการ") — แตะแถวเพื่อแก้ไข/ลบ
+function txListHtml(list){
+  const txRow = (e, glyph, tone, title, sub, amount) => `<li class="v-tx" data-id="${e.id}">
+      <span class="v-tx-ic v-tone-${tone}">${glyph}</span>
+      <div class="v-tx-main"><div class="v-tx-t">${title}</div><div class="v-tx-s">${sub}</div></div>
+      <span class="v-tx-a v-sens v-tone-${tone}">${amount}</span>
+    </li>`;
+  const rows = [];
+  let lastDate = null;
+  list.forEach(e => {
+    if(e.date !== lastDate){ lastDate = e.date; rows.push(`<li class="v-day">${dayHeading(e.date)}</li>`); }
+    const note = e.note ? escapeHtml(e.note) : "";
+    if(e.type === "transfer"){
+      const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
+      const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
+      rows.push(txRow(e, "⇄", "xfer", "โอนเงิน", `${escapeHtml(fromName)} → ${escapeHtml(toName)}${note ? " · "+note : ""}`, "฿"+fmt(e.amount)));
+    }else{
+      const tone = e.type==="income" ? "in" : e.type==="saving" ? "save" : "out";
+      const sign = e.type==="income" ? "+" : e.type==="saving" ? "" : "−";
+      const glyph = e.recurringId ? "🔁" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
+      const accName = accounts.find(a=>a.id===e.accountId)?.name || "";
+      const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ") || "&nbsp;";
+      rows.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
+    }
+  });
+  return `<ul class="v-txlist">${rows.join("")}</ul>`;
+}
+function bindTxRows(container){
+  container.querySelectorAll(".v-tx").forEach(li => {
+    li.addEventListener("click", () => {
+      const entry = entries.find(e => e.id === li.dataset.id);
+      if(entry) openForm(entry);
+    });
+  });
+}
+// ลบรายการ (เรียกจากปุ่ม "ลบรายการนี้" ในหน้าแก้ไข)
+function deleteEntryById(id){
+  const target = entries.find(e => e.id === id);
+  if(!target) return;
+  if(target.source === "loan_repayment"){
+    const result = deleteLoanRepayment(target.loanId, target.repaymentId);
+    if(!result.ok && result.error !== "cancelled") showToast("ลบเงินคืนไม่สำเร็จ");
+    return;
+  }
+  syncStudentLoanEntry(target, {...target, type:"__deleted__", category:""});
+  entries = entries.filter(e => e.id !== id);
+  saveEntries();
+  render();
+}
+
 function render(){
   refreshBackupBanner();
   renderAccountsSummary();
@@ -1511,36 +1561,11 @@ function render(){
   else ss.style.display = "none";
   ss.onclick = ev => { if(ev.target.id === "sumToggle"){ searchAllMonths = !searchAllMonths; render(); } };
   const listContainer = document.getElementById("listContainer");
+  const emptyMsg = `<div class="empty-state">ยังไม่มีรายการในเดือนนี้ — กดปุ่ม + เพื่อเริ่มจด</div>`;
   if(me.length===0){
-    listContainer.innerHTML = `<div class="empty-state">ยังไม่มีรายการในเดือนนี้ — กดปุ่ม + เพื่อเริ่มจด</div>`;
+    listContainer.innerHTML = emptyMsg;
   }else{
-    const meVisible = me.slice(0, txVisibleLimit);
-    const TRASH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
-    const txRow = (e, glyph, tone, title, sub, amount) => `<li class="v-tx" data-id="${e.id}">
-        <span class="v-tx-ic v-tone-${tone}">${glyph}</span>
-        <div class="v-tx-main"><div class="v-tx-t">${title}</div><div class="v-tx-s">${sub}</div></div>
-        <span class="v-tx-a v-sens v-tone-${tone}">${amount}</span>
-        <button type="button" class="v-tx-del delete-btn" data-id="${e.id}" aria-label="ลบรายการ">${TRASH_SVG}</button>
-      </li>`;
-    const rowsHtml = [];
-    let lastDate = null;
-    meVisible.forEach(e => {
-      if(e.date !== lastDate){ lastDate = e.date; rowsHtml.push(`<li class="v-day">${dayHeading(e.date)}</li>`); }
-      const note = e.note ? escapeHtml(e.note) : "";
-      if(e.type === "transfer"){
-        const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
-        const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
-        rowsHtml.push(txRow(e, "⇄", "xfer", "โอนเงิน", `${escapeHtml(fromName)} → ${escapeHtml(toName)}${note ? " · "+note : ""}`, "฿"+fmt(e.amount)));
-      }else{
-        const tone = e.type==="income" ? "in" : e.type==="saving" ? "save" : "out";
-        const sign = e.type==="income" ? "+" : e.type==="saving" ? "" : "−";
-        const glyph = e.recurringId ? "🔁" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
-        const accName = accounts.find(a=>a.id===e.accountId)?.name || "";
-        const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ") || "&nbsp;";
-        rowsHtml.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
-      }
-    });
-    listContainer.innerHTML = `<ul class="v-txlist">${rowsHtml.join("")}</ul>` + (me.length > txVisibleLimit
+    listContainer.innerHTML = txListHtml(me.slice(0, txVisibleLimit)) + (me.length > txVisibleLimit
       ? `<button type="button" class="v-more-btn" id="loadMoreTxBtn">ดูเพิ่มเติม (เหลืออีก ${me.length - txVisibleLimit} รายการ)</button>`
       : "");
     const loadMoreTxBtn = document.getElementById("loadMoreTxBtn");
@@ -1550,29 +1575,14 @@ function render(){
         render();
       });
     }
-    listContainer.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        if(!confirm("ลบรายการนี้ใช่ไหม?")) return;
-        const target = entries.find(e => e.id === btn.dataset.id);
-        if(!target) return;
-        if(target.source === "loan_repayment"){
-          const result=deleteLoanRepayment(target.loanId,target.repaymentId);
-          if(!result.ok && result.error !== "cancelled") showToast("ลบเงินคืนไม่สำเร็จ");
-          return;
-        }
-        syncStudentLoanEntry(target, {...target, type:"__deleted__", category:""});
-        entries = entries.filter(e => e.id !== btn.dataset.id);
-        saveEntries();
-        render();
-      });
-    });
-    listContainer.querySelectorAll(".v-tx").forEach(li => {
-      li.addEventListener("click", () => {
-        const entry = entries.find(e => e.id === li.dataset.id);
-        if(entry) openForm(entry);
-      });
-    });
+    bindTxRows(listContainer);
+  }
+  // หน้าหลัก: โชว์แค่ 5 รายการล่าสุดของเดือน (ไม่ผูกกับช่องค้นหา/ตัวกรองของแท็บ "รายการ")
+  const recentContainer = document.getElementById("recentContainer");
+  if(recentContainer){
+    const recent = [...getMonthEntries()].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+    recentContainer.innerHTML = recent.length ? txListHtml(recent) : emptyMsg;
+    bindTxRows(recentContainer);
   }
   scheduleGDriveAutoSync();
 }
@@ -1703,6 +1713,7 @@ function setFormManaging(on){
 }
 function openForm(entry){
   setFormManaging(false);
+  document.getElementById("vDeleteEntryBtn").hidden = !entry;
   editingId = entry ? entry.id : null;
   document.getElementById("modalTitle").textContent = entry ? "แก้ไขรายการ" : "เพิ่มรายการ";
   document.getElementById("overlay").classList.add("open");
@@ -1723,6 +1734,12 @@ function closeForm(){
 }
 
 document.getElementById("fabBtn").addEventListener("click", () => openForm(null));
+document.getElementById("vDeleteEntryBtn").addEventListener("click", () => {
+  if(!editingId || !confirm("ลบรายการนี้ใช่ไหม?")) return;
+  const id = editingId;
+  closeForm();
+  deleteEntryById(id);
+});
 document.getElementById("vManageBtn").addEventListener("click", () => setFormManaging(!document.querySelector("#overlay .v-sheet").classList.contains("v-managing")));
 document.getElementById("closeBtn").addEventListener("click", closeForm);
 document.getElementById("overlay").addEventListener("click", closeForm);
@@ -3434,22 +3451,23 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   const home=makeView('home','ภาพรวม','ทุกสิ่งที่สำคัญสำหรับคุณในตอนนี้');
   const tx=makeView('transactions','รายการเงิน','ดู ค้นหา และจัดการรายรับรายจ่ายทั้งหมด');
   const plan=makeView('plan','วางแผนการเงิน','กำหนดกรอบการใช้เงินและสร้างความปลอดภัยให้การเงิน');
-  const brainV=makeView('brain','Financial Brain','ให้ Vaultet วิเคราะห์สุขภาพและพฤติกรรมการเงินของคุณ');
   const more=makeView('more','เพิ่มเติม','ตั้งค่าและเครื่องมือของ Vaultet');
   const chatV=makeView('chat','AI ที่ปรึกษา','คุยแบบอิสระกับ Vaultet ได้เหมือนคุยกับที่ปรึกษาส่วนตัว');
 
   home.append(header,hero);
   if(upcoming) home.append(upcoming);
   if(proactive) home.append(proactive);
+  if(brain) plan.append(brain);
   if(budget) plan.append(budget);
   if(emergency) plan.append(emergency);
-  if(brain) brainV.append(brain);
   if(notify) more.append(notify);
   if(backup) more.append(backup);
+  // แท็บ "รายการ": ค้นหา/กรองรายการทั้งหมดก่อน แล้วค่อยเป็นการวิเคราะห์และเปรียบเทียบ
+  tx.append(list);
   if(breakdown) tx.append(breakdown);
   analyses.forEach(a=>tx.append(a));
-  // Transaction history/search/filter now live at the very bottom of Overview.
-  home.append(list);
+  // หน้าหลัก: โชว์เฉพาะ 5 รายการล่าสุด
+  const recent=page.querySelector('#vRecent'); if(recent) home.append(recent);
 
   // Dedicated AI page reuses the existing chat DOM/logic.
   const aiOverlay=document.getElementById('aiAnalystOverlay');
@@ -3477,19 +3495,20 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   bottom.className='ux-bottom-nav';
   bottom.setAttribute('aria-label','เมนูหลัก');
   bottom.innerHTML=`
-    <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>ภาพรวม</button>
+    <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>หน้าหลัก</button>
+    <button class="ux-bottom-item" data-page="transactions"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>รายการ</button>
     <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>แผน</button>
-    <button class="ux-bottom-item" data-page="brain"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>Brain</button>
     <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>ที่ปรึกษา AI</button>
-    <button class="ux-bottom-item" data-page="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>อื่นๆ</button>`;
+    <button class="ux-bottom-item" data-page="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.300 16.300l2.100 2.100M18.400 5.600l-2.100 2.100M7.700 16.300l-2.100 2.100"/></svg>ตั้งค่า</button>`;
   document.body.append(bottom);
 
-  const names={home:'ภาพรวม',transactions:'รายการเงิน',plan:'วางแผนการเงิน',brain:'Financial Brain',chat:'ที่ปรึกษา AI',more:'เพิ่มเติม'};
+  const names={home:'หน้าหลัก',transactions:'รายการ',plan:'แผน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า'};
   function go(id){
     if(!views[id]) id='home';
     Object.entries(views).forEach(([k,v])=>v.classList.toggle('active',k===id));
     document.body.classList.toggle('ux-home-active',id==='home');
     document.body.classList.toggle('ux-chat-active',id==='chat');
+    document.body.classList.toggle('ux-tx-active',id==='transactions');
     document.body.classList.toggle('ux-nonhome',id!=='home');
     document.body.classList.toggle('ux-more-active',id==='more');
     const pageName=document.getElementById('uxPageName');
@@ -3499,6 +3518,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     history.replaceState(null,'','#'+id);
   }
 
+  window.vaultetGo=go;
   document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.addEventListener('click',()=>{
     const id=x.dataset.page;
     if(id==='chat' && window.bancheeOpenChatPage){ window.bancheeOpenChatPage(); }
@@ -3606,7 +3626,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     if(!anchor) return;
     const active=document.querySelector('.ux-view.active');
     const pageId=active ? active.id.replace(/^ux-/,'') : 'home';
-    anchor.classList.toggle('fab-hidden', pageId !== 'home');
+    anchor.classList.toggle('fab-hidden', pageId !== 'home' && pageId !== 'transactions');
   }
 
   if(nav) nav.addEventListener('click',()=>setTimeout(syncFabVisibility,0),true);
@@ -3616,17 +3636,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     observer.observe(v,{attributes:true,attributeFilter:['class']});
   });
   syncFabVisibility();
-
-  // On Overview, hide floating actions while the transaction list is actually in view so they can never cover rows.
-  const listSection=document.querySelector('#ux-home .list-section');
-  if(anchor && listSection && 'IntersectionObserver' in window){
-    const listObserver=new IntersectionObserver(entries=>{
-      const visible=entries.some(x=>x.isIntersecting);
-      const active=document.querySelector('.ux-view.active')?.id==='ux-home';
-      anchor.classList.toggle('fab-hidden', active && visible);
-    },{threshold:0.08});
-    listObserver.observe(listSection);
-  }
 
   const bell=document.getElementById('uxBellBtn');
   const overlay=document.getElementById('notificationOverlay');
@@ -3777,7 +3786,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     return {name,meta,goal:goal?`เป้าหมาย: ${goal.name}`:''};
   }
   function ensureContext(viewId){
-    if(!['plan','brain','more'].includes(viewId)) return;
+    if(!['plan','more'].includes(viewId)) return;
     const view=document.getElementById('ux-'+viewId); if(!view||view.querySelector('.ux-user-context')) return;
     const card=document.createElement('div'); card.className='ux-user-context';
     card.innerHTML='<div class="ux-user-context-avatar">👤</div><div class="ux-user-context-main"><div class="ux-user-context-name"></div><div class="ux-user-context-meta"></div><div class="ux-user-context-goal"></div></div>';
@@ -3792,7 +3801,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     });
   }
   function setup(){
-    ['plan','brain','more'].forEach(ensureContext);
+    ['plan','more'].forEach(ensureContext);
     const more=document.getElementById('ux-more');
     if(more){
       // Keep exactly one profile/context card on Other. It is also the entry point to the full editor.
