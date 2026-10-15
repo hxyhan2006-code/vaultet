@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds14">
-<link rel="stylesheet" href="ds.css?v=ds14">
+<link rel="stylesheet" href="style.css?v=ds15">
+<link rel="stylesheet" href="ds.css?v=ds15">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -319,7 +319,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">🔢 การแสดงตัวเลข</div>
+      <div class="settings-card-title">การแสดงตัวเลข</div>
       <label class="field-label" style="display:flex; align-items:center; gap:8px; text-transform:none; font-size:13px; margin-top:10px; cursor:pointer;">
         <input type="checkbox" id="showDecimalsToggle" style="width:16px;height:16px;margin:0;" />
         แสดงเศษสตางค์ (ทศนิยม)
@@ -327,7 +327,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">🔑 Gemini API Key</div>
+      <div class="settings-card-title">Gemini API Key</div>
       <div class="ai-status-row" style="margin-top:10px;">
         <span class="ai-status-label">Gemini API Key</span>
         <span class="ai-status-value" id="apiKeyStatus">ยังไม่ได้ตั้งค่า</span>
@@ -342,7 +342,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">📈 ราคาหุ้น (Twelve Data)</div>
+      <div class="settings-card-title">ราคาหุ้น (Twelve Data)</div>
       <div class="ai-status-row" style="margin-top:10px;"><span class="ai-status-label">API Key</span><span class="ai-status-value" id="pfKeyStatus2">ยังไม่ได้ตั้งค่า</span></div>
       <p class="ai-hint">สมัครฟรีที่ twelvedata.com → API keys แล้วก๊อปมาวาง เก็บในเครื่องนี้เท่านั้น ไม่รวมในไฟล์สำรอง</p>
       <input class="text-input" id="pfKeyInput2" type="password" placeholder="วาง Twelve Data API Key" autocomplete="off" />
@@ -350,7 +350,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">☁️ สำรองอัตโนมัติขึ้น Google Drive</div>
+      <div class="settings-card-title">สำรองอัตโนมัติขึ้น Google Drive</div>
       <div class="ai-status-row" style="margin-top:10px;">
         <span class="ai-status-label">การเชื่อมต่อ</span>
         <span class="ai-status-value" id="gdriveConnStatus">ยังไม่ได้เชื่อมต่อ</span>
@@ -381,7 +381,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">🧠 โปรไฟล์การเงิน (สำหรับ AI)</div>
+      <div class="settings-card-title">โปรไฟล์การเงิน (สำหรับ AI)</div>
       <div class="ai-status-row" style="margin-top:10px;">
         <span class="ai-status-label">สถานะโปรไฟล์</span>
         <span class="ai-status-value" id="aiProfileStatus">ยังไม่ได้ตั้งค่า</span>
@@ -402,7 +402,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">🎯 เป้าหมายทางการเงิน</div>
+      <div class="settings-card-title">เป้าหมายทางการเงิน</div>
       <div class="goal-list" id="aiGoalsList"></div>
       <div class="goal-add-row">
         <div class="goal-add-inputs">
@@ -415,7 +415,7 @@
     </div>
 
     <div class="settings-card">
-      <div class="settings-card-title">🧠 Memory ที่ AI จำได้</div>
+      <div class="settings-card-title">Memory ที่ AI จำได้</div>
       <p class="ai-hint">สิ่งสำคัญที่ AI เคยจำไว้จากบทสนทนา (ทั้งที่จำเองอัตโนมัติ และที่เพิ่มเองด้านล่าง) — AI จะนำไปใช้ประกอบคำตอบทุกครั้งที่คุยกัน ลบรายการไหนก็ได้ถ้าไม่อยากให้จำอีกต่อไป</p>
       <div id="aiMemoryList"></div>
       <div class="memory-add-row">
@@ -430,7 +430,7 @@
   <div class="sheet-modal" onclick="event.stopPropagation()">
     <div class="modal-header"><span class="modal-title">เงินสำรองฉุกเฉิน</span><button class="close-btn" id="closeEmergencyBtn">✕</button></div>
     <div class="settings-card" style="margin-bottom:12px;">
-      <div class="settings-card-title">🛟 เป้าหมายเงินสำรอง</div>
+      <div class="settings-card-title">เป้าหมายเงินสำรอง</div>
       <p class="ai-hint">ระบบจะแนะนำจากค่าใช้จ่ายจำเป็นของคุณ เลือกเป้าหมาย 3 เดือน, 6 เดือน หรือกำหนดเองได้</p>
       <label class="field-label">เป้าหมาย</label>
       <select id="emergencyMonthsInput" class="field-select">
@@ -443,7 +443,7 @@
       <div style="margin-top:8px;" class="emergency-stat"><div class="emergency-stat-label">เป้าหมายเงินสำรอง</div><div class="emergency-stat-value mono" id="emergencyRecommendedTarget">฿0</div></div>
     </div>
     <div class="settings-card">
-      <div class="settings-card-title">🏷️ หมวดที่นับเป็นค่าใช้จ่ายจำเป็น</div>
+      <div class="settings-card-title">หมวดที่นับเป็นค่าใช้จ่ายจำเป็น</div>
       <p class="ai-hint">เลือกเฉพาะค่าใช้จ่ายที่คุณต้องจ่ายเพื่อใช้ชีวิตจริง ระบบจะใช้หมวดเหล่านี้คำนวณค่าใช้จ่ายจำเป็น</p>
       <div id="emergencyEssentialCategories" class="essential-category-grid"></div>
       <button id="saveEmergencyBtn" class="manage-accounts-btn" style="width:100%;margin-top:12px;">บันทึกการตั้งค่า</button>
@@ -743,9 +743,9 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds14"></script>
-<script src="app.js?v=ds14"></script>
-<script src="ai.js?v=ds14"></script>
-<script src="ui.js?v=ds14"></script>
+<script src="dialog.js?v=ds15"></script>
+<script src="app.js?v=ds15"></script>
+<script src="ai.js?v=ds15"></script>
+<script src="ui.js?v=ds15"></script>
 </body>
 </html>

@@ -539,3 +539,12 @@ html body #budgetOverlay .text-input:focus { outline: 2px solid var(--v-accent);
 #pfOverlay .pf-bottom button.primary { background: var(--v-accent) !important; border-color: transparent !important; color: var(--v-accent-ink) !important; font-weight: 600; }
 #pfOpenSheet .btns button.ok { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
 #pfOverlay .pos { color: var(--v-in); } #pfOverlay .neg { color: var(--v-out); }
+
+/* emergency settings: category picker as chips */
+#emergencyEssentialCategories { display: flex !important; flex-wrap: wrap; gap: 8px; }
+html body #saveEmergencyBtn { height: 48px; background: var(--v-accent) !important; color: var(--v-accent-ink) !important; border: 0 !important; border-radius: var(--v-r-md) !important; font-weight: 600; }
+/* profile editor: checkbox options as chips */
+html body .profile-check { position: relative; display: inline-flex; padding: 8px 14px !important; border-radius: 999px !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; color: var(--v-fg) !important; font-size: 14px !important; cursor: pointer; }
+html body .profile-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+html body .profile-check:has(input:checked) { background: var(--v-accent) !important; border-color: transparent !important; color: var(--v-accent-ink) !important; font-weight: 600; }
+html body .profile-check:has(input:focus-visible) { outline: 2px solid var(--v-accent); outline-offset: 2px; }
