@@ -712,3 +712,29 @@ html body #notificationOverlay .notification-setting[data-state]:has(input[type=
 html body #notificationOverlay .notification-setting:has(input[type="checkbox"]:checked) { background: none !important; border-color: var(--v-line) !important; }
 html body #notificationOverlay .notification-settings-panel { max-height: none !important; overflow: visible !important; }
 html body #notificationOverlay .notification-actions button { border-radius: var(--v-r-md) !important; }
+
+/* ===== ds23: shortcuts (centred, user-ordered), toast, scroll lock ===== */
+.v-sc-more { display: flex !important; justify-content: center; gap: 8px; }
+.v-sc-more[hidden] { display: none !important; }
+.v-sc-more .v-sc { flex: 0 0 calc((100% - 24px) / 4); max-width: calc((100% - 24px) / 4); }
+.v-sc-sort { display: flex; flex-direction: column; margin: 4px 0 14px; }
+.v-sc-sort-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--v-line); }
+.v-sc-sort-row:first-child { border-top: 0; }
+.v-sc-sort-row.is-split { border-top: 2px solid var(--v-muted); margin-top: 6px; padding-top: 14px; }
+.v-sc-sort-ic { flex: none; width: 36px; height: 36px; border-radius: 12px; background: var(--v-surface-2); display: grid; place-items: center; color: var(--v-fg); }
+.v-sc-sort-ic svg, .v-sc-sort-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.v-sc-sort-name { flex: 1; min-width: 0; font-size: 15px; }
+.v-sc-sort-where { font-size: 12px; color: var(--v-muted); }
+.v-sc-sort-btn { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-fg); cursor: pointer; }
+.v-sc-sort-btn:disabled { opacity: .3; cursor: default; }
+
+html body .ai-completion-notice { top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; right: auto; width: min(420px, calc(100vw - 32px)); padding: 10px 10px 10px 12px; gap: 6px; background: var(--v-surface) !important; border: 1px solid var(--v-line); border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,.45); transform: translate(-50%, -12px); align-items: center; z-index: 9200; }
+html body .ai-completion-notice.show { transform: translate(-50%, 0); }
+html body .ai-completion-main { background: none; border: 0; padding: 0; gap: 12px; align-items: center; text-align: left; color: var(--v-fg); }
+html body .ai-completion-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--v-accent) 16%, transparent); color: var(--v-in); display: grid; place-items: center; }
+html body .ai-completion-main strong { font-size: 15px; font-weight: 600; color: var(--v-fg); display: block; }
+html body .ai-completion-main small { font-size: 13px; color: var(--v-muted); display: block; margin-top: 2px; }
+html body .ai-completion-dismiss { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-muted); font-size: 18px; line-height: 1; }
+
+body.v-scroll-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+html body .sheet-modal, html body .v-dlg, html body .v-aimenu-hist, html body .notification-list, html body .wa-sheet, html body .profile-sheet, html body .pf-body, html body .ai-advisor-settings-panel, html body #aiAnalystBody { overscroll-behavior: contain; }

@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds22";
+  const UI_VERSION = "ds24";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -20,6 +20,102 @@
   if(more && row) more.addEventListener("click", () => {
     const open = row.hidden; row.hidden = !open; more.setAttribute("aria-expanded", open ? "true" : "false");
   });
+
+  // ---------- จัดเรียงทางลัดเอง: 3 อันแรกอยู่แถวบน ที่เหลืออยู่ใน "เพิ่มเติม" ----------
+  const K_SC = "vaultet_ui_shortcuts_v1";
+  const SC_DEFAULT = ["openPortfolioBtn", "vEmergencyBtn", "manageDebtsBtn", "manageAccountsBtn", "manageReservedBtn", "manageLoansBtn"];
+  const scGrid = document.getElementById("vShortcuts");
+  function scOrder(){
+    let saved = []; try{ saved = JSON.parse(get(K_SC) || "[]"); }catch(e){}
+    if(!Array.isArray(saved)) saved = [];
+    const ids = saved.filter(id => SC_DEFAULT.includes(id));
+    SC_DEFAULT.forEach(id => { if(!ids.includes(id)) ids.push(id); });
+    return ids;
+  }
+  function scApply(){
+    if(!scGrid || !more || !row) return;
+    const order = scOrder();
+    order.forEach((id, i) => {
+      const b = document.getElementById(id); if(!b) return;
+      if(i < 3) scGrid.insertBefore(b, more); else row.append(b);
+    });
+    const edit = document.getElementById("vScEdit"); if(edit) row.append(edit);
+  }
+  function scLabel(id){ return document.getElementById(id)?.querySelector("span")?.textContent || id; }
+  function scIcon(id){ return document.getElementById(id)?.querySelector("i")?.innerHTML || ""; }
+  if(scGrid && more && row){
+    const edit = document.createElement("button");
+    edit.type = "button"; edit.className = "v-sc"; edit.id = "vScEdit";
+    edit.innerHTML = '<i><svg viewBox="0 0 24 24"><path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/></svg></i><span>จัดเรียง</span>';
+    row.append(edit);
+    scApply();
+    edit.addEventListener("click", () => {
+      window.__vaultetShow(ctx => {
+        ctx.cancelValue = null;
+        const box = ctx.box;
+        box.insertAdjacentHTML("beforeend", '<h2 class="v-dlg-title">จัดเรียงทางลัด</h2><p class="v-dlg-msg">3 อันแรกอยู่บนหน้าหลัก ที่เหลืออยู่ใต้ปุ่ม "เพิ่มเติม"</p>');
+        const list = document.createElement("div"); list.className = "v-sc-sort";
+        const draw = () => {
+          list.innerHTML = "";
+          const order = scOrder();
+          order.forEach((id, i) => {
+            const r = document.createElement("div"); r.className = "v-sc-sort-row" + (i === 3 ? " is-split" : "");
+            r.innerHTML = '<span class="v-sc-sort-ic"><svg viewBox="0 0 24 24">' + scIcon(id) + '</svg></span><span class="v-sc-sort-name"></span><span class="v-sc-sort-where"></span><button type="button" class="v-sc-sort-btn" data-d="-1" aria-label="เลื่อนขึ้น"><svg viewBox="0 0 24 24"><path d="M6 14l6-6 6 6"/></svg></button><button type="button" class="v-sc-sort-btn" data-d="1" aria-label="เลื่อนลง"><svg viewBox="0 0 24 24"><path d="M6 10l6 6 6-6"/></svg></button>';
+            r.querySelector(".v-sc-sort-name").textContent = scLabel(id);
+            r.querySelector(".v-sc-sort-where").textContent = i < 3 ? "หน้าหลัก" : "เพิ่มเติม";
+            r.querySelectorAll("[data-d]").forEach(btn => {
+              const d = Number(btn.dataset.d), j = i + d;
+              btn.disabled = j < 0 || j >= order.length;
+              btn.addEventListener("click", () => { const o = scOrder(); [o[i], o[j]] = [o[j], o[i]]; set(K_SC, JSON.stringify(o)); scApply(); draw(); });
+            });
+            list.append(r);
+          });
+        };
+        draw();
+        box.append(list);
+        const actions = document.createElement("div"); actions.className = "v-dlg-actions";
+        const reset = document.createElement("button"); reset.type = "button"; reset.className = "v-dlg-cancel"; reset.textContent = "คืนค่าเดิม";
+        reset.addEventListener("click", () => { set(K_SC, JSON.stringify(SC_DEFAULT)); scApply(); draw(); });
+        const done = document.createElement("button"); done.type = "button"; done.className = "v-dlg-ok"; done.textContent = "เสร็จ"; done.setAttribute("data-autofocus", "");
+        done.addEventListener("click", () => ctx.close(true));
+        actions.append(reset, done); box.append(actions);
+      });
+    });
+  }
+
+  // ---------- ล็อกการเลื่อนหน้าด้านหลังตอนมีหน้าต่าง/แผ่น/เมนูเปิดอยู่ ----------
+  (function(){
+    let locked = false, savedY = 0, raf = 0;
+    const isOpenLayer = () => {
+      if(document.querySelector(".v-dlg-back, #advDetailOverlay")) return true;
+      for(const el of document.body.children){   // ชั้นที่สร้างด้วย inline style เต็มจอ (หน้าล็อกแอป, ตัวเลือกกู้คืน)
+        if(el.style && el.style.position === "fixed" && /inset:\s*0|top:\s*0/.test(el.style.cssText) && getComputedStyle(el).display !== "none") return true;
+      }
+      for(const el of document.querySelectorAll(".open, .is-open, .show")){
+        const cs = getComputedStyle(el);
+        if(cs.position === "fixed" && cs.display !== "none" && cs.visibility !== "hidden" && el.getBoundingClientRect().height > 40 && !/toast|notice|bell|ux-bottom|ux-month/.test(el.className + el.id)) return true;
+      }
+      return false;
+    };
+    const apply = () => {
+      raf = 0;
+      const want = isOpenLayer();
+      if(want === locked) return;
+      locked = want;
+      if(want){
+        savedY = window.scrollY || document.documentElement.scrollTop || 0;
+        document.body.style.top = (-savedY) + "px";
+        document.body.classList.add("v-scroll-locked");
+      }else{
+        document.body.classList.remove("v-scroll-locked");
+        document.body.style.top = "";
+        window.scrollTo(0, savedY);
+      }
+    };
+    const kick = () => { if(!raf) raf = requestAnimationFrame(apply); };
+    new MutationObserver(kick).observe(document.body, { attributes: true, attributeFilter: ["class"], subtree: true, childList: true });
+    window.vaultetRefreshScrollLock = kick;
+  })();
 
   // สินทรัพย์รวม: จำสถานะพับ/กาง
   const assets = document.getElementById("vAssets");

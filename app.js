@@ -3680,19 +3680,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   window.visualViewport?.addEventListener('scroll',syncVV,{passive:true});
   window.addEventListener('resize',syncVV,{passive:true});
 
-  // Generic overlay scroll lock with restoration. Nested overlays are supported.
-  let lockDepth=0, savedY=0;
-  function syncModalLock(){
-    const openCount=document.querySelectorAll('.overlay.open,.profile-overlay.open').length;
-    if(openCount && lockDepth===0){
-      savedY=window.scrollY||0; body.classList.add('app-modal-open'); body.style.position='fixed'; body.style.top=`-${savedY}px`; body.style.width='100%';
-      lockDepth=1;
-    }else if(!openCount && lockDepth){
-      body.classList.remove('app-modal-open'); body.style.position=''; body.style.top=''; body.style.width=''; window.scrollTo(0,savedY); lockDepth=0;
-    }
-  }
-  new MutationObserver(syncModalLock).observe(body,{subtree:true,attributes:true,attributeFilter:['class']});
-  syncModalLock();
+  // การล็อกเลื่อนหน้าด้านหลังตอนมีหน้าต่างเปิด อยู่ใน ui.js (ที่เดียว ครอบคลุมทุกชนิดของหน้าต่าง/แผ่น/เมนู)
 
   // Advisor page entry never creates a new chat automatically.
   // loadAllChats()/getActiveChat() already provide the existing chat (including an empty one);
