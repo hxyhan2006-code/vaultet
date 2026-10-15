@@ -31,24 +31,27 @@ await pg.screenshot({path:shots+'new-nav-chat.png'});
 
 // ---- avatar / settings page / back ----
 await tab('plan'); await pg.waitForTimeout(200);
-ok('avatar visible on plan', await vis('#uxAvatarBtn'));
-await pg.click('#uxAvatarBtn'); await pg.waitForTimeout(300);
-ok('avatar opens settings page', await vis('#ux-more'));
+ok('no profile icon in the top bar', (await pg.locator('#uxAvatarBtn').count())===0 || !(await vis('#uxAvatarBtn')));
+await tab('chat'); await pg.waitForTimeout(250);
+ok('AI top bar has only menu + new chat', (await pg.locator('#uxChatTopActions button:visible').count())===2 && await vis('#uxChatMenuBtn') && await vis('#uxChatNewBtn'));
+await pg.screenshot({path:shots+'new-ai-top.png'});
+await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(250);
+ok('AI menu opens with 6 rows + profile row', await vis('#aiMenu') && (await pg.locator('#aiMenu .v-aimenu-row').count())===6 && await vis('#aiMenuProfile'));
+await pg.screenshot({path:shots+'new-ai-menu.png'});
+await pg.click('#aiMenuProfile'); await pg.waitForTimeout(350);
+ok('profile row opens settings page', await vis('#ux-more') && !(await vis('#aiMenu')));
 ok('back button visible on settings', await vis('#uxBackBtn'));
-ok('avatar hidden on settings', !(await vis('#uxAvatarBtn')));
-ok('settings has 4 groups', (await pg.locator('#ux-more .v-group').count())===4);
+ok('settings has 5 groups (incl. AI key)', (await pg.locator('#ux-more .v-group').count())===5);
 ok('no leftover empty display card in the old sheet', !(await pg.evaluate(()=>[...document.querySelectorAll('#settingsOverlay .settings-card-title')].some(t=>/การแสดงตัวเลข/.test(t.textContent)))));
 ok('export row says no file backup yet', (await pg.textContent('#vSetExport')).includes('ยังไม่เคยสำรองเป็นไฟล์'));
 await pg.screenshot({path:shots+'new-settings.png'});
 await pg.click('#uxBackBtn'); await pg.waitForTimeout(300);
-ok('back returns to the tab we came from (plan)', await vis('#ux-plan') && !(await vis('#ux-more')));
-await tab('chat'); await pg.waitForTimeout(200);
-ok('avatar hidden on AI tab', !(await vis('#uxAvatarBtn')));
+ok('back returns to the AI tab', await vis('#ux-chat') && !(await vis('#ux-more')));
 
 // ---- scoped settings sheets ----
 const cardsShown=()=>pg.evaluate(()=>[...document.querySelectorAll('#settingsOverlay > .sheet-modal > .settings-card')].filter(c=>getComputedStyle(c).display!=='none').map(c=>c.querySelector('.settings-card-title').textContent.replace(/[^\wก-๙ ()]/g,'').trim()));
 const title=()=>pg.textContent('#settingsOverlay .modal-title');
-await pg.click('#uxAvatarBtn').catch(()=>{}); await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(200);
+await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(200);
 await pg.click('#vSetDrive'); await pg.waitForTimeout(300);
 let c=await cardsShown(); ok('Drive row shows only the Drive card ('+c.join(' | ')+')', c.length===1&&/Drive/.test(c[0])); ok('...titled Google Drive', (await title())==='Google Drive');
 await closeAll(); await pg.waitForTimeout(200);
@@ -56,16 +59,31 @@ await pg.click('#vSetStock'); await pg.waitForTimeout(300);
 c=await cardsShown(); ok('Stock row shows only the stock card ('+c.join(' | ')+')', c.length===1&&/Twelve|หุ้น/.test(c[0]));
 await closeAll(); await pg.waitForTimeout(200);
 await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(200);
-await pg.click('#aiAdvisorSettingsBtn'); await pg.waitForTimeout(250);
-ok('AI panel has the AI-data button', await vis('#vAiDataBtn'));
-await pg.click('#vAiDataBtn'); await pg.waitForTimeout(300);
-c=await cardsShown(); ok('AI button shows AI cards only: '+c.join(' | '), c.some(x=>/Gemini/.test(x)) && c.some(x=>/Memory/.test(x)) && !c.some(x=>/Drive|Twelve/.test(x)));
-ok('...titled ตั้งค่า AI', (await title())==='ตั้งค่า AI');
+const menuRow=async n=>{ await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(200); await pg.click('#aiMenu .v-aimenu-row >> nth='+n); await pg.waitForTimeout(350); };
+await menuRow(2);
+ok('"นิสัยและคำสั่ง" opens the AI instruction panel', await vis('#aiAdvisorInstruction'));
+await menuRow(1);
+c=await cardsShown(); ok('Memory row shows only the Memory card: '+c.join(' | '), c.length===1 && /Memory/.test(c[0]));
+ok('...titled Memory ที่ AI จำได้', (await title())==='Memory ที่ AI จำได้');
 await pg.screenshot({path:shots+'new-ai-sheet.png'});
+await closeAll(); await pg.waitForTimeout(250);
+await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(200);
+await pg.click('#vSetAiKey'); await pg.waitForTimeout(300);
+c=await cardsShown(); ok('API key row shows only the Gemini card: '+c.join(' | '), c.length===1 && /Gemini/.test(c[0]));
+ok('...titled Gemini API Key', (await title())==='Gemini API Key');
 await closeAll(); await pg.waitForTimeout(250);
 await pg.evaluate(()=>document.getElementById('settingsBtn').click()); await pg.waitForTimeout(250);
 c=await cardsShown(); ok('after closing, opening the sheet directly shows Gemini + stock + Drive again', c.some(x=>/Gemini/.test(x))&&c.some(x=>/Twelve/.test(x))&&c.some(x=>/Drive/.test(x)));
 await closeAll();
+
+// ---- AI menu rows ----
+await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(250);
+await menuRow(0); ok('history row opens the chat list', await pg.evaluate(()=>document.getElementById('aiChatListOverlay').classList.contains('open'))); await closeAll(); await pg.waitForTimeout(200);
+await menuRow(3); ok('"ข้อมูลของฉัน" opens the profile editor', await pg.evaluate(()=>document.getElementById('vaultetProfileOverlay').classList.contains('open'))); await closeAll(); await pg.waitForTimeout(200);
+await menuRow(5); await pg.waitForSelector('.v-dlg'); ok('clear-chat row asks first', await pg.isVisible('.v-dlg')); await T.dlgCancel(pg); await pg.waitForTimeout(200);
+const chatsBefore=await pg.evaluate(()=>{try{return JSON.stringify(Object.keys(localStorage).filter(k=>/chat/i.test(k)).map(k=>localStorage.getItem(k).length))}catch(e){return ''}});
+await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); ok('new-chat button works without leaving the chat tab', await vis('#ux-chat'));
+await pg.click('#uxChatMenuBtn'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); ok('Escape closes the AI menu', !(await vis('#aiMenu')));
 
 // ---- AI entry link in the add sheet ----
 await pg.evaluate(()=>vaultetGo('home')); await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);

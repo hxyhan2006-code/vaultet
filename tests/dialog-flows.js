@@ -78,7 +78,7 @@ await pg.click('[data-gadd]'); await T.dlgOK(pg,{v:'-1000'}); await pg.waitForTi
 await pg.click('[data-gdel]'); await T.dlgOK(pg); await pg.waitForTimeout(250); gl=await get('vaultet_goals_v1'); ok('goal delete (confirm) works', gl.length===0);
 
 // ===== AI memory edit =====
-await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(300); await pg.click('#aiAdvisorSettingsBtn'); await pg.click('#vAiDataBtn'); await pg.waitForTimeout(300);
+await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(300); await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(200); await pg.click('#aiMenu .v-aimenu-row >> nth=1'); await pg.waitForTimeout(350);
 await pg.click('.edit-ai-memory-btn'); await T.dlgOK(pg,{text:'ชอบออมเดือนละ 4,000'}); await pg.waitForTimeout(250);
 const mem=await get('finance_tracker_ai_memory_v1'); ok('AI memory edit saved', mem[0].text==='ชอบออมเดือนละ 4,000');
 await closeAll();

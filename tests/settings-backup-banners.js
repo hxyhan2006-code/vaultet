@@ -19,7 +19,7 @@ await pg.goto('http://localhost:8136/index.html');await pg.waitForTimeout(1200);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 const closeAll=()=>pg.evaluate(()=>document.querySelectorAll('.overlay.open,.open').forEach(e=>e.classList.remove('open')));
 await gotoPage(pg,'more');await pg.waitForTimeout(400);
-ok('settings has 4 groups', (await pg.locator('#ux-more .v-group').count())===4);
+ok('settings has 5 groups', (await pg.locator('#ux-more .v-group').count())===5);
 ok('old backup buttons hidden', !(await pg.isVisible('#exportBtn')) && !(await pg.isVisible('#importBtn')));
 ok('old "ตั้งค่าและข้อมูล" card hidden', !(await pg.isVisible('#settingsBtn')));
 // notifications row

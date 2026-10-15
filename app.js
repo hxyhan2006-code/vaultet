@@ -3234,7 +3234,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     <div class="ux-brand"><div class="ux-brand-name">Vaultet</div><div class="ux-brand-page" id="uxPageName">ภาพรวม</div></div>
     <select class="ux-month" id="uxMonthSelect" aria-label="เลือกเดือน"></select>
     <button class="ux-bell" id="uxBellBtn" aria-label="การแจ้งเตือน" aria-expanded="false">${vaultetIcon("🔔")}<i class="ux-bell-dot" id="uxBellDot" style="display:none"></i></button>
-    <button class="ux-avatar" id="uxAvatarBtn" type="button" aria-label="ตั้งค่า"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-7 8-7s8 2.600 8 7"/></svg></button>
   </div>`;
   page.insertBefore(shell,page.firstChild);
 
@@ -3319,7 +3318,6 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
 
   window.vaultetGo=go;
   document.getElementById('uxAddBtn')?.addEventListener('click',()=>openForm(null));
-  document.getElementById('uxAvatarBtn')?.addEventListener('click',()=>go('more'));
   document.getElementById('uxBackBtn')?.addEventListener('click',()=>go(window.vaultetLastTab||'home'));
   document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.addEventListener('click',()=>{
     const id=x.dataset.page;
