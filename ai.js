@@ -379,6 +379,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   const stream = /streamGenerateContent/.test(buildUrl("x"));
   const orOn = !!(OR && OR.enabled());
   if(orOn && Date.now() < geminiCooldownUntil){
+    aiRunEvent("ใช้ OpenRouter (Gemini ฟรีเพิ่งเต็ม พักไว้ชั่วคราว)");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r) return r;
   }
@@ -402,8 +403,10 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
     }
     if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์อื่น
     // คีย์นี้โควต้าเต็ม → ลองคีย์สำรองถัดไปทันที
+    if(i + 1 < keys.length) aiRunEvent(`คีย์ Gemini ที่ ${i + 1} โควต้าเต็ม ลองคีย์ที่ ${i + 2}`);
   }
   if(orOn){
+    aiRunEvent("คีย์ Gemini ฟรีเต็มทั้งหมด สลับไปใช้ OpenRouter");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r){ geminiCooldownUntil = Date.now() + 90000; return r; }
   }
@@ -1018,6 +1021,7 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
       const rows=entries.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,60), have=new Set(rows.map(e=>e.id));
       edit40.forEach(e=>{ if(!have.has(e.id)){ rows.push(e); have.add(e.id); } });
       const list=rows.map(e=>{ const o={}; if(editIds.has(e.id)) o.i=e.id; o.d=e.date; o.t=e.type; o.c=e.category||""; o.a=+e.amount||0; if(e.note) o.n=e.note; const an=acc(e.accountId); if(an) o.acc=an; return o; });
+      window.__aiSentRows = rows.length;
       return `- รายการล่าสุดของผู้ใช้ (ใช้อ้างอิงได้ตามจริง ห้ามเดาเกินจากนี้; d=วันที่ t=ประเภท c=หมวด a=จำนวนเงิน n=โน้ต acc=บัญชี; รายการที่มี i คือรายการที่แก้/ลบได้ ให้ใส่ค่า i ในฟิลด์ id ของ action ใช้ id ตามนี้เท่านั้น ห้ามเดา id รายการที่ไม่มี i แก้/ลบไม่ได้; ถ้าผู้ใช้พูดคลุมเครือว่าหมายถึงรายการไหน ให้ถามก่อน และห้ามเสนอลบ/แก้หลายรายการพร้อมกันถ้าไม่ชัดเจน): ${JSON.stringify(list)}`;
     })(),
     "- ผู้ใช้ต้องกดยืนยันก่อนระบบถึงจะเปลี่ยนจริง ดังนั้นห้ามบอกว่า \"ปรับให้แล้ว\" ให้บอกว่าเสนอแล้วให้กดยืนยันด้านล่าง และห้ามใส่ action ถ้าผู้ใช้แค่ถามหรือขอคำแนะนำเฉยๆ ที่ไม่ได้ขอให้ปรับระบบ; ห้ามเปิดเผยบรรทัด @@ACTION@@ ในเนื้อหาคำตอบ",
@@ -1523,17 +1527,39 @@ function renderAiChatBubbles(){
 }
 
 // ตัวบอกสถานะ "AI กำลังพิมพ์" — เป็น DOM ชั่วคราว ไม่เก็บลงประวัติ
+// ===== สถานะการเรียก AI ตามจริง: เก็บเฉพาะสิ่งที่แอปรู้เองจริง (ข้อมูลที่ส่ง เวลา เหตุการณ์ของคีย์/ตัวสำรอง) =====
+let aiRun = null, aiRunTimer = 0;
+function aiRunStart(){ aiRun = { t0: performance.now(), first: 0, end: 0, events: [], sent: "" }; }
+function aiRunEvent(txt){ if(aiRun){ aiRun.events.push(txt); aiRunPaint(); } }
+function aiRunPaint(){
+  const el = document.getElementById("aiRunStatus");
+  if(!el || !aiRun) return;
+  const sec = Math.round((performance.now() - aiRun.t0) / 1000);
+  const lines = [];
+  if(aiRun.sent) lines.push("ส่งข้อมูลให้ AI: " + aiRun.sent);
+  aiRun.events.forEach(t => lines.push(t));
+  lines.push(aiRun.first ? "กำลังพิมพ์คำตอบ" : "รอ AI เริ่มตอบ… " + sec + " วินาที");
+  el.innerHTML = lines.map(t => "<div>" + escapeHtml(t) + "</div>").join("");
+}
+function aiRunSummary(){
+  if(!aiRun || !aiRun.end) return "";
+  const f = ((aiRun.first || aiRun.end) - aiRun.t0) / 1000, tot = (aiRun.end - aiRun.t0) / 1000;
+  const parts = ["เริ่มตอบหลัง " + f.toFixed(1) + " วิ", "พิมพ์ " + Math.max(0, tot - f).toFixed(1) + " วิ", "รวม " + tot.toFixed(1) + " วิ"];
+  return parts.join(" · ") + (aiRun.events.length ? " · " + aiRun.events.join(" · ") : "");
+}
 function showAiChatTyping(){
   const body = document.getElementById("aiAnalystBody");
   if(!body || document.getElementById("aiChatTypingIndicator")) return;
   const div = document.createElement("div");
   div.id = "aiChatTypingIndicator";
   div.className = "ai-chat-typing";
-  div.innerHTML = "<span></span><span></span><span></span>";
+  div.innerHTML = '<span></span><span></span><span></span><div class="ai-run-status" id="aiRunStatus"></div>';
+  aiRunPaint(); clearInterval(aiRunTimer); aiRunTimer = setInterval(aiRunPaint, 1000);
   body.appendChild(div);
   body.scrollTop = body.scrollHeight;
 }
 function hideAiChatTyping(){
+  clearInterval(aiRunTimer);
   const el = document.getElementById("aiChatTypingIndicator");
   if(el) el.remove();
 }
@@ -1674,6 +1700,11 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
   if(!userText || !userText.trim()) return { ok:false, error:"empty_input" };
 
   const baseSystemPrompt = buildAIChatSystemPrompt(snapshot, profile);
+  if(aiRun){
+    const memOn = profile?.permissions?.memory !== false, memN = memOn ? Math.min(40, loadAIMemory().length) : 0;
+    aiRun.sent = `รายการล่าสุด ${window.__aiSentRows || 0} · ความจำ ${memN} ข้อ · ประวัติแชท ${Math.min(16, priorHistory.filter(isSafeHistoryMessage).length)} ข้อความ (ประมาณ ${Math.max(1, Math.round(baseSystemPrompt.length / 1024))} KB)`;
+    aiRunPaint();
+  }
   // ไม่ส่งคำตอบ AI เก่าที่เป็นเศษข้อความกลับเข้าไปเป็นบริบท เพราะจะทำให้ความเพี้ยนสะสม
   const recentHistory = priorHistory.filter(isSafeHistoryMessage).slice(-16);
   const contents = recentHistory
@@ -1754,6 +1785,7 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
     let r = await requestReplyOnce(extraInstruction, true);
     // สตรีมไม่สำเร็จก่อนได้ข้อความใดๆ → ถอยกลับไปแบบเดิมเงียบๆ (ไม่นับกรณีกดหยุด/คีย์ผิด)
     if(!r.ok && r.error !== "aborted" && r.error !== "invalid_api_key" && !r.gotText){
+      aiRunEvent("สตรีมไม่สำเร็จ ลองใหม่แบบรอทั้งก้อน");
       r = await requestReplyOnce(extraInstruction, false);
     }
     return r;
@@ -3004,7 +3036,9 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
   aiChatAbortController = new AbortController();
   const aiRequestStartedAt = performance.now();
   const streamUI = createAiStreamUI(requestChatId);
-  const result = await generateChatReply(priorHistory, text, snapshot, profile, aiChatAbortController.signal, t => streamUI.push(t));
+  aiRunStart(); aiRunPaint();
+  const result = await generateChatReply(priorHistory, text, snapshot, profile, aiChatAbortController.signal, t => { if(aiRun && !aiRun.first && t) aiRun.first = performance.now(); streamUI.push(t); });
+  if(aiRun) aiRun.end = performance.now();
   if(result.ok) await streamUI.drain();
   streamUI.remove();
   const aiElapsedMs = Math.round(performance.now() - aiRequestStartedAt);
@@ -3034,7 +3068,7 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
   renderAiChatBubbles();
   const latencyEl = document.createElement("div");
   latencyEl.className = "ai-chat-latency";
-  latencyEl.textContent = `ตอบใน ${(aiElapsedMs/1000).toFixed(1)} วินาที`;
+  latencyEl.textContent = aiRunSummary() || `ตอบใน ${(aiElapsedMs/1000).toFixed(1)} วินาที`;
   if(isAdvisorPageActive()) document.getElementById("aiAnalystBody")?.appendChild(latencyEl);
 
   // แจ้งเฉพาะเมื่อผู้ใช้ไม่ได้อยู่หน้า Advisor ตอนคำตอบเสร็จ และแจ้งครั้งเดียวต่อ request
@@ -3076,7 +3110,9 @@ async function regenerateLastReply(priorHistory, userText){
   const profile = loadAIProfile();
   aiChatAbortController = new AbortController();
   const streamUI = createAiStreamUI(requestChatId);
-  const result = await generateChatReply(priorHistory, userText, snapshot, profile, aiChatAbortController.signal, t => streamUI.push(t));
+  aiRunStart(); aiRunPaint();
+  const result = await generateChatReply(priorHistory, userText, snapshot, profile, aiChatAbortController.signal, t => { if(aiRun && !aiRun.first && t) aiRun.first = performance.now(); streamUI.push(t); });
+  if(aiRun) aiRun.end = performance.now();
   if(result.ok) await streamUI.drain();
   streamUI.remove();
   aiChatAbortController = null;

@@ -808,3 +808,8 @@ html body .overlay .v-loan-rep .icon-btn { width: 32px; height: 32px; }
 html body .v-act-btn.danger,html body .v-act-btn.danger:hover{color:#fff !important;background:#e5484d !important;-webkit-text-fill-color:#fff}
 html body .v-act-btn.primary{color:#000 !important;background:var(--v-accent) !important}
 html body .v-act-btn.link{color:var(--v-muted) !important;background:none !important}
+
+/* ds35: live AI status */
+html body .ai-chat-typing{flex-wrap:wrap;max-width:92%}
+html body .ai-run-status{flex-basis:100%;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--v-muted)}
+html body .ai-chat-latency{color:var(--v-muted);font-size:11.5px;line-height:1.5;text-align:left}
