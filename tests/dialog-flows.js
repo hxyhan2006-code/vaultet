@@ -44,9 +44,9 @@ await pg.click('.edit-loan-btn'); await T.dlgOK(pg,{next:'800'}); await pg.waitF
 ln=await get('finance_tracker_loans_v1'); ok('loan outstanding edit works (outstanding now 800)', await pg.evaluate(()=>loanOutstanding(loans[0]))===800);
 await pg.click('.repay-loan-btn'); await T.dlgOK(pg,{amt:'300',acc:'a1'}); await pg.waitForTimeout(300);
 ln=await get('finance_tracker_loans_v1'); ok('repayment recorded to chosen account', ln[0].repayments.length===1&&ln[0].repayments[0].amount===300&&ln[0].repayments[0].accountId==='a1');
-await pg.click('.edit-repayment-btn'); await T.dlgOK(pg,{amount:'250',date:'2026-10-10',note:'แก้แล้ว'}); await pg.waitForTimeout(300);
+await pg.click('.v-loan-hist summary'); await pg.waitForTimeout(150); await pg.click('.edit-repayment-btn'); await T.dlgOK(pg,{amount:'250',date:'2026-10-10',note:'แก้แล้ว'}); await pg.waitForTimeout(300);
 ln=await get('finance_tracker_loans_v1'); ok('repayment edit works', ln[0].repayments[0].amount===250&&ln[0].repayments[0].date==='2026-10-10'&&ln[0].repayments[0].note==='แก้แล้ว');
-await pg.click('.edit-repayment-btn'); await pg.waitForSelector('.v-dlg'); await pg.fill('.v-dlg [name="amount"]','99999'); await pg.click('.v-dlg-ok');
+await pg.click('.v-loan-hist summary'); await pg.waitForTimeout(150); await pg.click('.edit-repayment-btn'); await pg.waitForSelector('.v-dlg'); await pg.fill('.v-dlg [name="amount"]','99999'); await pg.click('.v-dlg-ok');
 ok('repayment amount above the allowed max is rejected inside the dialog', (await T.errShown(pg)) && (await pg.locator('.v-dlg').count())===1);
 await T.dlgCancel(pg); await closeAll();
 

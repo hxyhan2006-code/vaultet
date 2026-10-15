@@ -398,7 +398,7 @@ function saveEntries(){
   try{
     const res = localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
     document.getElementById("errorBanner").style.display = "none";
-    refreshProactiveCard();
+    if(typeof refreshProactiveCard==="function") refreshProactiveCard();
     return true;
   }catch(e){
     document.getElementById("errorBanner").style.display = "block";
@@ -472,7 +472,7 @@ function loadLoans(){
 }
 function saveLoans(){
   try{ localStorage.setItem(LOANS_KEY, JSON.stringify(loans)); }catch(e){}
-  refreshProactiveCard();
+  if(typeof refreshProactiveCard==="function") refreshProactiveCard();
 }
 // ===== Milestone 5: Debt Management Engine — storage =====
 function loadDebts(){
@@ -485,7 +485,7 @@ function loadDebts(){
 }
 function saveDebts(){
   try{ localStorage.setItem(DEBTS_KEY, JSON.stringify(debts)); }catch(e){}
-  refreshProactiveCard();
+  if(typeof refreshProactiveCard==="function") refreshProactiveCard();
 }
 
 // ===== Round 2: Emergency Fund — storage + deterministic calculations =====
@@ -2444,21 +2444,28 @@ function renderLoansManageList(){
     el.innerHTML = `<div class="empty-state">ยังไม่มีรายการเงินให้ยืม</div>`;
     return;
   }
-  el.innerHTML = loans.map(l => {
+  const rowHtml = l => {
     const outstanding = loanOutstanding(l);
-    const status = outstanding<=0 ? "คืนครบแล้ว" : (l.dueDate && l.dueDate < todayISO() ? "เลยกำหนด" : "ค้างคืน");
-    return `<div class="account-row" style="align-items:flex-start;">
-      <span class="acc-name" style="flex-direction:column; align-items:flex-start; display:flex;">
+    const paid = outstanding <= 0;
+    const status = paid ? "คืนครบแล้ว" : (l.dueDate && l.dueDate < todayISO() ? "เลยกำหนด" : "ค้างคืน");
+    const reps = l.repayments || [];
+    const hist = reps.length ? `<details class="v-loan-hist"><summary>ประวัติการคืน (${reps.length})</summary>${reps.map(r => `<div class="v-loan-rep"><span class="mono">฿${fmt(r.amount)} · ${escapeHtml(r.date || "")}</span><span class="v-loan-rep-acts"><button type="button" class="icon-btn edit-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="แก้เงินคืน">${ICON_EDIT}</button><button type="button" class="icon-btn delete-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="ลบเงินคืน">${ICON_TRASH}</button></span></div>`).join("")}</details>` : "";
+    return `<div class="account-row v-loan-row${paid ? " is-paid" : ""}" style="align-items:flex-start;">
+      <span class="acc-name" style="flex-direction:column; align-items:flex-start; display:flex; min-width:0; flex:1;">
         <span>${escapeHtml(l.person)} <span style="color:var(--faint)">— ${status}</span></span>
-        <span class="mono" style="font-size:12px;color:var(--faint)">ยืม ฿${fmt(l.amount)} · ค้าง ฿${fmt(outstanding)}</span>
-        ${(l.repayments||[]).length ? `<span style="font-size:10px;color:var(--faint);margin-top:5px;display:block">คืนแล้ว: ${(l.repayments||[]).map(r=>`฿${fmt(r.amount)} · ${escapeHtml(r.date||'') } <button type="button" class="icon-btn edit-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="แก้เงินคืน">${ICON_EDIT}</button><button type="button" class="icon-btn delete-repayment-btn" data-loan-id="${l.id}" data-repayment-id="${r.id}" aria-label="ลบเงินคืน">${ICON_TRASH}</button>`).join(' · ')}</span>` : ''}
+        <span class="mono" style="font-size:12px;color:var(--faint)">${paid ? `ยืม ฿${fmt(l.amount)}` : `ยืม ฿${fmt(l.amount)} · ค้าง ฿${fmt(outstanding)}`}</span>
+        ${hist}
       </span>
       <span class="acc-actions">
-        ${outstanding>0 ? `<button class="icon-btn repay-loan-btn" data-id="${l.id}" aria-label="รับคืน">รับคืน</button>` : ""}
+        ${paid ? "" : `<button class="icon-btn repay-loan-btn" data-id="${l.id}" aria-label="รับคืน">รับคืน</button>`}
         <button class="icon-btn edit-loan-btn" data-id="${l.id}" aria-label="แก้ไข">${ICON_EDIT}</button><button class="icon-btn delete-loan-btn" data-id="${l.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>`;
-  }).join("");
+  };
+  // คนที่คืนครบแล้วไม่ต้องอยู่ในรายการหลัก (ไม่ให้เห็นชื่อพร้อมยอด 0) — เก็บไว้ในช่อง "คืนครบแล้ว" ที่พับอยู่ ยังแก้/ลบได้
+  const active = loans.filter(l => loanOutstanding(l) > 0), done = loans.filter(l => loanOutstanding(l) <= 0);
+  el.innerHTML = (active.length ? active.map(rowHtml).join("") : `<div class="empty-state">ตอนนี้ไม่มีใครค้างคืน</div>`)
+    + (done.length ? `<details class="v-loan-done"><summary>คืนครบแล้ว (${done.length})</summary>${done.map(rowHtml).join("")}</details>` : "");
   el.querySelectorAll(".repay-loan-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const l = loans.find(x => x.id === btn.dataset.id);

@@ -741,3 +741,22 @@ html body .sheet-modal, html body .v-dlg, html body .v-aimenu-hist, html body .n
 
 /* bottom bar: same 5-column grid on the AI tab too (style.css forces display:flex there, which made the other tabs shift) */
 html body.ux-chat-active:not(.ux-keyboard-open) .ux-bottom-nav { display: grid !important; }
+
+/* loans: repayment history rows + paid-off section */
+.v-loan-hist { width: 100%; margin-top: 8px; }
+.v-loan-hist summary { list-style: none; cursor: pointer; font-size: 12px; color: var(--v-muted); padding: 2px 0; }
+.v-loan-hist summary::-webkit-details-marker { display: none; }
+.v-loan-hist summary::after { content: " ›"; }
+.v-loan-hist[open] summary::after { content: " ⌄"; }
+.v-loan-rep { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0 2px 10px; margin-top: 2px; border-left: 2px solid var(--v-line); font-size: 13px; color: var(--v-fg); }
+.v-loan-rep-acts { display: flex; flex: none; }
+html body .overlay .v-loan-rep .icon-btn { width: 32px; height: 32px; }
+.v-loan-done { margin-top: 12px; border-top: 1px solid var(--v-line); }
+.v-loan-done > summary { list-style: none; cursor: pointer; padding: 14px 0 4px; font-size: 14px; color: var(--v-muted); }
+.v-loan-done > summary::-webkit-details-marker { display: none; }
+.v-loan-done > summary::after { content: " ›"; }
+.v-loan-done[open] > summary::after { content: " ⌄"; }
+.v-loan-row.is-paid .acc-name > span:first-child { color: var(--v-muted); }
+.v-loan-hist { align-self: stretch; }
+.v-loan-rep .mono { white-space: nowrap; }
+.v-loan-rep > span:first-child { flex: 1; min-width: 0; }
