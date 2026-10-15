@@ -3449,11 +3449,12 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
 
   home.append(header,hero);
   if(upcoming) home.append(upcoming);
-  if(proactive) home.append(proactive);
+  // สิ่งที่ควรรู้: การ์ดเดียวบนหน้าหลัก (ข้อเสนอจากระบบ + สรุปจาก AI ถ้ามี)
+  if(notify){ home.append(notify); if(proactive) notify.append(proactive); }
+  else if(proactive) home.append(proactive);
   if(brain) plan.append(brain);
   if(budget) plan.append(budget);
   if(emergency) plan.append(emergency);
-  if(notify) more.append(notify);
   if(backup) more.append(backup);
   // แท็บ "วิเคราะห์": สรุปตามหมวด + วิเคราะห์ตามช่วงเวลา + เปรียบเทียบ
   if(breakdown) analysisV.append(breakdown);

@@ -2516,7 +2516,8 @@ function renderProactiveCard(severity, text, state, errorInfo){
   if(state === "loading"){
     bodyEl.innerHTML = `<span style="color:var(--faint)">กำลังวิเคราะห์สถานะการเงิน...</span>`;
   }else if(state === "needsApiKey"){
-    bodyEl.innerHTML = `<span style="color:var(--faint)">ตั้งค่า API Key (⚙️) เพื่อเปิดใช้งานการวิเคราะห์อัตโนมัติ</span>`;
+    // ยังไม่มี API Key: ไม่โชว์การ์ดบนหน้าหลัก (ไม่ต้องมีข้อความเตือนให้ไปตั้งค่าทุกครั้งที่เปิดแอป)
+    card.style.display = "none";
   }else if(state === "error" && !text){
     const label = (errorInfo && AI_ERROR_MESSAGES[errorInfo.error]) || "เรียก AI ไม่สำเร็จ";
     const codeLine = errorInfo && errorInfo.error ? `<br><span style="font-size:11px;opacity:0.65;">โค้ด: ${escapeHtml(errorInfo.error)}${errorInfo.status ? " (HTTP " + errorInfo.status + ")" : ""}</span>` : "";
