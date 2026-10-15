@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds13">
-<link rel="stylesheet" href="ds.css?v=ds13">
+<link rel="stylesheet" href="style.css?v=ds14">
+<link rel="stylesheet" href="ds.css?v=ds14">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -454,16 +454,16 @@
 <div class="overlay" id="budgetOverlay">
   <div class="sheet-modal" onclick="event.stopPropagation()">
     <div class="modal-header"><span class="modal-title">งบประมาณ</span><button class="close-btn" id="closeBudgetBtn">✕</button></div>
-    <div class="settings-card" style="margin-bottom:12px;">
-      <div class="settings-card-title">🎯 งบประมาณ (รายจ่าย / รายออม)</div>
-      <div id="budgetKindToggle" style="display:flex;gap:8px;margin:8px 0 4px;"><button type="button" data-bk="expense" class="quick-amount-btn" style="flex:1;padding:9px 0;">💸 งบรายจ่าย</button><button type="button" data-bk="saving" class="quick-amount-btn" style="flex:1;padding:9px 0;">🌱 งบรายออม</button></div>
-      <p class="ai-hint">กำหนดเพดานรายจ่ายของแต่ละหมวดในแต่ละเดือน ระบบจะคำนวณยอดใช้ไป ยอดเหลือ และ pace การใช้เงินให้เอง</p>
+    <div class="v-card v-bm-card">
+      <h2 class="v-card-title">ตั้งงบ</h2>
+      <div id="budgetKindToggle" class="v-seg"><button type="button" data-bk="expense">งบรายจ่าย</button><button type="button" data-bk="saving">งบรายออม</button></div>
+      
       <div class="budget-form-grid"><div><label class="field-label" style="margin-top:8px;">เดือน</label><input id="budgetMonthInput" class="text-input" type="month" /></div><div><label class="field-label" style="margin-top:8px;">ชื่องบ (ไม่บังคับ)</label><input id="budgetNameInput" class="text-input" type="text" maxlength="30" placeholder="เช่น ที่พัก" autocomplete="off" /></div></div>
       <label class="field-label">เลือกหมวด (เลือกได้หลายอัน)</label><div id="budgetCategoryInput" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
       <label class="field-label">งบต่อเดือน (บาท)</label><input id="budgetAmountInput" class="text-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="เช่น 5000" autocomplete="off" />
-      <button id="saveBudgetBtn" class="manage-accounts-btn" style="width:100%; margin-top:12px;">เพิ่ม / อัปเดตงบ</button>
+      <button id="saveBudgetBtn" class="v-btn-primary">เพิ่ม / อัปเดตงบ</button>
     </div>
-    <div class="settings-card"><div class="settings-card-title">📊 สถานะงบประมาณ</div><div id="budgetManageSummary"></div><div class="budget-manage-list" id="budgetManageList"></div></div>
+    <div class="v-card v-bm-card"><h2 class="v-card-title">งบที่ตั้งไว้</h2><div id="budgetManageSummary"></div><div class="budget-manage-list" id="budgetManageList"></div></div>
   </div>
 </div>
 
@@ -743,9 +743,9 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds13"></script>
-<script src="app.js?v=ds13"></script>
-<script src="ai.js?v=ds13"></script>
-<script src="ui.js?v=ds13"></script>
+<script src="dialog.js?v=ds14"></script>
+<script src="app.js?v=ds14"></script>
+<script src="ai.js?v=ds14"></script>
+<script src="ui.js?v=ds14"></script>
 </body>
 </html>

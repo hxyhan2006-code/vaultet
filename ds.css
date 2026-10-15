@@ -509,3 +509,33 @@ body.v-single-account #analysisAccountFilter, body.v-single-account #compareAcco
 .v-brow-c .v-brow-meta { margin-top: 5px; }
 .v-brow-more { padding: 0 0 10px; font-size: 12px; color: var(--v-muted); }
 .v-brow-c summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* ===== ds13: management sheets — budget manager + portfolio ===== */
+#budgetOverlay .sheet-modal { display: flex; flex-direction: column; gap: 14px; max-height: 92vh; overflow-y: auto; }
+#budgetOverlay .v-bm-card { display: flex; flex-direction: column; gap: 10px; }
+#budgetOverlay .field-label { margin: 6px 0 0 !important; font-size: 13px; color: var(--v-muted); }
+html body #budgetOverlay .text-input { width: 100%; height: 46px; padding: 0 14px !important; margin: 0 !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px; box-sizing: border-box; }
+html body #budgetOverlay .text-input:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+#budgetOverlay .budget-form-grid { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.v-seg { display: flex; padding: 3px; gap: 3px; background: var(--v-surface-2); border-radius: 999px; }
+.v-seg button { flex: 1; height: 38px; border: 0; border-radius: 999px; background: none; color: var(--v-muted); font: inherit; font-size: 14px; cursor: pointer; }
+.v-seg button.on { background: var(--v-accent); color: var(--v-accent-ink); font-weight: 600; }
+.v-check { position: relative; display: inline-flex; }
+.v-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.v-check span { padding: 8px 14px; font-size: 14px; border-radius: 999px; background: var(--v-surface-2); border: 1px solid var(--v-line); color: var(--v-fg); }
+.v-check input:checked + span { background: var(--v-accent); border-color: transparent; color: var(--v-accent-ink); font-weight: 600; }
+.v-check input:focus-visible + span { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-btn-primary { width: 100%; height: 48px; margin-top: 8px; border: 0; border-radius: var(--v-r-md); background: var(--v-accent); color: var(--v-accent-ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+#budgetManageSummary .networth-sub { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border: 0; }
+#budgetManageSummary .networth-sub span:first-child { color: var(--v-muted); }
+#budgetManageList .v-brow:first-child { border-top: 1px solid var(--v-line); margin-top: 8px; }
+
+/* portfolio: same surface / divider / button language as the rest */
+#pfOverlay { background: var(--v-bg) !important; }
+#pfOverlay .pf-sum { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-lg) !important; }
+#pfOverlay .pf-sum-big { font-family: var(--v-mono); font-size: 30px; letter-spacing: -.02em; }
+#pfOverlay .pf-sum-line { border-top: 1px solid var(--v-line) !important; border-style: solid none none none !important; }
+#pfOverlay .pf-bottom button { border-radius: var(--v-r-md) !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; color: var(--v-fg) !important; }
+#pfOverlay .pf-bottom button.primary { background: var(--v-accent) !important; border-color: transparent !important; color: var(--v-accent-ink) !important; font-weight: 600; }
+#pfOpenSheet .btns button.ok { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+#pfOverlay .pos { color: var(--v-in); } #pfOverlay .neg { color: var(--v-out); }
