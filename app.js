@@ -4643,11 +4643,8 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     let base=origPrompt(snapshot,profile), extra='';
     try{
       const d=pfData();
-      const acc=id=>(accounts.find(a=>a.id===id)||{}).name||'';
-      const recent=entries.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,60).map(e=>({d:e.date,t:e.type,c:e.category||'',a:+e.amount||0,n:e.note||'',acc:acc(e.accountId)}));
       extra='\n\nข้อมูลเพิ่มเติมจากแอป (ใช้อ้างอิงได้ตามจริง ห้ามเดาเกินจากนี้):\n'
        +'พอร์ตหุ้น (หน่วยบาท ต้นทุนคือเงินบาทที่จ่ายจริงตามที่ผู้ใช้บันทึก ราคาเป็น USD): '+JSON.stringify({fxUSDTHB:d.fx,priceAsOf:d.asOf,holdings:d.hs,totalValueTHB:r2(d.val),totalCostTHB:r2(d.cost),unrealizedPLTHB:r2(d.val-d.cost),realizedPLTHB:r2(d.realized),dcaThisMonth:d.thisMonth,dcaLast6Months:d.months})+'\n'
-       +'รายการล่าสุด 60 รายการ (d=วันที่ t=ประเภท c=หมวด a=จำนวนเงิน n=โน้ต acc=บัญชี): '+JSON.stringify(recent)+'\n'
        +'แนวทางเมื่อคุยเรื่องหุ้น/การลงทุน: ใช้ตัวเลขพอร์ตจริงของผู้ใช้ คุยเรื่องวินัย DCA การกระจายความเสี่ยง (เช่น สัดส่วนหุ้นตัวเดียว ความผันผวน) ผลของค่าเงินบาท/ดอลลาร์ และเทียบกับเงินสำรองฉุกเฉิน หนี้ และกระแสเงินสดของผู้ใช้ ห้ามทำนายราคา ห้ามฟันธงให้ซื้อหรือขายหุ้นตัวใดตัวหนึ่ง ไม่มีข่าวหรือราคาเรียลไทม์ ถ้าราคาในข้อมูลเก่าให้บอกวันที่ และตัวเลขกำไรอาจคลาดจากแอปโบรกเกอร์เล็กน้อย ถ้าอ้างความรู้ทั่วไปเกี่ยวกับตัวหุ้น/กองทุน ให้บอกว่าเป็นความรู้ทั่วไป อาจไม่เป็นปัจจุบัน';
     }catch(e){}
     return base+extra;

@@ -26,6 +26,7 @@ await pg.addInitScript(()=>{
       {id:'anthropic/claude-haiku-x',name:'Claude Haiku X',pricing:{prompt:'0.000001',completion:'0.000005'},architecture:{output_modalities:['text']},context_length:200000},
       {id:'openai/gpt-mini-x',name:'GPT Mini X',pricing:{prompt:'0.0000004',completion:'0.0000016'},architecture:{output_modalities:['text']},context_length:128000},
       {id:'google/gemini-3.8-flash',name:'Gemini 3.8 Flash',pricing:{prompt:'0.000000375',completion:'0.000001875'},architecture:{output_modalities:['text']},context_length:1000000},
+      {id:'google/gemini-3.8-flash:batch',name:'Gemini 3.8 Flash (batch)',pricing:{prompt:'0.000000375',completion:'0.000001875'},architecture:{output_modalities:['text']},context_length:1000000},
       {id:'img/only',name:'Image Only',pricing:{prompt:'0.1',completion:'0.1'},architecture:{output_modalities:['image']}}]});
     if(/openrouter\.ai\/api\/v1\/chat\/completions/.test(u)){
       const body=JSON.parse(opts.body); M.calls.push('OR '+body.model+(body.stream?' stream':'')); M.orBodies.push(body); M.orAuth.push((opts.headers||{}).Authorization);
@@ -140,6 +141,10 @@ ok('status asks for a model next', (await pg.textContent('#orStatus')).includes(
 await pg.click('#orModelBtn'); await pg.waitForSelector('.v-or-row'); await pg.waitForTimeout(200);
 const rows=await pg.locator('.v-or-row').allTextContents();
 ok('picker lists text models with live prices, hides image-only ('+rows.length+' rows)', rows.length===3 && rows.some(t=>t.includes('Claude Haiku X')&&t.includes('$1.00')&&t.includes('$5.00')) && !rows.some(t=>t.includes('Image Only')));
+ok('the :batch variant is hidden by default', !rows.some(t=>t.includes(':batch')));
+await pg.click('.v-or-toggle'); await pg.waitForTimeout(150);
+ok('the toggle reveals the :batch variant', (await pg.locator('.v-or-row').allTextContents()).some(t=>t.includes(':batch')));
+await pg.click('.v-or-toggle'); await pg.waitForTimeout(150);
 await pg.fill('.v-or-pick input[type=search]','gpt'); await pg.waitForTimeout(150);
 ok('search filters the list', (await pg.locator('.v-or-row').count())===1);
 await pg.screenshot({path:shots+'or-picker.png'});
@@ -154,6 +159,7 @@ await pg.screenshot({path:shots+'or-card.png'});
 // ค่า AI โชว์บนหน้าตั้งค่าเลย ไม่ต้องกดเข้า OpenRouter
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'))); await pg.waitForTimeout(300);
 await pg.evaluate(()=>vaultetGo('home')); await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(700);
+ok('the AI group is the first group on the Settings page', (await pg.locator('#ux-more .v-group-title').first().textContent())==='AI');
 ok('settings page shows the AI cost directly (visible without opening anything)', await pg.isVisible('#vSetAiCost'));
 const costTxt=await pg.textContent('#vSetAiCost');
 ok('...today $0.43 / $5.00 and month $2.51 / $20.00 ('+costTxt.replace(/\s+/g,' ').trim()+')', costTxt.includes('$0.43 / $5.00') && costTxt.includes('$2.51 / $20.00'));

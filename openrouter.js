@@ -158,10 +158,12 @@
       const search = document.createElement("input"); search.type = "search"; search.className = "v-field"; search.placeholder = "ค้นหา เช่น claude, gpt, gemini"; search.autocomplete = "off";
       const list = document.createElement("div"); list.className = "v-or-list"; list.textContent = "กำลังโหลดรายการโมเดล…";
       const manual = document.createElement("input"); manual.type = "text"; manual.className = "v-field"; manual.placeholder = "หรือพิมพ์ ID โมเดลเอง เช่น vendor/model-name"; manual.value = ""; manual.autocomplete = "off"; manual.setAttribute("autocapitalize", "off");
-      let all = null;
+      let all = null, showBatch = false;
+      const tog = document.createElement("button"); tog.type = "button"; tog.className = "v-or-toggle"; tog.textContent = "แสดงรุ่นพิเศษ (:batch) — ปิดอยู่ เพราะเหมาะกับงานไม่เร่ง ไม่ใช่แชท";
+      tog.addEventListener("click", () => { showBatch = !showBatch; tog.textContent = showBatch ? "ซ่อนรุ่นพิเศษ (:batch)" : "แสดงรุ่นพิเศษ (:batch) — ปิดอยู่ เพราะเหมาะกับงานไม่เร่ง ไม่ใช่แชท"; draw(); });
       const draw = () => {
         const q = search.value.trim().toLowerCase();
-        const rows = (all || []).filter(m => !q || m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q)).slice(0, 60);
+        const rows = (all || []).filter(m => (showBatch || !/:batch$/i.test(m.id)) && (!q || m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q))).slice(0, 60);
         list.innerHTML = "";
         if(!all){ list.textContent = "โหลดรายการไม่ได้ (เช็กอินเทอร์เน็ต) — พิมพ์ ID โมเดลเองด้านล่างได้"; return; }
         if(!rows.length){ list.textContent = "ไม่พบโมเดลที่ค้นหา"; return; }
@@ -174,7 +176,7 @@
       };
       search.addEventListener("input", draw);
       api.models(false).then(l => { all = l; draw(); });
-      box.append(search, list, manual);
+      box.append(search, tog, list, manual);
       const actions = document.createElement("div"); actions.className = "v-dlg-actions";
       const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "v-dlg-cancel"; cancel.textContent = "ยกเลิก"; cancel.addEventListener("click", () => ctx.close(null));
       const use = document.createElement("button"); use.type = "button"; use.className = "v-dlg-ok"; use.textContent = "ใช้ ID ที่พิมพ์";
@@ -200,13 +202,13 @@
     btn.textContent = api.model() || "เลือกโมเดล";
     sb.textContent = api.smallModel() || "ใช้ตัวเดียวกับแชท";
     info.textContent = api.model() ? "" : "ต้องเลือกโมเดลก่อน ระบบถึงจะสลับมาใช้ OpenRouter ได้";
-    if(api.model()){ const l = await api.models(false); const m = l && l.find(x => x.id === api.model()); info.textContent = m ? api.priceText(m) : "ราคา: ดูในหน้าโมเดลของ OpenRouter (รายการยังโหลดไม่ได้)"; }
+    if(api.model()){ const l = await api.models(false); const m = l && l.find(x => x.id === api.model()); info.textContent = m ? api.priceText(m) : "ราคา: ดูในหน้าโมเดลของ OpenRouter (รายการยังโหลดไม่ได้)"; if(/:batch$/i.test(api.model())) info.textContent += " · ⚠ รุ่น batch ประมวลผลเป็นชุด อาจช้าหรือใช้แชทไม่ได้ แนะนำเลือกรุ่นที่ไม่มี :batch"; }
     const cap = api.caps(); const dayI = document.getElementById("orCapDay"), monI = document.getElementById("orCapMonth");
     if(document.activeElement !== dayI) dayI.value = cap.day || ""; if(document.activeElement !== monI) monI.value = cap.month || "";
     const u = api.usageCache(), box = document.getElementById("orUsage");
     if(!api.hasKey()){ box.innerHTML = ""; return; }
     const row = (label, val, capv, extra) => '<div class="v-or-urow"><span>' + label + '</span><b class="v-or-pill' + (capv > 0 && val >= capv ? " is-over" : "") + '">' + usd(val) + (capv > 0 ? " / " + usd(capv) : "") + '</b></div>' + (extra ? '<div class="v-or-usub">' + extra + '</div>' : "");
-    box.innerHTML = u && !u.error ? row("ค่า AI วันนี้", u.day, cap.day, "") + row("ค่า AI เดือนนี้", u.month, cap.month, "ยอดจริงจาก OpenRouter (รวมทุกการใช้คีย์นี้)" + baht(u.month)) + (api.overCap() ? '<div class="v-or-usub is-over">ถึงเพดานแล้ว — แอปหยุดเรียก OpenRouter ชั่วคราว</div>' : "")
+    box.innerHTML = u && !u.error ? row("ค่า AI วันนี้", u.day, cap.day, "") + row("ค่า AI เดือนนี้", u.month, cap.month, "ยอดจริงจาก OpenRouter (รวมทุกการใช้คีย์นี้)" + baht(u.month)) + (api.overCap() ? '<div class="v-or-usub is-over">ถึงเพดานแล้ว — แอปหยุดเรียก OpenRouter ชั่วคราว</div>' : "") + '<div class="v-or-usub">"วันนี้" นับตามเวลา UTC (รีเซ็ต 07:00 น. เวลาไทย) · ราคาไม่รวมค่าธรรมเนียมตอนเติมเครดิต</div>'
       : '<div class="v-or-usub">' + (u && u.error ? "ดึงยอดใช้ไม่ได้ (HTTP " + u.error + ") — เช็กคีย์" : "กำลังดึงยอดใช้…") + "</div>";
   }
   function bindOR(){

@@ -10,6 +10,7 @@ await pg.route(/accounts\.google\.com|fonts\./,r=>r.abort());
 await pg.addInitScript(()=>{const now=Date.now();const cats=['กิน','คาเฟ่','ค่าเดินทาง'];
  const es=[];for(let i=0;i<150;i++){const d=new Date();d.setDate(d.getDate()-i);es.push({id:'e'+i,type:'expense',category:cats[i%3],amount:50+i%40,note:'x'+i,date:d.toISOString().slice(0,10),accountId:'a1'});}
  const d0=new Date().toISOString().slice(0,10);
+ es.push({id:'sys1',type:'income',category:'เงินคืนจากการยืม',amount:100,note:'ระบบสร้าง',date:new Date().toISOString().slice(0,10),accountId:'a1',source:'loan_repayment'});
  es.push({id:'inv1',type:'saving',category:'ลงทุน',amount:3500,note:'ซื้อ QQQM',date:d0,accountId:'a1',ticker:'QQQM',shares:0.5});
  localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'บัญชีหลัก',initialBalance:20000}]));
  localStorage.setItem('finance_tracker_entries_v1',JSON.stringify(es));
@@ -28,6 +29,15 @@ ok('portfolio totals are correct (38,500 value / 33,500 cost)', pf.totals.valueT
 ok('goals now reach the AI with saved/remaining', r.goals.length===1&&r.goals[0].saved===7500&&r.goals[0].remaining===22500&&r.goals[0].progressPct===25);
 ok('monthlyHistory has completed months with category breakdown ('+r.hist.length+' months)', r.hist.length>=3 && r.hist[0].expenseByCategory && Object.keys(r.hist[0].expenseByCategory).length>=1);
 ok('system prompt tells the model about the new fields', r.prompt);
+const pr=await pg.evaluate(()=>{const s=buildFinancialSnapshot(),p=loadAIProfile();const sys=buildAIChatSystemPrompt(s,p);const slim=JSON.parse(JSON.stringify(slimSnapshotForPrompt(s)));
+  const m=sys.match(/ห้ามเดาเกินจากนี้; d=วันที่[^:]*\): (\[.*\])/);const list=m?JSON.parse(m[1]):[];
+  return {len:sys.length,list,hasOld40:sys.includes('รายการที่แก้/ลบได้ (ล่าสุด'),hasOld60:sys.includes('รายการล่าสุด 60 รายการ'),topBrain:'financialBrain' in slim,ctxBrain:!!(slim.advisorContext&&slim.advisorContext.financialBrain),lmFull:!!(slim.lastMonth&&slim.lastMonth.expenseBreakdownFull),hist:slim.monthlyHistory.length};});
+ok('one merged recent-entries list (the old 40-list and 60-list labels are gone)', pr.list.length>=60 && !pr.hasOld40 && !pr.hasOld60);
+ok('editable entries carry their id (i) so the AI can still edit/delete: '+pr.list.filter(x=>x.i).length+' of '+pr.list.length, pr.list.filter(x=>x.i).length>=30 && pr.list.filter(x=>x.i).length<=40);
+ok('system-generated entries (loan repayment) have no id, so they cannot be edited by the AI', !(pr.list.find(x=>x.c==='เงินคืนจากการยืม'&&x.i)));
+ok('account name still included', pr.list.some(x=>x.acc==='บัญชีหลัก'));
+ok('lastMonth full breakdown removed from the prompt (same figures stay in monthlyHistory); health block (financialBrain) kept', !pr.lmFull && pr.hist>=3 && pr.topBrain);
+ok('prompt size with the merged list ('+pr.len+' chars, includes this test data)', pr.len>0);
 ok('no api keys in the portfolio payload', !JSON.stringify(pf).toLowerCase().includes('apikey'));
 console.log(errs.join('\n')||'no js errors');
 await b.close();srv.close()})();

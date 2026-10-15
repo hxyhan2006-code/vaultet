@@ -1010,7 +1010,16 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
     "ถ้า queryContext.mode=income_allocation (ผู้ใช้สมมติรายรับ) ใช้ queryContext.plan เป็นฐาน แต่ปรับสัดส่วนให้เหมาะกับสถานการณ์ได้ (เช่น เงินสำรองยังไม่ถึงเป้า → ออมมากขึ้น) โดยต้องบอกเปอร์เซ็นต์ที่ใช้ชัดเจน และต้องเสนอ action set_brain_targets ให้หน้า Brain ตรงกับแผนที่เสนอ",
     `การสั่งแก้ระบบ: ถ้าผู้ใช้ขอให้ตั้ง/ปรับ/ลบงบประมาณหรือเกณฑ์ Brain ให้ **เสนอ** การเปลี่ยนแปลงด้วยการเพิ่มบรรทัดท้ายคำตอบ รูปแบบ JSON บรรทัดเดียว ต่อ 1 action: @@ACTION@@ {"type":"set_budget","month":"YYYY-MM","name":"ชื่อกลุ่ม(ไม่บังคับ)","categories":["หมวด1","หมวด2"],"amount":3720} | {"type":"delete_budget","month":"YYYY-MM","categories":[...]} | {"type":"set_brain_targets","month":"YYYY-MM","savingsRatePct":20,"essentialMaxPct":50,"discretionaryMaxPct":30} | {"type":"reset_brain_targets","month":"YYYY-MM"} | {"type":"add_entry","entryType":"income|expense","category":"หมวด","amount":123,"date":"YYYY-MM-DD","note":"","account":"ชื่อบัญชี(ไม่บังคับ)"} | {"type":"edit_entry","id":"รหัสรายการ","amount":123,"category":"หมวด","date":"YYYY-MM-DD","note":""(ใส่เฉพาะช่องที่จะแก้)} | {"type":"delete_entry","id":"รหัสรายการ"} | {"type":"add_recurring","name":"ชื่อ","amount":199,"category":"หมวดรายจ่าย","frequency":"weekly|monthly|bimonthly|quarterly|yearly","nextDueDate":"YYYY-MM-DD"} | {"type":"set_emergency_target","targetMonths":3}. add_entry ใช้เมื่อผู้ใช้บอกชัดว่ามีรายการเกิดขึ้นจริงให้บันทึก (ไม่ใช่การสมมติ) และ categories ของรายรับ: ${JSON.stringify(CATS_BY_TYPE.income||[])}; ห้ามเดาจำนวนเงินหรือวันที่ที่ผู้ใช้ไม่ได้บอก ถ้าไม่ชัดให้ถามก่อน`,
     `- เดือนปัจจุบัน ${monthKey(todayISO())}; categories ต้องเป็นชื่อหมวดรายจ่ายที่มีจริงเท่านั้น: ${JSON.stringify(CATS_BY_TYPE.expense||[])}; 1 หมวดอยู่ได้แค่งบเดียวต่อเดือน; ออม+จำเป็น+ไม่จำเป็นรวมกันต้องไม่เกิน 100%`,
-    `- รายการที่แก้/ลบได้ (ล่าสุด 40 รายการ; ใช้ id ตามนี้เท่านั้น ห้ามเดา id; ถ้าผู้ใช้พูดคลุมเครือว่าหมายถึงรายการไหน ให้ถามก่อน และห้ามเสนอลบ/แก้หลายรายการพร้อมกันถ้าไม่ชัดเจน): ${JSON.stringify(entries.filter(e=>(e.type==="income"||e.type==="expense")&&!e.source&&!e.recurringId&&e.category!=="กยศ.").slice(0,40).map(e=>({id:e.id,date:e.date,type:e.type,category:e.category,amount:e.amount,note:e.note||""})))}`,
+    (()=>{
+      // รายการล่าสุดของผู้ใช้ — ลิสต์เดียว (รวมรายการอ้างอิงกับรายการที่แก้/ลบได้ ไม่ส่งซ้ำสองชุด) รายการที่แก้/ลบได้มี i = id
+      const acc=id=>(accounts.find(a=>a.id===id)||{}).name||"";
+      const editable=e=>(e.type==="income"||e.type==="expense")&&!e.source&&!e.recurringId&&e.category!=="กยศ.";
+      const edit40=entries.filter(editable).slice(0,40), editIds=new Set(edit40.map(e=>e.id));
+      const rows=entries.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,60), have=new Set(rows.map(e=>e.id));
+      edit40.forEach(e=>{ if(!have.has(e.id)){ rows.push(e); have.add(e.id); } });
+      const list=rows.map(e=>{ const o={}; if(editIds.has(e.id)) o.i=e.id; o.d=e.date; o.t=e.type; o.c=e.category||""; o.a=+e.amount||0; if(e.note) o.n=e.note; const an=acc(e.accountId); if(an) o.acc=an; return o; });
+      return `- รายการล่าสุดของผู้ใช้ (ใช้อ้างอิงได้ตามจริง ห้ามเดาเกินจากนี้; d=วันที่ t=ประเภท c=หมวด a=จำนวนเงิน n=โน้ต acc=บัญชี; รายการที่มี i คือรายการที่แก้/ลบได้ ให้ใส่ค่า i ในฟิลด์ id ของ action ใช้ id ตามนี้เท่านั้น ห้ามเดา id รายการที่ไม่มี i แก้/ลบไม่ได้; ถ้าผู้ใช้พูดคลุมเครือว่าหมายถึงรายการไหน ให้ถามก่อน และห้ามเสนอลบ/แก้หลายรายการพร้อมกันถ้าไม่ชัดเจน): ${JSON.stringify(list)}`;
+    })(),
     "- ผู้ใช้ต้องกดยืนยันก่อนระบบถึงจะเปลี่ยนจริง ดังนั้นห้ามบอกว่า \"ปรับให้แล้ว\" ให้บอกว่าเสนอแล้วให้กดยืนยันด้านล่าง และห้ามใส่ action ถ้าผู้ใช้แค่ถามหรือขอคำแนะนำเฉยๆ ที่ไม่ได้ขอให้ปรับระบบ; ห้ามเปิดเผยบรรทัด @@ACTION@@ ในเนื้อหาคำตอบ",
     "- กฎเหล็ก: ก่อนจะออกคำสั่ง @@ACTION@@ ให้ตรวจสอบค่าปัจจุบันใน Snapshot ก่อนเสมอ หากค่าในระบบเป็นค่านั้นอยู่แล้ว หรือผู้ใช้เพิ่งกดยืนยันการปรับนั้นไปในบทสนทนา ห้ามออก @@ACTION@@ ซ้ำเด็ดขาด ให้ตอบเป็นข้อความพูดคุยตามปกติ (เช่น เกณฑ์ Brain, buffer, งบรายหมวด หรือเป้าเงินสำรองฉุกเฉินที่ตรงกับค่าปัจจุบันแล้ว หรือมีสถานะ ✓ ทำแล้วในแชทนี้)",
     "- ผู้ใช้มีทั้ง \"งบรายจ่าย\" (expenseBudget) และ \"งบรายออม / เป้าออมรายเดือน\" (savingBudget) ควบคู่กันเสมอ ทั้งสองอยู่ระดับบนสุดของ Snapshot พร้อมสรุปใน budgetOverview; เมื่อวิเคราะห์เรื่องงบประมาณ เป้าหมาย หรือการจัดสรรเงิน ต้องพูดถึงทั้งสองด้านเสมอ (เป้าออมเดือนนี้เท่าไร ออมไปแล้วเท่าไร เหลืออีกเท่าไร และงบรายจ่ายใช้ไปเท่าไร) ห้ามพูดถึงแค่งบรายจ่ายอย่างเดียว",
@@ -1052,7 +1061,7 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
   lines.push(
     "",
     "Financial Snapshot (ตัวเลขที่คำนวณไว้แล้วทั้งหมด หน่วยเป็นบาท):",
-    JSON.stringify(snapshot)
+    JSON.stringify(slimSnapshotForPrompt(snapshot))
   );
 
   // ===== Memory ระยะยาว — ข้อมูลสำคัญที่ผู้ใช้เคยขอให้จำไว้ข้ามการสนทนา =====
@@ -1456,6 +1465,12 @@ function processAiReplyForMemory(text,history){
   return cleaned;
 }
 
+// ตัดส่วนที่ซ้ำออกก่อนส่งให้ AI (ตัวเลขเดิมยังอยู่ในที่อื่นของ snapshot): lastMonth.expenseBreakdownFull ซ้ำกับ monthlyHistory
+function slimSnapshotForPrompt(s){
+  const c = Object.assign({}, s);
+  if(c.lastMonth && Array.isArray(c.monthlyHistory) && c.monthlyHistory.length){ c.lastMonth = Object.assign({}, c.lastMonth); delete c.lastMonth.expenseBreakdownFull; }
+  return c;
+}
 function renderAiChatBubbles(){
   const history = loadAIChatHistory();
   const body = document.getElementById("aiAnalystBody");

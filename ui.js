@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds32";
+  const UI_VERSION = "ds33";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -229,9 +229,9 @@
     }
 
     const groups = [
+      group("AI", costBox, aikey, orRow),
       group("สำรองข้อมูล", backupNow, exp, imp, drive),
       group("การแจ้งเตือน", notif),
-      group("AI", costBox, aikey, orRow),
       lockCard ? group("ความปลอดภัย", lockCard) : null,
       group("การแสดงผลและข้อมูล", ...[decRow, stock].filter(Boolean))
     ].filter(Boolean);
@@ -250,7 +250,8 @@
     box.hidden = false;
     if(!u || u.error){ box.innerHTML = '<div class="v-or-urow"><span>ค่า AI</span><span class="v-set-cost-note">' + (u && u.error ? "ดึงยอดไม่ได้ (เช็กคีย์)" : "กำลังดึงยอดใช้…") + "</span></div>"; return; }
     box.innerHTML = '<div class="v-or-urow"><span>ค่า AI วันนี้</span>' + pill(u.day, cap.day) + '</div>'
-      + '<div class="v-or-urow"><span>ค่า AI เดือนนี้' + (fx ? '<small> ≈ ' + Math.round(u.month * fx).toLocaleString("en-US") + " บาท</small>" : "") + "</span>" + pill(u.month, cap.month) + "</div>";
+      + '<div class="v-or-urow"><span>ค่า AI เดือนนี้' + (fx ? '<small> ≈ ' + Math.round(u.month * fx).toLocaleString("en-US") + " บาท</small>" : "") + "</span>" + pill(u.month, cap.month) + "</div>"
+      + '<div class="v-set-cost-note v-set-cost-foot">"วันนี้" นับตามเวลา UTC (รีเซ็ต 07:00 น.)</div>';
   }
   document.addEventListener("vaultet-or-usage", renderAiCost);
   new MutationObserver(() => { if(document.body.classList.contains("ux-more-active")){ renderAiCost(); if(window.vaultetOR && window.vaultetOR.hasKey()) window.vaultetOR.refreshUsage(false); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
