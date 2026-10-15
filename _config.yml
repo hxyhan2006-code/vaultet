@@ -1,0 +1,8 @@
+# GitHub Pages: ไม่ต้องเผยแพร่ไฟล์สำหรับทดสอบ/พัฒนา
+exclude:
+  - tests
+  - package.json
+  - package-lock.json
+  - node_modules
+  - README.md
+  - .github

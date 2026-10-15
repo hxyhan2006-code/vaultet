@@ -1,0 +1,41 @@
+// รันชุดทดสอบทั้งหมดทีละไฟล์ แล้วสรุปผล — `npm test`
+// ทดสอบด้วยเบราว์เซอร์จริง (Chromium ผ่าน Playwright) ที่จอ 380px กับข้อมูลสมมติ ไม่แตะข้อมูลจริงของใคร ไม่เรียก API ภายนอก
+// ตัวแปรเสริม: CHROMIUM_PATH=ที่อยู่ Chromium (ถ้าไม่ใส่ใช้ตัวที่ Playwright ติดตั้งให้)
+const { spawnSync } = require('child_process');
+const path = require('path');
+const FILES = [
+  ['tabs-no-leak.js', 'แต่ละแท็บแสดงหน้าเดียว ไม่มีเนื้อหารั่วข้ามแท็บ'],
+  ['home-and-nav.js', 'หน้าหลัก แถบล่าง ทางลัด รายการ ลบรายการ'],
+  ['add-entry.js', 'ฟอร์มเพิ่ม/แก้รายการ หมวด เทมเพลต โอนเงิน'],
+  ['plan-budget.js', 'หน้าแผน งบ สรุปรายจ่าย เงินสำรอง'],
+  ['bottom-bar-ai-settings.js', 'ปุ่ม + กลางแถบล่าง ตั้งค่า (จากรูปโปรไฟล์) หน้าต่าง AI'],
+  ['settings-backup-banners.js', 'หน้าตั้งค่า สำรองข้อมูล แถบเตือนทีละอัน'],
+  ['debts.js', 'หนี้สิน'],
+  ['accounts-reserved-loans.js', 'บัญชี เงินกันไว้ เงินให้ยืม'],
+  ['dialog-component.js', 'กล่องข้อความในแอป (ยืนยัน/ฟอร์ม/ตรวจข้อมูล)'],
+  ['dialog-flows.js', 'ค่าใช้จ่ายประจำ เงินให้ยืม รวมหมวด เทมเพลต เป้าหมาย ความจำ AI ล็อกแอป'],
+  ['single-account-goals.js', 'โหมดบัญชีเดียว ของที่ตัดออก เป้าหมายรวมเป็นระบบเดียว'],
+  ['ai-snapshot.js', 'ข้อมูลที่ส่งให้ AI (พอร์ตหุ้น เป้าหมาย ประวัติ 6 เดือน)'],
+  ['top-spacing.js', 'เนื้อหาไม่ชิดแถบบน'],
+];
+const KNOWN = /^(PASS |FAIL |no js errors|no leaks|snapshot chars|\[agent-proxy\]|- .*:443 |\(oldest|For details|$)/;
+let failed = 0, totalPass = 0;
+for (const [file, label] of FILES) {
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, [path.join(__dirname, file)], { encoding: 'utf8', timeout: 240000, env: process.env });
+  const lines = (r.stdout || '').split('\n');
+  const pass = lines.filter(l => l.startsWith('PASS ')).length;
+  const fails = lines.filter(l => l.startsWith('FAIL '));
+  const odd = lines.filter(l => !KNOWN.test(l));
+  const problems = [];
+  if (r.status !== 0) problems.push('exit code ' + r.status + (r.error ? ' (' + r.error.code + ')' : '') + (r.stderr ? '\n    ' + r.stderr.split('\n').slice(0, 6).join('\n    ') : ''));
+  fails.forEach(l => problems.push(l));
+  odd.forEach(l => problems.push('unexpected output: ' + l));
+  if (!pass) problems.push('no PASS lines');
+  totalPass += pass;
+  const secs = ((Date.now() - t0) / 1000).toFixed(0);
+  if (problems.length) { failed++; console.log(`✗ ${file} — ${label} (${pass} ผ่าน, ${secs}s)`); problems.forEach(p => console.log('   ' + p)); }
+  else console.log(`✓ ${file} — ${label} (${pass} ข้อ, ${secs}s)`);
+}
+console.log(`\n${failed ? 'มีไฟล์ที่ไม่ผ่าน ' + failed + ' จาก ' + FILES.length : 'ผ่านทั้งหมด ' + FILES.length + ' ไฟล์'} · รวม ${totalPass} ข้อ`);
+process.exit(failed ? 1 : 0);
