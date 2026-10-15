@@ -1021,6 +1021,7 @@ function buildFinancialAnalystSystemPrompt(snapshot, profile){
       return `- รายการล่าสุดของผู้ใช้ (ใช้อ้างอิงได้ตามจริง ห้ามเดาเกินจากนี้; d=วันที่ t=ประเภท c=หมวด a=จำนวนเงิน n=โน้ต acc=บัญชี; รายการที่มี i คือรายการที่แก้/ลบได้ ให้ใส่ค่า i ในฟิลด์ id ของ action ใช้ id ตามนี้เท่านั้น ห้ามเดา id รายการที่ไม่มี i แก้/ลบไม่ได้; ถ้าผู้ใช้พูดคลุมเครือว่าหมายถึงรายการไหน ให้ถามก่อน และห้ามเสนอลบ/แก้หลายรายการพร้อมกันถ้าไม่ชัดเจน): ${JSON.stringify(list)}`;
     })(),
     "- ผู้ใช้ต้องกดยืนยันก่อนระบบถึงจะเปลี่ยนจริง ดังนั้นห้ามบอกว่า \"ปรับให้แล้ว\" ให้บอกว่าเสนอแล้วให้กดยืนยันด้านล่าง และห้ามใส่ action ถ้าผู้ใช้แค่ถามหรือขอคำแนะนำเฉยๆ ที่ไม่ได้ขอให้ปรับระบบ; ห้ามเปิดเผยบรรทัด @@ACTION@@ ในเนื้อหาคำตอบ",
+    "- เมื่อออก @@ACTION@@ ระบบจะแสดงการ์ดสรุปรายละเอียด (ชื่อ จำนวนเงิน วันที่) ให้ผู้ใช้เองแล้ว ในข้อความตอบให้พูดสั้นๆ ไม่เกิน 1 ประโยค ห้ามทวนรายละเอียดซ้ำ",
     "- กฎเหล็ก: ก่อนจะออกคำสั่ง @@ACTION@@ ให้ตรวจสอบค่าปัจจุบันใน Snapshot ก่อนเสมอ หากค่าในระบบเป็นค่านั้นอยู่แล้ว หรือผู้ใช้เพิ่งกดยืนยันการปรับนั้นไปในบทสนทนา ห้ามออก @@ACTION@@ ซ้ำเด็ดขาด ให้ตอบเป็นข้อความพูดคุยตามปกติ (เช่น เกณฑ์ Brain, buffer, งบรายหมวด หรือเป้าเงินสำรองฉุกเฉินที่ตรงกับค่าปัจจุบันแล้ว หรือมีสถานะ ✓ ทำแล้วในแชทนี้)",
     "- ผู้ใช้มีทั้ง \"งบรายจ่าย\" (expenseBudget) และ \"งบรายออม / เป้าออมรายเดือน\" (savingBudget) ควบคู่กันเสมอ ทั้งสองอยู่ระดับบนสุดของ Snapshot พร้อมสรุปใน budgetOverview; เมื่อวิเคราะห์เรื่องงบประมาณ เป้าหมาย หรือการจัดสรรเงิน ต้องพูดถึงทั้งสองด้านเสมอ (เป้าออมเดือนนี้เท่าไร ออมไปแล้วเท่าไร เหลืออีกเท่าไร และงบรายจ่ายใช้ไปเท่าไร) ห้ามพูดถึงแค่งบรายจ่ายอย่างเดียว",
     `- งบรายออม: set_budget/delete_budget ใส่ "kind":"saving" ได้ โดย categories ต้องเป็นหมวดออมเท่านั้น: ${JSON.stringify(CATS_BY_TYPE.saving||[])} (หน้าแผนจะแสดงว่าเดือนนี้ออมไปแล้วเท่าไหร่เทียบเป้า) | เงินสำรองเผื่อเหตุไม่คาดฝัน: {"type":"set_buffer","month":"YYYY-MM","amount":1500} | ย้ายเศษเงินสำรองไปออม: {"type":"sweep_buffer","month":"YYYY-MM","amount":800,"category":"หมวดออม"} (เสนอได้หลายบรรทัดเพื่อแยกหมวด แต่ผลรวมต้องไม่เกินเงินสำรองที่เหลือ)`,
@@ -1408,11 +1409,29 @@ function undoAiAction(u){
   else if(u.kind==="recurring"){ recurringExpenses=recurringExpenses.filter(r=>r.id!==u.id); saveRecurring(); }
   else if(u.kind==="emergency"){ emergencyFundConfig=normalizeEmergencyConfig({targetMonths:u.prev,essentialCategories:emergencyFundConfig.essentialCategories}); saveEmergencyFundConfig(); }
 }
+function __aiShortDate(d){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d||"")); if(!m) return String(d||""); const mo=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]; return Number(m[3])+" "+mo[Number(m[2])-1]; }
+const AI_ACT_SVG={del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',add:'<path d="M12 5v14M5 12h14"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>'};
+function aiActionParts(a){
+  const ml=monthLabel(a.month), nm=a.name||(a.categories||[]).join(" + ");
+  const row=e=>e?`${e.category} ฿${fmt(e.amount)} · ${__aiShortDate(e.date)}`:"ไม่พบรายการแล้ว";
+  if(a.type==="delete_entry") return {k:"del",title:"ลบรายการ",detail:row(entries.find(x=>x.id===a.id))};
+  if(a.type==="delete_budget") return {k:"del",title:a.kind==="saving"?"ลบเป้าออม":"ลบงบ",detail:`${nm} · ${ml}`};
+  if(a.type==="add_entry") return {k:"add",title:a.entryType==="income"?"เพิ่มรายรับ":"เพิ่มรายจ่าย",detail:`${a.category} ฿${fmt(a.amount)} · ${__aiShortDate(a.date)}${a.note?` · ${a.note}`:""}`};
+  if(a.type==="add_recurring") return {k:"add",title:"เพิ่มรายจ่ายประจำ",detail:`${a.name} ฿${fmt(a.amount)} · ครบกำหนด ${__aiShortDate(a.nextDueDate)}`};
+  if(a.type==="edit_entry"){ const e=entries.find(x=>x.id===a.id), c=a.changes||{};
+    return {k:"edit",title:"แก้รายการ",detail:`${row(e)} → ${[c.category,c.amount!=null?"฿"+fmt(c.amount):null,c.date?__aiShortDate(c.date):null,c.note!=null?c.note:null].filter(Boolean).join(" · ")}`}; }
+  if(a.type==="set_budget") return {k:"edit",title:a.kind==="saving"?"ตั้งเป้าออม":"ตั้งงบ",detail:`${nm} · ${ml} · ฿${fmt(a.amount)}`};
+  return {k:"edit",title:"ปรับการตั้งค่า",detail:describeAiAction(a)};
+}
 function renderAiActionCard(m,idx){
   if(!Array.isArray(m.actions)||!m.actions.length) return "";
-  const st={pending:"",done:" ✓ ทำแล้ว",cancelled:" (ยกเลิก)",revised:" (ขอปรับ — พิมพ์ข้อเสนอของคุณด้านล่าง)",undone:" (ย้อนกลับแล้ว)",failed:" ✗ ทำไม่ได้"};
-  const btn=(op,ai,t)=>`<button type="button" data-aiact="${op}" data-mi="${idx}" data-ai="${ai}" style="padding:9px 14px;min-height:38px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-size:13px;cursor:pointer;position:relative;z-index:3;pointer-events:auto;touch-action:manipulation;">${t}</button>`;
-  return `<div style="margin:8px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);font-size:12.5px;"><div style="font-weight:700;margin-bottom:6px;">สิ่งที่ AI เสนอให้ปรับ</div>${m.actions.map((a,ai)=>`<div style="padding:6px 0;border-top:1px solid var(--line);"><div>${escapeHtml(describeAiAction(a))}<span style="color:var(--faint)">${st[a.status]||""}</span>${a.msg?`<div style="color:var(--expense)">${escapeHtml(a.msg)}</div>`:""}</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${a.status==="pending"?btn("ok",ai,"✓ ยืนยัน")+btn("rev",ai,"เสนอแก้")+btn("no",ai,"ยกเลิก"):a.status==="done"?btn("undo",ai,"↩ ย้อนกลับ"):""}</div></div>`).join("")}</div>`;
+  const st={done:a=>a.__k==="del"?"ลบแล้ว":a.__k==="add"?"เพิ่มแล้ว":"ทำแล้ว",cancelled:()=>"ยกเลิกแล้ว",revised:()=>"รอคุณพิมพ์ข้อเสนอด้านล่าง",undone:()=>"ย้อนกลับแล้ว",failed:()=>"ทำไม่ได้"};
+  const btn=(op,ai,t,cls)=>`<button type="button" class="v-act-btn ${cls||""}" data-aiact="${op}" data-mi="${idx}" data-ai="${ai}">${t}</button>`;
+  return `<div class="v-act-list">${m.actions.map((a,ai)=>{
+    const p=aiActionParts(a); a.__k=p.k;
+    const ic=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${AI_ACT_SVG[p.k]||AI_ACT_SVG.edit}</svg>`;
+    const status=st[a.status]?st[a.status](a):"";
+    return `<div class="v-act-card ${a.status!=="pending"?"is-"+a.status:""}"><div class="v-act-head"><span class="v-act-ic ${p.k}">${ic}</span><div class="v-act-txt"><div class="v-act-title">${escapeHtml(p.title)}</div><div class="v-act-detail">${escapeHtml(p.detail)}</div></div></div>${a.msg?`<div class="v-act-msg">${escapeHtml(a.msg)}</div>`:""}${a.status==="pending"?`<div class="v-act-row">${btn("ok",ai,p.k==="del"?"ลบ":"ยืนยัน",p.k==="del"?"danger":"primary")}${btn("no",ai,"ยกเลิก","")}${btn("rev",ai,"เสนอแก้","link")}</div>`:`<div class="v-act-row"><span class="v-act-status">${status}</span>${a.status==="done"?btn("undo",ai,"ย้อนกลับ","link"):""}</div>`}</div>`;}).join("")}</div>`;
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest&&e.target.closest("[data-aiact]"); if(!b) return;
@@ -1420,7 +1439,7 @@ document.addEventListener("click",e=>{
   try{
     const op=b.dataset.aiact, mi=Number(b.dataset.mi), ai=Number(b.dataset.ai), cid=loadAllChats().activeId, h=loadAIChatHistory(), a=h[mi]&&h[mi].actions&&h[mi].actions[ai];
     if(!a){ showToast("ไม่พบข้อเสนอนี้แล้ว"); return; }
-    if(op==="ok"&&a.status==="pending"){ const r=executeAiAction(a); if(r.ok){a.status="done";a.undo=r.undo;showToast("ปรับระบบแล้ว ✓");}else{a.status="failed";a.msg=r.msg;showToast(r.msg||"ทำไม่สำเร็จ");} }
+    if(op==="ok"&&a.status==="pending"){ const r=executeAiAction(a); if(r.ok){a.status="done";a.undo=r.undo;showToast("ปรับระบบแล้ว");}else{a.status="failed";a.msg=r.msg;showToast(r.msg||"ทำไม่สำเร็จ");} }
     else if(op==="no"&&a.status==="pending"){ a.status="cancelled"; }
     else if(op==="rev"&&a.status==="pending"){ a.status="revised"; const inp=document.getElementById("aiChatInput"); if(inp){ inp.value="ขอปรับข้อเสนอนี้: "+describeAiAction(a)+" → อยากให้ปรับเป็น "; inp.focus(); try{inp.setSelectionRange(inp.value.length,inp.value.length);}catch(_){} } showToast("พิมพ์สิ่งที่อยากปรับแล้วกดส่งได้เลย"); }
     else if(op==="undo"&&a.status==="done"&&a.undo){ undoAiAction(a.undo); a.status="undone"; delete a.undo; showToast("ย้อนกลับแล้ว"); }
