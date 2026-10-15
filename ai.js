@@ -1517,7 +1517,7 @@ function renderAiChatBubbles(){
     const actions = isUser
       ? `<div class="ai-chat-actions"><button type="button" data-action="edit" data-idx="${idx}">${icons.edit}<span>แก้ไข</span></button></div>`
       : `<div class="ai-chat-actions"><button type="button" data-action="copy" data-idx="${idx}">${icons.copy}<span>คัดลอก</span></button>${idx === lastModelIdx ? `<button type="button" data-action="regenerate" data-idx="${idx}">${icons.refresh}<span>ตอบใหม่</span></button>` : ""}</div>`;
-    return `<div class="ai-chat-msg role-${m.role}" data-idx="${idx}"><div class="ai-chat-bubble ${bubbleCls}">${inner}</div>${renderAiActionCard(m,idx)}${actions}</div>`;
+    return `<div class="ai-chat-msg role-${m.role}" data-idx="${idx}"><div class="ai-chat-bubble ${bubbleCls}">${inner}</div>${renderAiActionCard(m,idx)}${actions}${(!isUser&&m.timing&&idx===lastModelIdx)?`<div class="ai-chat-latency">${escapeHtml(m.timing)}</div>`:""}</div>`;
   }).join("");
   body.scrollTop = body.scrollHeight;
   const activeChatId=loadAllChats().activeId;
@@ -3062,14 +3062,10 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
     return;
   }
 
-  const historyWithReply = historyWithUserMsg.concat([{ role:"model", text: processAiReplyForMemory(result.text, historyWithUserMsg), actions: takePendingActions() }]);
+  const historyWithReply = historyWithUserMsg.concat([{ role:"model", text: processAiReplyForMemory(result.text, historyWithUserMsg), actions: takePendingActions(), timing: aiRunSummary() || ("ตอบใน " + (aiElapsedMs/1000).toFixed(1) + " วินาที") }]);
   saveAIChatHistoryForChat(requestChatId, historyWithReply);
   aiRequestState=null;
   renderAiChatBubbles();
-  const latencyEl = document.createElement("div");
-  latencyEl.className = "ai-chat-latency";
-  latencyEl.textContent = aiRunSummary() || `ตอบใน ${(aiElapsedMs/1000).toFixed(1)} วินาที`;
-  if(isAdvisorPageActive()) document.getElementById("aiAnalystBody")?.appendChild(latencyEl);
 
   // แจ้งเฉพาะเมื่อผู้ใช้ไม่ได้อยู่หน้า Advisor ตอนคำตอบเสร็จ และแจ้งครั้งเดียวต่อ request
   if(!isAdvisorPageActive()){
@@ -3132,7 +3128,7 @@ async function regenerateLastReply(priorHistory, userText){
     aiRequestState=null; renderAiChatBubbles(); return;
   }
 
-  saveAIChatHistoryForChat(requestChatId,priorHistory.concat([{ role:"user", text: userText }, { role:"model", text: processAiReplyForMemory(result.text, priorHistory), actions: takePendingActions() }]));
+  saveAIChatHistoryForChat(requestChatId,priorHistory.concat([{ role:"user", text: userText }, { role:"model", text: processAiReplyForMemory(result.text, priorHistory), actions: takePendingActions(), timing: aiRunSummary() }]));
   aiRequestState=null;
   renderAiChatBubbles();
 

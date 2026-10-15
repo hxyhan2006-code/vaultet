@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds35";
+  const UI_VERSION = "ds36";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };

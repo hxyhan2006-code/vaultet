@@ -58,6 +58,10 @@ ok('สรุปเวลาแยกสองช่วง',/เริ่มต�
 const f=Number((/เริ่มตอบหลัง (\d+\.\d)/.exec(lat)||[])[1]);
 ok('ช่วงรอสอดคล้องกับที่ตั้งไว้ (~2.6 วิ)',f>=2.4&&f<=4.5);
 ok('สรุปมีเหตุการณ์คีย์',/คีย์ Gemini ที่ 1/.test(lat));
+await pg.evaluate(()=>renderAiChatBubbles());
+ok('เวลายังอยู่หลังวาดแชทใหม่',await pg.evaluate(()=>/เริ่มตอบหลัง/.test((document.querySelector('.ai-chat-latency')||{}).innerText||'')));
+await pg.reload();await pg.waitForTimeout(800);await pg.evaluate(()=>vaultetGo('chat'));await pg.waitForTimeout(400);
+ok('เวลายังอยู่หลังเปิดแอปใหม่',await pg.evaluate(()=>/เริ่มตอบหลัง/.test((document.querySelector('.ai-chat-latency')||{}).innerText||'')));
 ok('ไม่มี error',errs.length===0);
 await b.close();srv.close();
 })();
