@@ -136,3 +136,91 @@ html body .ux-bottom-item {
 }
 html body .ux-bottom-item .ico, html body .ux-bottom-item svg { width: 22px; height: 22px; font-size: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 html body .ux-bottom-item.active { color: var(--v-accent) !important; background: none !important; }
+
+/* =====================================================================
+   ฟอร์มเพิ่ม/แก้ไขรายการ (bottom sheet)
+   ===================================================================== */
+html body #overlay .v-sheet {
+  display: flex; flex-direction: column; padding: 0 !important; max-height: 92dvh; overflow: hidden !important;
+  background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-bottom: 0 !important;
+  border-radius: 24px 24px 0 0 !important;
+}
+html body #overlay .v-sheet::before { display: none !important; }
+.v-sheet-grip { width: 36px; height: 4px; border-radius: 4px; background: var(--v-line); margin: 8px auto 0; flex: none; }
+html body #overlay .v-sheet .modal-header { padding: 8px 20px 4px !important; margin: 0 !important; flex: none; }
+html body #overlay .v-sheet .modal-title { font-size: 17px; font-weight: 600; }
+html body #overlay .v-sheet .close-btn { width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2) !important; border: 0 !important; border-radius: 50%; color: var(--v-muted); }
+.v-sheet .close-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.v-sheet-body { padding: 8px 20px 12px; overflow-y: auto; overscroll-behavior: contain; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+
+/* ประเภท: segmented control */
+html body #overlay .v-sheet .type-toggle { margin: 0 !important; }
+
+/* จำนวนเงิน: ตัวเลขใหญ่กลางจอ */
+.v-amount { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 6px 0 0; }
+.v-amount-cur { font-family: var(--v-mono); font-size: 28px; color: var(--v-muted); }
+html body #overlay .v-sheet input#amount {
+  width: 2ch; max-width: 100%; min-width: 0; padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  font-family: var(--v-mono) !important; font-size: 44px !important; font-weight: 600; text-align: left; color: var(--v-fg) !important; line-height: 1.2; appearance: textfield; -moz-appearance: textfield;
+}
+html body #overlay .v-sheet input#amount::-webkit-outer-spin-button,
+html body #overlay .v-sheet input#amount::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+html body #overlay .v-sheet input#amount::placeholder { color: var(--v-muted); opacity: .5; }
+
+/* ชิป (ปุ่มลัดจำนวน / เทมเพลต / หมวด) */
+.v-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.v-chips-center { justify-content: center; }
+.v-chip-wrap { display: inline-flex; align-items: stretch; border-radius: 999px; background: var(--v-surface-2); border: 1px solid var(--v-line); overflow: hidden; }
+.v-chip { background: none; border: 0; color: var(--v-fg); font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.v-chip-wrap > .v-chip { border-radius: 0; }
+.v-chip-x { display: none; background: none; border: 0; border-left: 1px solid var(--v-line); color: var(--v-muted); font-size: 16px; line-height: 1; padding: 0 10px; cursor: pointer; }
+.v-chip-add { background: none; border: 1px dashed var(--v-line); color: var(--v-muted); display: none; }
+.v-chip-ghost { color: var(--v-muted); border: 1px dashed var(--v-line); }
+.v-chip-wrap.is-selected { border-color: transparent; }
+.v-chip-wrap.is-selected > .v-chip, .v-chip-wrap.is-selected > .v-chip-x { color: #0b0c0e; border-color: transparent; font-weight: 600; }
+.v-chip-wrap.is-selected.v-t-expense { background: var(--v-out); }
+.v-chip-wrap.is-selected.v-t-income { background: var(--v-in); }
+.v-chip-wrap.is-selected.v-t-saving { background: var(--v-save); }
+.v-chip-wrap.is-orphan { border-style: dashed; }
+
+/* โหมด "จัดการ": โผล่ปุ่มลบ/เพิ่ม เฉพาะตอนต้องใช้ */
+.v-managing .v-chip-x { display: inline-block; }
+.v-managing .v-chip-add { display: inline-block; }
+.v-sheet:not(.v-managing) .v-manage-only { display: none; }
+.v-has-none { display: none; }
+.v-managing .v-has-none { display: flex; }
+.v-managing #tplRow:empty { display: none; }
+
+.v-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: -6px; }
+.v-label { display: block; font-size: 13px; color: var(--v-muted); margin: 0 0 6px; }
+.v-section-head .v-label { margin: 0; }
+.v-link { background: none; border: 0; padding: 4px 0 4px 12px; color: var(--v-accent); font: inherit; font-size: 13px; cursor: pointer; }
+
+/* ช่องกรอกทั่วไป */
+html body #overlay .v-sheet .v-field {
+  width: 100%; height: 46px; padding: 0 14px !important; margin: 0 !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important;
+  border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px;
+}
+html body #overlay .v-sheet .v-field:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+.v-two { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.v-two > div:only-child, .v-two > div[style*="display: none"] + div { grid-column: 1 / -1; }
+#transferFieldGroup { display: flex; flex-direction: column; gap: 4px; }
+#transferFieldGroup .transfer-arrow { text-align: center; color: var(--v-muted); }
+
+/* ปุ่มบันทึก: ติดขอบล่างของ sheet */
+.v-sheet-foot { flex: none; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--v-surface); border-top: 1px solid var(--v-line); }
+html body #overlay .v-sheet #submitBtn {
+  width: 100%; height: 52px; margin: 0 !important; border: 0 !important; border-radius: 14px !important;
+  color: #0b0c0e !important; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+html body #overlay .v-sheet #submitBtn:disabled { opacity: .35; cursor: not-allowed; }
+html body #overlay .v-sheet button:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-sheet-body > * { flex: none; }
+#tplHead { display: none; }
+.v-sheet:not(.v-managing) #tplRow:not(:has(.v-chip-wrap)) { display: none; }
+
+/* ช่องหุ้น/ETF (โผล่เมื่อเลือกหมวด "ลงทุน") ให้หน้าตาเหมือนช่องอื่น */
+html body #overlay #investFields { padding: 14px !important; margin: 0 !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; }
+html body #overlay #investFields .field-label { display: block; margin: 0 0 6px !important; font-size: 13px; font-weight: 400; color: var(--v-muted); text-transform: none; letter-spacing: 0; }
+html body #overlay #investFields input { width: 100%; height: 46px; padding: 0 14px !important; margin: 0 0 12px !important; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px; }
+html body #overlay #investFields .hint, html body #overlay #investFields p { margin: 0; font-size: 12px; color: var(--v-muted); }

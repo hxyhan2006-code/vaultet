@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds1">
-<link rel="stylesheet" href="ds.css?v=ds1">
+<link rel="stylesheet" href="style.css?v=ds2">
+<link rel="stylesheet" href="ds.css?v=ds2">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -248,42 +248,66 @@
 </div>
 
 <div class="overlay" id="overlay">
-  <div class="sheet-modal" onclick="event.stopPropagation()">
+  <div class="sheet-modal v-sheet" onclick="event.stopPropagation()">
+    <div class="v-sheet-grip" aria-hidden="true"></div>
     <div class="modal-header">
       <span class="modal-title" id="modalTitle">เพิ่มรายการ</span>
-      <button class="close-btn" id="closeBtn">✕</button>
+      <button class="close-btn" id="closeBtn" type="button" aria-label="ปิด"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <div class="type-toggle" id="typeToggle">
-      <button class="type-btn" data-type="expense"><span class="type-btn-label">รายจ่าย</span></button>
-      <button class="type-btn" data-type="income"><span class="type-btn-label">รายรับ</span></button>
-      <button class="type-btn" data-type="saving"><span class="type-btn-label">ออม/ลงทุน</span></button>
-      <button class="type-btn" data-type="transfer"><span class="type-btn-label">โอนเงิน</span></button>
+    <div class="v-sheet-body">
+      <div class="type-toggle" id="typeToggle">
+        <button class="type-btn" data-type="expense" type="button"><span class="type-btn-label">รายจ่าย</span></button>
+        <button class="type-btn" data-type="income" type="button"><span class="type-btn-label">รายรับ</span></button>
+        <button class="type-btn" data-type="saving" type="button"><span class="type-btn-label">ออม/ลงทุน</span></button>
+        <button class="type-btn" data-type="transfer" type="button"><span class="type-btn-label">โอนเงิน</span></button>
+      </div>
+
+      <div class="v-amount">
+        <span class="v-amount-cur">฿</span>
+        <input id="amount" type="number" inputmode="decimal" step="any" min="0" placeholder="0" autocomplete="off" aria-label="จำนวนเงิน (บาท)" />
+      </div>
+      <div class="v-chips v-chips-center" id="quickAmountRow">
+        <span id="qaChips" style="display:contents"></span>
+        <button type="button" class="v-chip v-chip-ghost" id="quickAmountClear">ล้าง</button>
+      </div>
+
+      <div class="v-section-head" id="tplHead"><span class="v-label">เทมเพลต</span></div>
+      <div id="tplRow" class="v-chips"></div>
+
+      <div id="categoryFieldGroup">
+        <div class="v-section-head">
+          <span class="v-label">หมวด</span>
+          <button type="button" class="v-link" id="vManageBtn" aria-pressed="false">จัดการ</button>
+        </div>
+        <div class="v-chips" id="catGrid"></div>
+      </div>
+
+      <div id="transferFieldGroup" style="display:none">
+        <span class="v-label">จากบัญชี</span>
+        <select class="field-select v-field" id="fromAccount"></select>
+        <div class="transfer-arrow">↓</div>
+        <span class="v-label">ไปบัญชี</span>
+        <select class="field-select v-field" id="toAccount"></select>
+      </div>
+
+      <div class="v-two">
+        <div id="entryAccountWrap">
+          <label class="v-label" for="entryAccount">บัญชี</label>
+          <select class="field-select v-field" id="entryAccount"></select>
+        </div>
+        <div>
+          <label class="v-label" for="date">วันที่</label>
+          <input class="v-field" id="date" type="date" autocomplete="off" />
+        </div>
+      </div>
+      <div>
+        <label class="v-label" for="note">โน้ต (ไม่บังคับ)</label>
+        <input class="v-field" id="note" type="text" placeholder="เช่น ค่าข้าวเที่ยง" autocomplete="off" />
+      </div>
     </div>
-    <div id="tplRow" class="quick-amount-row" style="flex-wrap:wrap;margin-bottom:10px"></div>
-    <label class="field-label">จำนวนเงิน (บาท)</label>
-    <input id="amount" type="number" inputmode="decimal" step="any" min="0" placeholder="0" autocomplete="off" />
-    <div class="quick-amount-row" id="quickAmountRow" style="flex-wrap:wrap">
-      <span id="qaChips" style="display:contents"></span>
-      <button type="button" class="quick-amount-btn clear" id="quickAmountClear">ล้าง</button>
+    <div class="v-sheet-foot">
+      <button id="submitBtn" type="button">บันทึก</button>
     </div>
-    <div id="categoryFieldGroup">
-      <label class="field-label">หมวด</label>
-      <div class="cat-grid" id="catGrid"></div>
-      <label class="field-label">บัญชี</label>
-      <select class="field-select" id="entryAccount"></select>
-    </div>
-    <div id="transferFieldGroup" style="display:none">
-      <label class="field-label">จากบัญชี</label>
-      <select class="field-select" id="fromAccount"></select>
-      <div class="transfer-arrow">↓</div>
-      <label class="field-label">ไปบัญชี</label>
-      <select class="field-select" id="toAccount"></select>
-    </div>
-    <label class="field-label">วันที่</label>
-    <input id="date" type="date" autocomplete="off" />
-    <label class="field-label">โน้ต (ไม่บังคับ)</label>
-    <input id="note" type="text" placeholder="เช่น ค่าข้าวเที่ยง" autocomplete="off" />
-    <button id="submitBtn">บันทึก</button>
   </div>
 </div>
 
@@ -746,8 +770,8 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="app.js?v=ds1"></script>
-<script src="ai.js?v=ds1"></script>
-<script src="ui.js?v=ds1"></script>
+<script src="app.js?v=ds2"></script>
+<script src="ai.js?v=ds2"></script>
+<script src="ui.js?v=ds2"></script>
 </body>
 </html>

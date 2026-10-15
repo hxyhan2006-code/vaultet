@@ -1585,16 +1585,16 @@ function renderCatGrid(){
   const chips = showOrphan ? [{ name: orphanCategory, orphan: true }, ...cats.map(c => ({ name: c, orphan: false }))]
                             : cats.map(c => ({ name: c, orphan: false }));
   catGrid.innerHTML = chips.map(({ name: c, orphan }) => {
-    const sel = selectedCategory===c ? "selected-"+formType : "";
+    const sel = selectedCategory===c ? `is-selected v-t-${formType}` : "";
     const delBtn = orphan
       ? ""
-      : `<button type="button" class="cat-chip-del" data-cat="${escapeHtml(c)}" aria-label="ลบหมวด ${escapeHtml(c)}">×</button>`;
+      : `<button type="button" class="v-chip-x cat-chip-del" data-cat="${escapeHtml(c)}" aria-label="ลบหมวด ${escapeHtml(c)}">×</button>`;
     const label = orphan ? `${escapeHtml(c)} (หมวดถูกลบ)` : escapeHtml(c);
-    return `<span class="cat-chip-wrap ${sel} ${orphan?"orphan":""}">
-      <button type="button" class="cat-chip-label" data-cat="${escapeHtml(c)}">${label}</button>
+    return `<span class="v-chip-wrap ${sel} ${orphan?"is-orphan":""}">
+      <button type="button" class="v-chip cat-chip-label" data-cat="${escapeHtml(c)}">${label}</button>
       ${delBtn}
     </span>`;
-  }).join("") + `<button type="button" class="cat-chip add-chip" id="addCatBtn">+ เพิ่มหมวด</button><button type="button" class="cat-chip add-chip" id="mergeCatBtn">⇄ รวมหมวด</button>`;
+  }).join("") + `<button type="button" class="v-chip v-chip-add v-manage-only" id="addCatBtn">+ เพิ่มหมวด</button><button type="button" class="v-chip v-chip-add v-manage-only" id="mergeCatBtn">⇄ รวมหมวด</button>`;
 
   catGrid.querySelectorAll(".cat-chip-label").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1656,6 +1656,7 @@ function setFormType(t, isInit, entry){
   const isTransfer = t === "transfer";
   document.getElementById("categoryFieldGroup").style.display = isTransfer ? "none" : "block";
   document.getElementById("transferFieldGroup").style.display = isTransfer ? "block" : "none";
+  document.getElementById("entryAccountWrap").style.display = isTransfer ? "none" : "";
   if(isTransfer){
     if(accounts.length < 2){
       showToast("ต้องมีอย่างน้อย 2 บัญชีก่อนถึงจะโอนเงินได้");
@@ -1694,7 +1695,14 @@ function setFormType(t, isInit, entry){
   renderCatGrid();
 }
 
+function setFormManaging(on){
+  document.querySelector("#overlay .v-sheet").classList.toggle("v-managing", on);
+  const b = document.getElementById("vManageBtn");
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.textContent = on ? "เสร็จ" : "จัดการ";
+}
 function openForm(entry){
+  setFormManaging(false);
   editingId = entry ? entry.id : null;
   document.getElementById("modalTitle").textContent = entry ? "แก้ไขรายการ" : "เพิ่มรายการ";
   document.getElementById("overlay").classList.add("open");
@@ -1706,6 +1714,7 @@ function openForm(entry){
   setFormType(entry ? entry.type : "expense", true, entry);
   const v = parseFloat(document.getElementById("amount").value);
   document.getElementById("submitBtn").disabled = !v || v<=0;
+  fitAmountWidth();
   document.getElementById("amount").focus();
 }
 function closeForm(){
@@ -1714,12 +1723,19 @@ function closeForm(){
 }
 
 document.getElementById("fabBtn").addEventListener("click", () => openForm(null));
+document.getElementById("vManageBtn").addEventListener("click", () => setFormManaging(!document.querySelector("#overlay .v-sheet").classList.contains("v-managing")));
 document.getElementById("closeBtn").addEventListener("click", closeForm);
 document.getElementById("overlay").addEventListener("click", closeForm);
 document.querySelectorAll(".type-btn").forEach(btn => {
   btn.addEventListener("click", () => setFormType(btn.dataset.type));
 });
+// ให้ช่องจำนวนเงินกว้างพอดีตัวเลข (ตัวเลขกับ ฿ จะอยู่กึ่งกลางเสมอ)
+function fitAmountWidth(){
+  const el = document.getElementById("amount");
+  el.style.width = Math.max(1, String(el.value || "").length) + 1 + "ch";
+}
 document.getElementById("amount").addEventListener("input", () => {
+  fitAmountWidth();
   const v = parseFloat(document.getElementById("amount").value);
   document.getElementById("submitBtn").disabled = !v || v<=0;
 });
@@ -4118,8 +4134,10 @@ const num=n=>Number(n||0).toLocaleString("en-US",{maximumFractionDigits:0});
 /* ===== เทมเพลต ===== */
 function renderTpl(){
   const row=document.getElementById("tplRow");if(!row)return;
-  const t=jget(TK);
-  row.innerHTML=t.map((x,i)=>x.type!==formType?"":`<span class="cat-chip-wrap"><button type="button" class="cat-chip-label" data-use="${i}">⚡ ${esc2(x.name)} ฿${num(x.amount)}</button><button type="button" class="cat-chip-del" data-del="${i}" aria-label="ลบเทมเพลต">×</button></span>`).join("")+`<button type="button" class="cat-chip add-chip" id="tplSave">+ บันทึกเป็นเทมเพลต</button>`;
+  const t=jget(TK), mine=t.filter(x=>x.type===formType);
+  row.innerHTML=t.map((x,i)=>x.type!==formType?"":`<span class="v-chip-wrap"><button type="button" class="v-chip" data-use="${i}">⚡ ${esc2(x.name)} ฿${num(x.amount)}</button><button type="button" class="v-chip-x" data-del="${i}" aria-label="ลบเทมเพลต">×</button></span>`).join("")+`<button type="button" class="v-chip v-chip-add v-manage-only" id="tplSave">+ บันทึกเป็นเทมเพลต</button>`;
+  // ไม่มีเทมเพลตของประเภทนี้ → ซ่อนหัวข้อ (ปุ่มบันทึกเป็นเทมเพลตยังโผล่ในโหมดจัดการ)
+  document.getElementById("tplHead").classList.toggle("v-has-none", mine.length===0);
 }
 document.addEventListener("click",e=>{
   const row=document.getElementById("tplRow");if(!row||!e.target.closest||!e.target.closest("#tplRow"))return;
@@ -4179,7 +4197,7 @@ const QK="vaultet_quick_amounts_v1";
 const get=()=>{const r=localStorage.getItem(QK);if(r===null)return [20,50,100,500];try{const a=JSON.parse(r);return Array.isArray(a)?a:[20,50,100,500]}catch(e){return [20,50,100,500]}};
 const put=a=>{try{localStorage.setItem(QK,JSON.stringify(a))}catch(e){}};
 function render(){const el=document.getElementById("qaChips");if(!el)return;
-  el.innerHTML=get().map((n,i)=>`<span class="cat-chip-wrap"><button type="button" class="cat-chip-label" data-qa="${n}">+${n}</button><button type="button" class="cat-chip-del" data-qd="${i}" aria-label="ลบ +${n}">×</button></span>`).join("")+`<button type="button" class="cat-chip add-chip" id="qaAdd">+ เพิ่มตัวเลข</button>`;}
+  el.innerHTML=get().map((n,i)=>`<span class="v-chip-wrap"><button type="button" class="v-chip" data-qa="${n}">+${n}</button><button type="button" class="v-chip-x" data-qd="${i}" aria-label="ลบ +${n}">×</button></span>`).join("")+`<button type="button" class="v-chip v-chip-add v-manage-only" id="qaAdd">+ เพิ่มตัวเลข</button>`;}
 document.addEventListener("click",e=>{
   if(!e.target.closest)return;const box=e.target.closest("#qaChips");if(!box)return;
   const use=e.target.closest("[data-qa]"),del=e.target.closest("[data-qd]");
