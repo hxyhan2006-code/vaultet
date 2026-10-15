@@ -46,22 +46,35 @@ await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(400);
 await pg.evaluate(()=>{window.__mock.mode='ok';window.__mock.delay=300;window.__mock.first=2600;window.__mock.quota1=true;window.__mock.parts=['คำตอบ ','ทดสอบ ','ครับ'];});
 await send('ช่วยดูงบหน่อย');
 await pg.waitForTimeout(1700);
-const st=await pg.evaluate(()=>{const e=document.getElementById('aiRunStatus');return e?e.innerText:null});
-ok('ขึ้นสถานะระหว่างรอ',!!st);
-ok('บอกสิ่งที่ส่งตามจริง (รายการล่าสุด/ความจำ/ประวัติ)',/ส่งข้อมูลให้ AI: รายการล่าสุด \d+ · ความจำ \d+ ข้อ · ประวัติแชท \d+ ข้อความ/.test(st||''));
-ok('บอกว่าคีย์ 1 เต็ม ลองคีย์ 2',/คีย์ Gemini ที่ 1 โควต้าเต็ม ลองคีย์ที่ 2/.test(st||''));
-ok('มีตัวนับเวลารอจริง',/รอ AI เริ่มตอบ… \d+ วินาที/.test(st||''));
-ok('ไม่ขึ้นข้อความอ่านงบ/เดาเอง',!/กำลังอ่าน|กำลังวิเคราะห์/.test(st||''));
+const st=await pg.evaluate(()=>{const e=document.getElementById('aiChatTypingIndicator');return e?e.innerText.trim():null});
+ok('ระหว่างรอมีแค่จุด ไม่มีข้อความยาว',st==='');
+ok('ไม่มีกล่องสถานะ',await pg.evaluate(()=>!document.getElementById('aiRunStatus')));
 await pg.waitForFunction(()=>document.querySelector('.ai-chat-latency'),null,{timeout:15000});
 const lat=await pg.evaluate(()=>document.querySelector('.ai-chat-latency').innerText);
 ok('สรุปเวลาแยกสองช่วง',/เริ่มตอบหลัง \d+\.\d วิ · พิมพ์ \d+\.\d วิ · รวม \d+\.\d วิ/.test(lat));
 const f=Number((/เริ่มตอบหลัง (\d+\.\d)/.exec(lat)||[])[1]);
 ok('ช่วงรอสอดคล้องกับที่ตั้งไว้ (~2.6 วิ)',f>=2.4&&f<=4.5);
-ok('สรุปมีเหตุการณ์คีย์',/คีย์ Gemini ที่ 1/.test(lat));
+ok('บรรทัดเวลาไม่มีเรื่องคีย์ (สั้น)',!/คีย์/.test(lat));
+// หน้าตั้งค่า
+await pg.evaluate(()=>{window.vaultetOpenSettings&&window.vaultetOpenSettings();});await pg.waitForTimeout(500);
+const rows=await pg.evaluate(()=>({k:document.querySelector('#vSetAiKey')?.innerText||'',o:document.querySelector('#vSetOR')?.innerText||''}));
+ok('แถว Gemini: คีย์ 1 เต็ม (2 คีย์ ใช้ได้ 1)',/2 คีย์ · เต็ม 1 คีย์/.test(rows.k));
+const ks=await pg.evaluate(()=>JSON.parse(localStorage.getItem('vaultet_ai_keystate_local')));
+ok('เก็บสถานะรายคีย์ (1=เต็ม 2=ใช้ได้)',ks.keys[0].s==='full'&&ks.keys[1].s==='ok');
+ok('สถานะไม่เข้าไฟล์สำรอง',await pg.evaluate(()=>!shouldBackupLocalStorageKey('vaultet_ai_keystate_local')));
 await pg.evaluate(()=>renderAiChatBubbles());
 ok('เวลายังอยู่หลังวาดแชทใหม่',await pg.evaluate(()=>/เริ่มตอบหลัง/.test((document.querySelector('.ai-chat-latency')||{}).innerText||'')));
-await pg.reload();await pg.waitForTimeout(800);await pg.evaluate(()=>vaultetGo('chat'));await pg.waitForTimeout(400);
+await pg.reload();await pg.waitForTimeout(800);await pg.click('.ux-bottom-item[data-page="chat"]');await pg.waitForTimeout(600);
 ok('เวลายังอยู่หลังเปิดแอปใหม่',await pg.evaluate(()=>/เริ่มตอบหลัง/.test((document.querySelector('.ai-chat-latency')||{}).innerText||'')));
+// ทุกคีย์เต็ม → สรุปเต็มทั้งหมด
+await pg.evaluate(()=>{localStorage.setItem('vaultet_ai_keystate_local',JSON.stringify({keys:{0:{s:'full',t:Date.now()},1:{s:'full',t:Date.now()}}}));vaultetOpenSettings();});await pg.waitForTimeout(300);
+ok('แถว Gemini: เต็มทั้งหมด',/2 คีย์ · เต็มทั้งหมด \d\d:\d\d/.test(await pg.evaluate(()=>document.querySelector('#vSetAiKey').innerText)));
+// รายคีย์ในหน้าตั้งคีย์
+await pg.evaluate(()=>renderApiKeyList());
+ok('รายคีย์แสดงเต็มพร้อมเวลา',/เต็ม \d\d:\d\d/.test(await pg.evaluate(()=>document.getElementById('apiKeyList').innerText)));
+// เพิ่ม/ลบคีย์ → ล้างสถานะเก่า
+await pg.evaluate(()=>saveApiKeys(['KEY-1']));
+ok('แก้รายการคีย์แล้วล้างสถานะเก่า',await pg.evaluate(()=>localStorage.getItem('vaultet_ai_keystate_local')===null));
 ok('ไม่มี error',errs.length===0);
 await b.close();srv.close();
 })();

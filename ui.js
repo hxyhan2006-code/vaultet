@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds36";
+  const UI_VERSION = "ds37";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -268,8 +268,8 @@
     set("vSetDrive", last && !/ยังไม่เคย/.test(last) ? conn + " · สำรองขึ้น Drive ล่าสุด " + last : conn);
     set("vSetStock", document.getElementById("pfKeyStatus2")?.textContent || "");
     renderAiCost();
-    set("vSetAiKey", document.getElementById("apiKeyStatus")?.textContent || "");
-    set("vSetOR", window.vaultetOR && window.vaultetOR.statusText ? window.vaultetOR.statusText() : "");
+    set("vSetAiKey", typeof aiGeminiSummary === "function" ? aiGeminiSummary() : (document.getElementById("apiKeyStatus")?.textContent || ""));
+    set("vSetOR", typeof aiORSummary === "function" ? aiORSummary() : "");
   }
   // หน้าตั้งค่าสร้างหลังโค้ดเดิมโหลดครบ (บางส่วนถูกสร้างด้วย timer) — ลองใหม่สั้นๆ จนกว่าจะพร้อม
   let tries = 0;

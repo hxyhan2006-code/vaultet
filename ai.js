@@ -22,6 +22,7 @@ function getApiKeys(){
 // สำคัญ: เก็บเฉพาะคีย์เหล่านี้ ห้ามนำไปรวมกับ payload ของ exportBtn เด็ดขาด (ดูคอมเมนต์ด้านบน)
 function saveApiKeys(arr){
   localStorage.setItem(AI_APIKEYS_KEY, JSON.stringify(arr));
+  try{ localStorage.removeItem("vaultet_ai_keystate_local"); }catch(e){}   // ลำดับคีย์เปลี่ยน สถานะเก่าใช้ไม่ได้แล้
 }
 
 // ===== AI Layer (Milestone 3) =====
@@ -69,7 +70,7 @@ function renderApiKeyList(){
       <div class="memory-row">
         <div>
           <div class="memory-row-text">คีย์ที่ ${i+1}${i === 0 ? " (หลัก)" : " (สำรอง)"}</div>
-          <div class="memory-row-meta">${escapeHtml(maskApiKey(k))}</div>
+          <div class="memory-row-meta">${escapeHtml(maskApiKey(k))}${aiKeyStateText(i) ? " · " + escapeHtml(aiKeyStateText(i)) : ""}</div>
         </div>
         <button class="icon-btn delete-api-key-btn" data-index="${i}" aria-label="ลบคีย์นี้">${ICON_TRASH}</button>
       </div>
@@ -381,7 +382,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   if(orOn && Date.now() < geminiCooldownUntil){
     aiRunEvent("ใช้ OpenRouter (Gemini ฟรีเพิ่งเต็ม พักไว้ชั่วคราว)");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
-    if(r) return r;
+    if(r){ noteAiOR(); return r; }
   }
   const retries = orOn ? 0 : maxRetriesPerKey;   // มีตัวสำรองแล้ว ไม่ต้องรอ retry นาน
   const keys = getApiKeys();
@@ -401,6 +402,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
       attempt++;
       await new Promise(r => setTimeout(r, 1500 * attempt)); // หน่วงเพิ่มขึ้นทีละรอบ: 1.5s, 3s
     }
+    noteAiKey(i, res.ok ? "ok" : res.status === 429 ? "full" : res.status === 503 ? "busy" : "bad");
     if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์อื่น
     // คีย์นี้โควต้าเต็ม → ลองคีย์สำรองถัดไปทันที
     if(i + 1 < keys.length) aiRunEvent(`คีย์ Gemini ที่ ${i + 1} โควต้าเต็ม ลองคีย์ที่ ${i + 2}`);
@@ -408,7 +410,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   if(orOn){
     aiRunEvent("คีย์ Gemini ฟรีเต็มทั้งหมด สลับไปใช้ OpenRouter");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
-    if(r){ geminiCooldownUntil = Date.now() + 90000; return r; }
+    if(r){ geminiCooldownUntil = Date.now() + 90000; noteAiOR(); return r; }
   }
   return res || new Response("no_ai_available", { status: 503 });
 }
@@ -1527,6 +1529,40 @@ function renderAiChatBubbles(){
 }
 
 // ตัวบอกสถานะ "AI กำลังพิมพ์" — เป็น DOM ชั่วคราว ไม่เก็บลงประวัติ
+// ===== สถานะคีย์/ตัวสำรองครั้งล่าสุด (เก็บในเครื่อง ใช้แสดงในหน้าตั้งค่า) =====
+const AI_KEYSTATE_KEY = "vaultet_ai_keystate_local"; // สถานะเฉพาะเครื่องนี้ — ถูกกันออกจากไฟล์สำรองใน app.js
+function loadAiKeyState(){ try{ const o = JSON.parse(localStorage.getItem(AI_KEYSTATE_KEY) || "{}"); o.keys = o.keys || {}; return o; }catch(e){ return { keys:{} }; } }
+function noteAiKey(i, st){ try{ const o = loadAiKeyState(); o.keys[i] = { s: st, t: Date.now() }; localStorage.setItem(AI_KEYSTATE_KEY, JSON.stringify(o)); }catch(e){} }
+function noteAiOR(){ try{ const o = loadAiKeyState(); o.or = Date.now(); localStorage.setItem(AI_KEYSTATE_KEY, JSON.stringify(o)); }catch(e){} }
+function aiStateTime(t){
+  const d = new Date(t), now = new Date(), hm = String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  if(d.toDateString() === now.toDateString()) return hm;
+  return (typeof __aiShortDate === "function" ? __aiShortDate(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0")) : "") + " " + hm;
+}
+// สรุปสถานะ: เฉพาะที่เคยเกิดขึ้นจริงตอนเรียก AI (ไม่ใช่สถานะสด)
+function aiKeyStateText(i){
+  const st = loadAiKeyState().keys[i]; if(!st) return "";
+  return st.s === "full" ? "เต็ม " + aiStateTime(st.t) : st.s === "busy" ? "ไม่ว่าง " + aiStateTime(st.t) : st.s === "bad" ? "ตอบกลับผิดพลาด " + aiStateTime(st.t) : "ใช้ได้ " + aiStateTime(st.t);
+}
+function aiGeminiSummary(){
+  const n = getApiKeys().length; if(!n) return "ยังไม่ได้ตั้งค่า";
+  const o = loadAiKeyState(), sts = Array.from({ length:n }, (_, i) => o.keys[i]);
+  const tried = sts.filter(Boolean);
+  if(!tried.length) return "ตั้งค่าแล้ว " + n + " คีย์";
+  const full = sts.filter(x => x && x.s === "full"), okc = sts.filter(x => x && x.s === "ok"), bad = sts.filter(x => x && x.s === "bad");
+  if(bad.length && !full.length) return n + " คีย์ · " + bad.length + " คีย์ตอบกลับผิดพลาด (ตรวจคีย์) " + aiStateTime(bad.reduce((a, b) => (a.t > b.t ? a : b)).t);
+  const last = tried.reduce((a, b) => (a.t > b.t ? a : b));
+  if(full.length === n) return n + " คีย์ · เต็มทั้งหมด " + aiStateTime(last.t);
+  if(full.length) return n + " คีย์ · เต็ม " + full.length + " คีย์ (ล่าสุด " + aiStateTime(full.reduce((a, b) => (a.t > b.t ? a : b)).t) + ")";
+  return n + " คีย์ · ใช้ได้" + (okc.length ? " (ล่าสุด " + aiStateTime(last.t) + ")" : "");
+}
+function aiORSummary(){
+  const OR = window.vaultetOR; if(!OR || !OR.statusText) return "";
+  const base = OR.statusText(), o = loadAiKeyState();
+  if(!OR.hasKey() || !OR.model() || !o.or) return base;
+  const okTimes = Object.values(o.keys).filter(x => x && x.s === "ok").map(x => x.t), lastOk = okTimes.length ? Math.max(...okTimes) : 0;
+  return (o.or > lastOk ? "กำลังใช้แทน Gemini ฟรี" : "พร้อมสำรอง") + " · ใช้ล่าสุด " + aiStateTime(o.or) + " · " + OR.model();
+}
 // ===== สถานะการเรียก AI ตามจริง: เก็บเฉพาะสิ่งที่แอปรู้เองจริง (ข้อมูลที่ส่ง เวลา เหตุการณ์ของคีย์/ตัวสำรอง) =====
 let aiRun = null, aiRunTimer = 0;
 function aiRunStart(){ aiRun = { t0: performance.now(), first: 0, end: 0, events: [], sent: "" }; }
@@ -1545,7 +1581,7 @@ function aiRunSummary(){
   if(!aiRun || !aiRun.end) return "";
   const f = ((aiRun.first || aiRun.end) - aiRun.t0) / 1000, tot = (aiRun.end - aiRun.t0) / 1000;
   const parts = ["เริ่มตอบหลัง " + f.toFixed(1) + " วิ", "พิมพ์ " + Math.max(0, tot - f).toFixed(1) + " วิ", "รวม " + tot.toFixed(1) + " วิ"];
-  return parts.join(" · ") + (aiRun.events.length ? " · " + aiRun.events.join(" · ") : "");
+  return parts.join(" · ");
 }
 function showAiChatTyping(){
   const body = document.getElementById("aiAnalystBody");
@@ -1553,8 +1589,7 @@ function showAiChatTyping(){
   const div = document.createElement("div");
   div.id = "aiChatTypingIndicator";
   div.className = "ai-chat-typing";
-  div.innerHTML = '<span></span><span></span><span></span><div class="ai-run-status" id="aiRunStatus"></div>';
-  aiRunPaint(); clearInterval(aiRunTimer); aiRunTimer = setInterval(aiRunPaint, 1000);
+  div.innerHTML = "<span></span><span></span><span></span>";
   body.appendChild(div);
   body.scrollTop = body.scrollHeight;
 }
