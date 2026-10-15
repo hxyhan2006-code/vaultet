@@ -738,3 +738,6 @@ html body .ai-completion-dismiss { flex: none; width: 36px; height: 36px; displa
 
 body.v-scroll-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
 html body .sheet-modal, html body .v-dlg, html body .v-aimenu-hist, html body .notification-list, html body .wa-sheet, html body .profile-sheet, html body .pf-body, html body .ai-advisor-settings-panel, html body #aiAnalystBody { overscroll-behavior: contain; }
+
+/* bottom bar: same 5-column grid on the AI tab too (style.css forces display:flex there, which made the other tabs shift) */
+html body.ux-chat-active:not(.ux-keyboard-open) .ux-bottom-nav { display: grid !important; }

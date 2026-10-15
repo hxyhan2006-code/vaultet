@@ -47,6 +47,16 @@ await pg.click('#aiAdvisorCloseBtn'); await pg.waitForTimeout(700); await pg.key
 ok('everything closed → unlocked', !(await locked()));
 await pg.evaluate(()=>vaultetGo('home')); await pg.waitForTimeout(300);
 
+// ---- แถบล่าง: ปุ่มไม่ขยับเมื่อสลับไปแท็บ AI ----
+const navXs=()=>pg.evaluate(()=>[...document.querySelectorAll('.ux-bottom-item, #uxAddBtn')].map(e=>{const r=e.getBoundingClientRect();return Math.round(r.left+r.width/2)}));
+const navHome=await navXs();
+const navByTab={};
+for(const t of ['analysis','plan','chat','home']){ await pg.evaluate(x=>vaultetGo(x),t); await pg.waitForTimeout(350); navByTab[t]=await navXs(); }
+const same=(a,b)=>a.length===b.length && a.every((v,i)=>Math.abs(v-b[i])<=1);
+ok('bottom bar items stay put on every tab incl. AI ('+navHome.join(',')+' vs AI '+navByTab.chat.join(',')+')', ['analysis','plan','chat','home'].every(t=>same(navByTab[t],navHome)));
+const cols=await pg.evaluate(()=>getComputedStyle(document.querySelector('.ux-bottom-nav')).display);
+ok('nav is a grid on the home tab', cols==='grid');
+
 // ---- แจ้งเตือน "AI ตอบแล้ว" อยู่กึ่งกลาง ----
 await pg.evaluate(()=>window.scrollTo(0,0));
 await pg.evaluate(()=>showAiCompletionNotification('x')); await pg.waitForTimeout(500);
@@ -77,6 +87,11 @@ ok('a moved shortcut still works (opens Accounts)', await pg.evaluate(()=>docume
 await pg.evaluate(()=>document.querySelectorAll('.overlay.open').forEach(e=>e.classList.remove('open'))); await pg.waitForTimeout(300);
 await pg.click('#vMoreBtn'); await pg.click('#vScEdit'); await pg.waitForSelector('.v-dlg'); await pg.click('.v-dlg-cancel'); await pg.waitForTimeout(200); await pg.click('.v-dlg-ok'); await pg.waitForTimeout(300);
 ok('reset restores the default order', (await firstId())==='openPortfolioBtn,vEmergencyBtn,manageDebtsBtn,vMoreBtn');
+// ---- ไอคอนแอป: manifest ชี้ไฟล์ที่มีจริง ขนาดถูก ----
+const ic=await pg.evaluate(async()=>{const m=await (await fetch('manifest.webmanifest')).json();const out=[];for(const i of m.icons){const r=await fetch(i.src);const buf=new Uint8Array(await r.arrayBuffer());const dv=new DataView(buf.buffer);out.push({src:i.src,sizes:i.sizes,purpose:i.purpose,ok:r.ok,png:buf[1]===0x50&&buf[2]===0x4E,w:dv.getUint32(16),h:dv.getUint32(20)});}
+const ap=document.querySelector('link[rel=apple-touch-icon]').getAttribute('href');const r2=await fetch(ap);return {out,ap,apOk:r2.ok};});
+ok('manifest icons exist and match their declared size ('+ic.out.map(i=>i.src+' '+i.w+'x'+i.h).join(', ')+')', ic.out.length>=2 && ic.out.every(i=>i.ok&&i.png&&i.sizes===i.w+'x'+i.h));
+ok('apple-touch-icon file exists ('+ic.ap+')', ic.apOk);
 ok('no native browser dialogs ('+native.msgs.join(' | ')+')', native.n===0);
 console.log(errs.join('\n')||'no js errors');
 await b.close();srv.close()})();
