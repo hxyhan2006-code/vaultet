@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds18";
+  const UI_VERSION = "ds19";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -102,6 +102,14 @@
     const oldCard = settingsBtn.closest(".ux-section-card"); if(oldCard) oldCard.hidden = true;
     const lockCard = document.getElementById("lockSettingsBtn")?.closest(".ux-section-card");
 
+    const backupNow = rowBtn("vSetBackupNow", "สำรองขึ้น Google Drive ตอนนี้", "", async () => {
+      const hasFile = !!localStorage.getItem(typeof GDRIVE_FILE_ID_KEY !== "undefined" ? GDRIVE_FILE_ID_KEY : "");
+      if(!hasFile){ openSettingsSheet("drive"); return; }
+      const b = document.getElementById("vSetBackupNow"); b.classList.add("is-busy");
+      try{ document.getElementById("gdriveSyncNowBtn")?.click(); }catch(e){}
+      setTimeout(() => { b.classList.remove("is-busy"); refreshSettings(); }, 1500);
+    });
+    backupNow.classList.add("v-set-primary");
     const exp = rowBtn("vSetExport", "สำรองเป็นไฟล์", "", () => { exportBtn.click(); setTimeout(refreshSettings, 600); });
     const imp = rowBtn("vSetImport", "กู้คืนจากไฟล์", "เลือกไฟล์สำรองที่เคยบันทึกไว้", () => importBtn.click());
     const drive = rowBtn("vSetDrive", "Google Drive", "", () => openSettingsSheet("drive"));
@@ -121,7 +129,7 @@
     }
 
     const groups = [
-      group("สำรองข้อมูล", exp, imp, drive),
+      group("สำรองข้อมูล", backupNow, exp, imp, drive),
       group("การแจ้งเตือน", notif),
       group("AI", aikey),
       lockCard ? group("ความปลอดภัย", lockCard) : null,
@@ -137,6 +145,8 @@
     const n = unreadCount();
     set("vSetNotif", null, n ? '<span class="v-set-badge">' + n + '</span>' : "");
     const f = timeAgo(fileBackupIso());
+    const hasDrive = !!localStorage.getItem(typeof GDRIVE_FILE_ID_KEY !== "undefined" ? GDRIVE_FILE_ID_KEY : "");
+    set("vSetBackupNow", hasDrive ? "ล่าสุด: " + (document.getElementById("gdriveLastSyncStatus")?.textContent || "ยังไม่เคย") : "ยังไม่ได้เชื่อม Drive — แตะเพื่อตั้งค่า");
     set("vSetExport", f ? "สำรองเป็นไฟล์ล่าสุด: " + f : "ยังไม่เคยสำรองเป็นไฟล์");
     const conn = document.getElementById("gdriveConnStatus")?.textContent || "ยังไม่ได้เชื่อมต่อ";
     const last = document.getElementById("gdriveLastSyncStatus")?.textContent || "";
@@ -151,64 +161,109 @@
   window.vaultetOpenSettings = () => { buildSettings(); refreshSettings(); if(window.vaultetGo) window.vaultetGo("more"); };
 
 
-  // ---------- เมนูหน้า AI (จุดสามจุดมุมขวาบน) ----------
+  // ---------- เมนูหน้า AI (จุดสามจุดมุมขวาบน) — หน้าตาแบบเมนูข้างของ Claude/Gemini ----------
   const I = {
-    hist: '<path d="M4 6h16M4 12h16M4 18h10"/>',
-    mem: '<path d="M12 3a6 6 0 00-6 6c0 2 1 3.5 2 4.5V17h8v-3.5c1-1 2-2.500 2-4.500a6 6 0 00-6-6z"/><path d="M9 20h6"/>',
+    mem: '<path d="M12 3a6 6 0 00-6 6c0 2 1 3.500 2 4.500V17h8v-3.500c1-1 2-2.500 2-4.500a6 6 0 00-6-6z"/><path d="M9 20h6"/>',
     tune: '<path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 20c1.500-4 4.500-6 8-6s6.500 2 8 6"/>',
     chart: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
     dots: '<circle cx="12" cy="5" r="1.300"/><circle cx="12" cy="12" r="1.300"/><circle cx="12" cy="19" r="1.300"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>',
-    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>'
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+    search: '<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    chat: '<path d="M5 6h14a1 1 0 011 1v9a1 1 0 01-1 1h-7l-4 3v-3H5a1 1 0 01-1-1V7a1 1 0 011-1z"/>'
   };
   const svg = p => '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true">' + p + '</svg>';
   function profileName(){
     try{ const p = JSON.parse(localStorage.getItem("vaultet_user_profile_v1") || "{}") || {}; return p.nickname || [p.firstName, p.lastName].filter(Boolean).join(" ") || ""; }catch(e){ return ""; }
   }
+  const chatsData = () => { try{ return typeof loadAllChats === "function" ? loadAllChats() : { chats: [], activeId: null }; }catch(e){ return { chats: [], activeId: null }; } };
   function buildAiMenu(){
     const host = document.getElementById("uxChatTopActions");
     if(!host || document.getElementById("uxChatMenuBtn")) return !!host;
-    const menuBtn = document.createElement("button");
-    menuBtn.type = "button"; menuBtn.id = "uxChatMenuBtn"; menuBtn.className = "v-top-btn"; menuBtn.setAttribute("aria-label", "เมนู AI"); menuBtn.innerHTML = svg(I.dots);
     const newBtn = document.createElement("button");
     newBtn.type = "button"; newBtn.id = "uxChatNewBtn"; newBtn.className = "v-top-btn"; newBtn.setAttribute("aria-label", "แชทใหม่"); newBtn.innerHTML = svg(I.edit);
-    host.append(menuBtn, newBtn);
+    const menuBtn = document.createElement("button");
+    menuBtn.type = "button"; menuBtn.id = "uxChatMenuBtn"; menuBtn.className = "v-top-btn"; menuBtn.setAttribute("aria-label", "เมนู AI"); menuBtn.innerHTML = svg(I.dots);
+    host.append(newBtn, menuBtn);
 
-    const back = document.createElement("div"); back.className = "v-aimenu-back"; back.id = "aiMenuBack"; back.hidden = true;
-    const panel = document.createElement("aside"); panel.className = "v-aimenu"; panel.id = "aiMenu"; panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "เมนู AI"); panel.hidden = true;
-    const close = () => { back.hidden = true; panel.hidden = true; document.body.classList.remove("v-aimenu-open"); };
+    const back = document.createElement("div"); back.className = "v-aimenu-back"; back.id = "aiMenuBack";
+    const panel = document.createElement("aside"); panel.className = "v-aimenu"; panel.id = "aiMenu"; panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "เมนู AI");
+    const head = document.createElement("div"); head.className = "v-aimenu-head";
+    head.innerHTML = '<span class="v-aimenu-title">ที่ปรึกษา AI</span><button type="button" class="v-aimenu-search-btn" id="aiMenuSearchBtn" aria-label="ค้นหาแชท">' + svg(I.search) + '</button>';
+    const searchWrap = document.createElement("div"); searchWrap.className = "v-aimenu-search"; searchWrap.hidden = true;
+    searchWrap.innerHTML = svg(I.search) + '<input type="search" id="aiMenuSearch" placeholder="ค้นหาแชท" autocomplete="off" enterkeyhint="search">';
+    const list = document.createElement("div"); list.className = "v-aimenu-list";
+    const hist = document.createElement("div"); hist.className = "v-aimenu-hist"; hist.id = "aiMenuHist";
+    const histLabel = document.createElement("div"); histLabel.className = "v-aimenu-label"; histLabel.textContent = "ประวัติแชท";
+    const prof = document.createElement("button"); prof.type = "button"; prof.className = "v-aimenu-profile"; prof.id = "aiMenuProfile";
+    prof.innerHTML = '<span class="v-aimenu-avatar"></span><span class="v-aimenu-pinfo"><span class="v-aimenu-name"></span><span class="v-aimenu-sub">ตั้งค่า</span></span>';
+
+    let closeTimer = 0;
+    const close = () => { panel.classList.remove("is-open"); back.classList.remove("is-open"); document.body.classList.remove("v-aimenu-open"); };
+    const after = fn => { close(); setTimeout(fn, 230); };   // รอเมนูเลื่อนออกก่อนค่อยเปิดอย่างอื่น ไม่ให้กระตุก
+    const renderHist = () => {
+      const q = (document.getElementById("aiMenuSearch").value || "").trim().toLowerCase();
+      const data = chatsData();
+      const rows = [...(data.chats || [])].sort((x, y) => (y.updatedAt || "").localeCompare(x.updatedAt || ""))
+        .map(c => ({ c, title: c.title || (typeof chatTitleFrom === "function" ? chatTitleFrom(c.messages) : "") || "แชทใหม่" }))
+        .filter(r => !q || r.title.toLowerCase().includes(q) || (r.c.messages || []).some(m => String(m.text || "").toLowerCase().includes(q)));
+      hist.innerHTML = "";
+      if(!rows.length){ const e = document.createElement("div"); e.className = "v-aimenu-empty"; e.textContent = q ? "ไม่พบแชทที่ค้นหา" : "ยังไม่มีแชท"; hist.append(e); return; }
+      rows.forEach(({ c, title }) => {
+        const b = document.createElement("div"); b.className = "v-aimenu-chat" + (c.id === data.activeId ? " is-active" : "");
+        b.innerHTML = '<button type="button" class="v-aimenu-chat-main">' + svg(I.chat) + '<span></span></button><button type="button" class="v-aimenu-chat-del" aria-label="ลบแชทนี้">' + svg(I.x) + '</button>';
+        b.querySelector("span").textContent = title;
+        b.querySelector(".v-aimenu-chat-main").addEventListener("click", () => after(() => {
+          if(typeof switchToChat === "function") switchToChat(c.id);
+          if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
+          if(typeof clearAiChatUnread === "function") clearAiChatUnread();
+        }));
+        b.querySelector(".v-aimenu-chat-del").addEventListener("click", async () => {
+          if(!(await vaultetAsk("ลบ", "ลบแชทนี้ทั้งหมดใช่ไหม? กู้คืนไม่ได้", true))) return;
+          if(typeof deleteChat === "function") deleteChat(c.id);
+          if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
+          renderHist();
+        });
+        hist.append(b);
+      });
+    };
     const open = () => {
-      const n = profileName(); const pn = panel.querySelector(".v-aimenu-name"); if(pn) pn.textContent = n || "โปรไฟล์ของคุณ";
-      back.hidden = false; panel.hidden = false; document.body.classList.add("v-aimenu-open");
+      const n = profileName();
+      prof.querySelector(".v-aimenu-name").textContent = n || "โปรไฟล์ของคุณ";
+      prof.querySelector(".v-aimenu-avatar").textContent = n ? Array.from(n)[0].toUpperCase() : "";
+      if(!n) prof.querySelector(".v-aimenu-avatar").innerHTML = svg(I.user);
+      searchWrap.hidden = true; document.getElementById("aiMenuSearch").value = "";
+      renderHist();
+      back.classList.add("is-open"); panel.classList.add("is-open"); document.body.classList.add("v-aimenu-open");
     };
     const item = (icon, label, fn, danger) => {
       const b = document.createElement("button"); b.type = "button"; b.className = "v-aimenu-row" + (danger ? " is-danger" : "");
       b.innerHTML = svg(icon) + "<span></span>"; b.querySelector("span").textContent = label;
-      b.addEventListener("click", () => { close(); setTimeout(fn, 60); });
+      b.addEventListener("click", () => after(fn));
       return b;
     };
     const click = id => () => document.getElementById(id)?.click();
-    const list = document.createElement("div"); list.className = "v-aimenu-list";
     list.append(
-      item(I.hist, "ประวัติแชท", click("aiChatHistoryBtn")),
+      item(I.user, "ข้อมูลของฉันที่ AI ใช้", () => window.vaultetOpenProfile && window.vaultetOpenProfile()),
       item(I.mem, "Memory ที่ AI จำได้", () => openSettingsSheet("memory")),
       item(I.tune, "นิสัยและคำสั่งของ AI", () => { const p = document.getElementById("aiAdvisorSettingsPanel"); if(!p || !p.classList.contains("is-open")) click("aiAdvisorSettingsBtn")(); }),
-      item(I.user, "ข้อมูลของฉันที่ AI ใช้", () => window.vaultetOpenProfile && window.vaultetOpenProfile()),
       item(I.chart, "รายงานรายสัปดาห์", () => { if(typeof openWeeklyAuditModal === "function") openWeeklyAuditModal(); }),
       item(I.trash, "ล้างข้อความในแชทนี้", async () => { if(await vaultetAsk("ล้าง", "ล้างข้อความทั้งหมดในแชทนี้ใช่ไหม?", true)) click("clearAiChatBtn")(); }, true)
     );
-    const prof = document.createElement("button"); prof.type = "button"; prof.className = "v-aimenu-profile"; prof.id = "aiMenuProfile";
-    prof.innerHTML = '<span class="v-aimenu-avatar">' + svg(I.user) + '</span><span class="v-aimenu-pinfo"><span class="v-aimenu-name"></span><span class="v-aimenu-sub">ตั้งค่า สำรองข้อมูล ล็อกแอป</span></span>' + CHEV;
-    prof.addEventListener("click", () => { close(); setTimeout(() => window.vaultetOpenSettings && window.vaultetOpenSettings(), 60); });
-    const head = document.createElement("div"); head.className = "v-aimenu-head"; head.textContent = "ที่ปรึกษา AI";
-    panel.append(head, list, prof);
+    panel.append(head, searchWrap, list, histLabel, hist, prof);
     document.body.append(back, panel);
     back.addEventListener("click", close);
-    document.addEventListener("keydown", e => { if(e.key === "Escape" && !panel.hidden) close(); });
+    document.addEventListener("keydown", e => { if(e.key === "Escape" && panel.classList.contains("is-open")) close(); });
     menuBtn.addEventListener("click", open);
     newBtn.addEventListener("click", () => document.getElementById("newAiChatBtn")?.click());
+    prof.addEventListener("click", () => after(() => window.vaultetOpenSettings && window.vaultetOpenSettings()));
+    document.getElementById("aiMenuSearchBtn").addEventListener("click", () => {
+      searchWrap.hidden = !searchWrap.hidden;
+      if(!searchWrap.hidden) document.getElementById("aiMenuSearch").focus(); else { document.getElementById("aiMenuSearch").value = ""; renderHist(); }
+    });
+    document.getElementById("aiMenuSearch").addEventListener("input", renderHist);
     return true;
   }
   let mtries = 0;

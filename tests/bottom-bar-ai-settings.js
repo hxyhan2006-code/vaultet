@@ -36,7 +36,7 @@ await tab('chat'); await pg.waitForTimeout(250);
 ok('AI top bar has only menu + new chat', (await pg.locator('#uxChatTopActions button:visible').count())===2 && await vis('#uxChatMenuBtn') && await vis('#uxChatNewBtn'));
 await pg.screenshot({path:shots+'new-ai-top.png'});
 await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(250);
-ok('AI menu opens with 6 rows + profile row', await vis('#aiMenu') && (await pg.locator('#aiMenu .v-aimenu-row').count())===6 && await vis('#aiMenuProfile'));
+ok('AI menu opens with 5 rows + history + profile row', await vis('#aiMenu') && (await pg.locator('#aiMenu .v-aimenu-row').count())===5 && await vis('#aiMenuProfile') && await vis('#aiMenuHist'));
 await pg.screenshot({path:shots+'new-ai-menu.png'});
 await pg.click('#aiMenuProfile'); await pg.waitForTimeout(350);
 ok('profile row opens settings page', await vis('#ux-more') && !(await vis('#aiMenu')));
@@ -52,6 +52,10 @@ ok('back returns to the AI tab', await vis('#ux-chat') && !(await vis('#ux-more'
 const cardsShown=()=>pg.evaluate(()=>[...document.querySelectorAll('#settingsOverlay > .sheet-modal > .settings-card')].filter(c=>getComputedStyle(c).display!=='none').map(c=>c.querySelector('.settings-card-title').textContent.replace(/[^\wก-๙ ()]/g,'').trim()));
 const title=()=>pg.textContent('#settingsOverlay .modal-title');
 await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(200);
+ok('quick backup row exists and says Drive is not connected', (await pg.textContent('#vSetBackupNow')).includes('ยังไม่ได้เชื่อม'));
+await pg.click('#vSetBackupNow'); await pg.waitForTimeout(300);
+{ const cc=await cardsShown(); ok('quick backup without Drive opens the Drive setup sheet', cc.length===1 && /Drive/.test(cc[0])); }
+await closeAll(); await pg.waitForTimeout(200);
 await pg.click('#vSetDrive'); await pg.waitForTimeout(300);
 let c=await cardsShown(); ok('Drive row shows only the Drive card ('+c.join(' | ')+')', c.length===1&&/Drive/.test(c[0])); ok('...titled Google Drive', (await title())==='Google Drive');
 await closeAll(); await pg.waitForTimeout(200);
@@ -59,7 +63,8 @@ await pg.click('#vSetStock'); await pg.waitForTimeout(300);
 c=await cardsShown(); ok('Stock row shows only the stock card ('+c.join(' | ')+')', c.length===1&&/Twelve|หุ้น/.test(c[0]));
 await closeAll(); await pg.waitForTimeout(200);
 await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(200);
-const menuRow=async n=>{ await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(200); await pg.click('#aiMenu .v-aimenu-row >> nth='+n); await pg.waitForTimeout(350); };
+const rowOrder=['ข้อมูลของฉัน','Memory','นิสัย','รายงาน','ล้าง'];
+const menuRow=async n=>{ await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(200); await pg.click('#aiMenu .v-aimenu-row >> nth='+n); await pg.waitForTimeout(650); };
 await menuRow(2);
 ok('"นิสัยและคำสั่ง" opens the AI instruction panel', await vis('#aiAdvisorInstruction'));
 await menuRow(1);
@@ -78,12 +83,19 @@ await closeAll();
 
 // ---- AI menu rows ----
 await pg.evaluate(()=>vaultetGo('chat')); await pg.waitForTimeout(250);
-await menuRow(0); ok('history row opens the chat list', await pg.evaluate(()=>document.getElementById('aiChatListOverlay').classList.contains('open'))); await closeAll(); await pg.waitForTimeout(200);
-await menuRow(3); ok('"ข้อมูลของฉัน" opens the profile editor', await pg.evaluate(()=>document.getElementById('vaultetProfileOverlay').classList.contains('open'))); await closeAll(); await pg.waitForTimeout(200);
-await menuRow(5); await pg.waitForSelector('.v-dlg'); ok('clear-chat row asks first', await pg.isVisible('.v-dlg')); await T.dlgCancel(pg); await pg.waitForTimeout(200);
+await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(300);
+ok('history lists the chats inside the menu', (await pg.locator('#aiMenuHist .v-aimenu-chat').count())>=1);
+await pg.click('#aiMenuSearchBtn'); await pg.fill('#aiMenuSearch','zzzz-no-such-chat'); await pg.waitForTimeout(200);
+ok('search with no match shows the empty message', (await pg.textContent('#aiMenuHist')).includes('ไม่พบ'));
+await pg.fill('#aiMenuSearch',''); await pg.waitForTimeout(200);
+ok('clearing the search brings the chats back', (await pg.locator('#aiMenuHist .v-aimenu-chat').count())>=1);
+await pg.click('#aiMenuHist .v-aimenu-chat-main >> nth=0'); await pg.waitForTimeout(600);
+ok('tapping a chat closes the menu', !(await vis('#aiMenu')));
+await menuRow(0); ok('"ข้อมูลของฉัน" opens the profile editor', await pg.evaluate(()=>document.getElementById('vaultetProfileOverlay').classList.contains('open'))); await closeAll(); await pg.waitForTimeout(200);
+await menuRow(4); await pg.waitForSelector('.v-dlg'); ok('clear-chat row asks first', await pg.isVisible('.v-dlg')); await T.dlgCancel(pg); await pg.waitForTimeout(200);
 const chatsBefore=await pg.evaluate(()=>{try{return JSON.stringify(Object.keys(localStorage).filter(k=>/chat/i.test(k)).map(k=>localStorage.getItem(k).length))}catch(e){return ''}});
 await pg.click('#uxChatNewBtn'); await pg.waitForTimeout(300); ok('new-chat button works without leaving the chat tab', await vis('#ux-chat'));
-await pg.click('#uxChatMenuBtn'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200); ok('Escape closes the AI menu', !(await vis('#aiMenu')));
+await pg.click('#uxChatMenuBtn'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(500); ok('Escape closes the AI menu', !(await vis('#aiMenu')));
 
 // ---- AI entry link in the add sheet ----
 await pg.evaluate(()=>vaultetGo('home')); await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);
