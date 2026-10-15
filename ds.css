@@ -447,3 +447,33 @@ html body #debtsOverlay .v-field { width: 100%; height: 46px; padding: 0 14px !i
 html body #debtsOverlay .v-field:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
 .v-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--v-muted); }
 #debtsOverlay .v-btn-block { margin-top: 14px; }
+
+/* =====================================================================
+   กล่องข้อความในแอป (dialog.js) — แทน prompt / confirm / alert ของเบราว์เซอร์
+   ===================================================================== */
+.v-dlg-back { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: rgba(0,0,0,.62); backdrop-filter: blur(4px); font-family: var(--v-font); }
+.v-dlg { width: min(400px, 100%); max-height: 88dvh; overflow-y: auto; padding: 20px; background: var(--v-surface); color: var(--v-fg); border: 1px solid var(--v-line); border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.v-dlg-title { margin: 0 0 8px; font-size: 17px; font-weight: 600; line-height: 1.4; }
+.v-dlg-msg { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: var(--v-muted); white-space: pre-line; overflow-wrap: anywhere; }
+.v-dlg-title:last-child, .v-dlg-msg:last-child { margin-bottom: 14px; }
+.v-dlg-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.v-dlg-label { display: block; margin: 0 0 6px; font-size: 13px; color: var(--v-muted); }
+.v-dlg .v-field { width: 100%; height: 46px; padding: 0 14px; margin: 0; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); font: inherit; font-size: 15px; }
+.v-dlg textarea.v-field { height: auto; padding: 10px 14px; resize: vertical; }
+.v-dlg .v-field:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+.v-dlg .v-field[aria-invalid="true"] { border-color: var(--v-out); }
+.v-dlg-hint { margin-top: 6px; font-size: 12px; color: var(--v-muted); }
+.v-dlg-err { margin-top: 6px; font-size: 12px; color: var(--v-out); }
+.v-dlg-err[hidden] { display: none; }
+.v-dlg-actions { display: flex; gap: 10px; }
+.v-dlg-actions button { flex: 1; height: 46px; border: 0; border-radius: var(--v-r-md); font: inherit; font-size: 15px; cursor: pointer; }
+.v-dlg-cancel { background: var(--v-surface-2); color: var(--v-fg); border: 1px solid var(--v-line) !important; }
+.v-dlg-ok { background: var(--v-accent); color: var(--v-accent-ink); font-weight: 600; }
+.v-dlg-ok.v-dlg-danger { background: var(--v-out); color: #0b0c0e; }
+.v-dlg-actions button:focus-visible { outline: 2px solid var(--v-fg); outline-offset: 2px; }
+.v-dlg-choices { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.v-dlg-choice { width: 100%; padding: 13px 14px; background: var(--v-surface-2); color: var(--v-fg); border: 1px solid var(--v-line); border-radius: var(--v-r-md); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.v-dlg-choice-danger { color: var(--v-out); }
+.v-dlg-choice:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+/* ฟอร์มยาว (เช่น ค่าใช้จ่ายประจำ): ปุ่มบันทึก/ยกเลิกติดขอบล่างของกล่อง ไม่ต้องเลื่อนหา */
+.v-dlg-actions { position: sticky; bottom: -20px; margin: 0 -20px -20px; padding: 12px 20px 20px; background: var(--v-surface); border-radius: 0 0 20px 20px; }

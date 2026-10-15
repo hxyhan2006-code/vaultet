@@ -1467,11 +1467,11 @@ function bindTxRows(container){
   });
 }
 // ลบรายการ (เรียกจากปุ่ม "ลบรายการนี้" ในหน้าแก้ไข)
-function deleteEntryById(id){
+async function deleteEntryById(id){
   const target = entries.find(e => e.id === id);
   if(!target) return;
   if(target.source === "loan_repayment"){
-    const result = deleteLoanRepayment(target.loanId, target.repaymentId);
+    const result = await deleteLoanRepayment(target.loanId, target.repaymentId);
     if(!result.ok && result.error !== "cancelled") showToast("ลบเงินคืนไม่สำเร็จ");
     return;
   }
@@ -1608,7 +1608,7 @@ function renderCatGrid(){
     });
   });
   catGrid.querySelectorAll(".cat-chip-del").forEach(btn => {
-    btn.addEventListener("click", (ev) => {
+    btn.addEventListener("click", async (ev) => {
       ev.stopPropagation();
       const cat = btn.dataset.cat;
       if(CATS_BY_TYPE[formType].length <= 1){
@@ -1619,7 +1619,7 @@ function renderCatGrid(){
       const msg = inUse
         ? `หมวด "${cat}" มีรายการที่บันทึกไว้อยู่ ลบหมวดนี้ออกจากตัวเลือกใช่ไหม? (รายการเดิมจะไม่หาย)`
         : `ลบหมวด "${cat}" ใช่ไหม?`;
-      if(!confirm(msg)) return;
+      if(!(await vaultetAsk("ลบ", msg, true))) return;
       CATS_BY_TYPE[formType] = CATS_BY_TYPE[formType].filter(x => x !== cat);
       saveCategories();
       if(selectedCategory === cat){
@@ -1629,8 +1629,8 @@ function renderCatGrid(){
       renderCatGrid();
     });
   });
-  document.getElementById("addCatBtn").addEventListener("click", () => {
-    const name = prompt("ชื่อหมวดใหม่:");
+  document.getElementById("addCatBtn").addEventListener("click", async () => {
+    const name = await vaultetPrompt("ชื่อหมวด", "", { title: "เพิ่มหมวดใหม่", required: true, placeholder: "เช่น กาแฟ", okText: "เพิ่ม" });
     if(!name) return;
     const trimmed = name.trim();
     if(!trimmed) return;
@@ -1732,8 +1732,8 @@ document.getElementById("vAiEntryBtn").addEventListener("click", () => {
   closeForm();
   document.getElementById("aiFabBtn").click();
 });
-document.getElementById("vDeleteEntryBtn").addEventListener("click", () => {
-  if(!editingId || !confirm("ลบรายการนี้ใช่ไหม?")) return;
+document.getElementById("vDeleteEntryBtn").addEventListener("click", async () => {
+  if(!editingId || !(await vaultetAsk("ลบ", "ลบรายการนี้ใช่ไหม?", true))) return;
   const id = editingId;
   closeForm();
   deleteEntryById(id);
@@ -2016,9 +2016,9 @@ function promptRestore(data,label){
   const close=()=>ov.remove();
   ov.querySelector("#rsCancel").onclick=close;
   ov.querySelector("#rsMerge").onclick=()=>{ close(); try{ if(!applyImportedBackup(data)) throw new Error("invalid"); showToast("รวมข้อมูลสำเร็จ"); }catch(e){ showToast("กู้คืนไม่สำเร็จ"); } };
-  ov.querySelector("#rsReplace").onclick=()=>{
+  ov.querySelector("#rsReplace").onclick=async ()=>{
     if(!canReplace) return;
-    if(!confirm("ข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลในไฟล์ทั้งหมด (รวมรายการที่ไม่มีในไฟล์จะหายไป)\nระบบจะดาวน์โหลดข้อมูลปัจจุบันเก็บไว้ให้ก่อน ดำเนินการต่อไหม?")) return;
+    if(!(await vaultetAsk("แทนที่ข้อมูล", "ข้อมูลในเครื่องจะถูกแทนที่ด้วยข้อมูลในไฟล์ทั้งหมด (รวมรายการที่ไม่มีในไฟล์จะหายไป)\nระบบจะดาวน์โหลดข้อมูลปัจจุบันเก็บไว้ให้ก่อน ดำเนินการต่อไหม?", true))) return;
     try{
       downloadJsonFile(buildBackupPayload(),`finance-before-restore-${backupStamp()}.json`);
       const keep=new Set(Object.keys(stored).filter(k=>shouldBackupLocalStorageKey(k)&&typeof stored[k]==="string")), drop=[];
@@ -2178,8 +2178,13 @@ selectedMonth = monthKey(todayISO());
 render();
 // (AI) refreshApiKeyStatus(); refreshProactiveCard(); ย้ายไปรันท้าย ai.js
 
+// ตัวเลือกบัญชีสำหรับฟอร์ม (เลือกจากรายการ ไม่ต้องพิมพ์เลข)
+const accountOptions = () => accounts.map(a => ({ value: a.id, label: a.name }));
 // ไอคอนปุ่มในหน้าต่างจัดการ (ชุดเดียวกันทั้งแอป แทนอีโมจิ)
 const ICON_EDIT = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+const ICON_PAUSE = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>';
+const ICON_PLAY = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>';
+const ICON_BAN = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.300 6.300l11.400 11.400"/></svg>';
 const ICON_TRASH = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>';
 function renderAccountsManageList(){
   const el = document.getElementById("accountsManageList");
@@ -2193,22 +2198,23 @@ function renderAccountsManageList(){
     </div>
   `).join("");
   el.querySelectorAll(".rename-acc-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const acc = accounts.find(a => a.id === btn.dataset.id);
       if(!acc) return;
-      const name = prompt("ชื่อบัญชี:", acc.name);
-      if(!name || !name.trim()) return;
-      acc.name = name.trim();
-      const balStr = prompt("ยอดเริ่มต้นของบัญชี (บาท) — ใช้ตอนสร้างบัญชีครั้งแรกเท่านั้น ไม่กระทบรายการที่บันทึกไปแล้ว:", acc.initialBalance || 0);
-      const bal = parseFloat(balStr);
-      if(!isNaN(bal)) acc.initialBalance = bal;
+      const v = await vaultetForm({ title: "แก้ไขบัญชี", fields: [
+        { key: "name", label: "ชื่อบัญชี", value: acc.name, required: true },
+        { key: "bal", label: "ยอดเริ่มต้น (บาท)", type: "number", value: acc.initialBalance || 0, hint: "ใช้ตอนสร้างบัญชีครั้งแรกเท่านั้น ไม่กระทบรายการที่บันทึกไปแล้ว" }
+      ] });
+      if(!v) return;
+      acc.name = v.name;
+      if(v.bal !== null) acc.initialBalance = v.bal;
       saveAccounts();
       renderAccountsManageList();
       render();
     });
   });
   el.querySelectorAll(".delete-acc-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       if(accounts.length <= 1){
         showToast("ต้องเหลืออย่างน้อย 1 บัญชี");
         return;
@@ -2221,7 +2227,7 @@ function renderAccountsManageList(){
       const msg = inUse
         ? `บัญชี "${acc.name}" มีรายการผูกอยู่ ลบแล้วรายการเหล่านั้นจะถูกย้ายไปที่ "${fallback.name}" — ยืนยันไหม?`
         : `ลบบัญชี "${acc.name}" ใช่ไหม?`;
-      if(!confirm(msg)) return;
+      if(!(await vaultetAsk("ลบ", msg, true))) return;
       if(inUse){
         entries.forEach(e => {
           if(e.accountId === acc.id) e.accountId = fallback.id;
@@ -2253,12 +2259,13 @@ document.getElementById("closeAccountsBtn").addEventListener("click", () => {
 document.getElementById("accountsOverlay").addEventListener("click", () => {
   document.getElementById("accountsOverlay").classList.remove("open");
 });
-document.getElementById("addAccountBtn").addEventListener("click", () => {
-  const name = prompt("ชื่อบัญชีใหม่ เช่น ธนาคาร, เงินสด, Wallet, เงินออม:");
-  if(!name || !name.trim()) return;
-  const balStr = prompt("ยอดเงินเริ่มต้นในบัญชีนี้ตอนนี้ (บาท):", "0");
-  const bal = parseFloat(balStr) || 0;
-  accounts.push({ id: makeId(), name: name.trim(), initialBalance: bal });
+document.getElementById("addAccountBtn").addEventListener("click", async () => {
+  const v = await vaultetForm({ title: "เพิ่มบัญชี", okText: "เพิ่มบัญชี", fields: [
+    { key: "name", label: "ชื่อบัญชี", required: true, placeholder: "เช่น ธนาคาร, เงินสด, Wallet, เงินออม" },
+    { key: "bal", label: "ยอดเงินเริ่มต้นตอนนี้ (บาท)", type: "number", value: 0 }
+  ] });
+  if(!v) return;
+  accounts.push({ id: makeId(), name: v.name, initialBalance: v.bal || 0 });
   saveAccounts();
   renderAccountsManageList();
   render();
@@ -2281,24 +2288,24 @@ function renderReservedManageList(){
     </div>
   `).join("");
   el.querySelectorAll(".edit-reserved-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const r = reservedItems.find(x => x.id === btn.dataset.id);
       if(!r) return;
-      const name = prompt("ชื่อรายการ:", r.name);
-      if(!name || !name.trim()) return;
-      const amtStr = prompt("จำนวนเงินที่กันไว้ (บาท):", r.amount);
-      const amt = parseFloat(amtStr);
-      if(!amt || amt<=0) return;
-      const due = prompt("วันครบกำหนด (YYYY-MM-DD, เว้นว่างได้):", r.dueDate || "");
-      r.name = name.trim(); r.amount = amt; r.dueDate = due ? due.trim() : "";
+      const v = await vaultetForm({ title: "แก้ไขเงินกันไว้", fields: [
+        { key: "name", label: "ชื่อรายการ", value: r.name, required: true },
+        { key: "amt", label: "จำนวนเงินที่กันไว้ (บาท)", type: "number", value: r.amount, required: true, positive: true },
+        { key: "due", label: "วันครบกำหนด (ไม่บังคับ)", type: "date", value: r.dueDate || "" }
+      ] });
+      if(!v) return;
+      r.name = v.name; r.amount = v.amt; r.dueDate = v.due || "";
       saveReserved();
       renderReservedManageList();
       render();
     });
   });
   el.querySelectorAll(".delete-reserved-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if(!confirm("ลบรายการเงินกันไว้นี้ใช่ไหม?")) return;
+    btn.addEventListener("click", async () => {
+      if(!(await vaultetAsk("ลบ", "ลบรายการเงินกันไว้นี้ใช่ไหม?", true))) return;
       reservedItems = reservedItems.filter(x => x.id !== btn.dataset.id);
       saveReserved();
       renderReservedManageList();
@@ -2316,14 +2323,14 @@ document.getElementById("closeReservedBtn").addEventListener("click", () => {
 document.getElementById("reservedOverlay").addEventListener("click", () => {
   document.getElementById("reservedOverlay").classList.remove("open");
 });
-document.getElementById("addReservedBtn").addEventListener("click", () => {
-  const name = prompt("กันเงินไว้สำหรับอะไร เช่น ค่าเช่าห้อง, ค่าเน็ต:");
-  if(!name || !name.trim()) return;
-  const amtStr = prompt("จำนวนเงินที่กันไว้ (บาท):");
-  const amt = parseFloat(amtStr);
-  if(!amt || amt<=0) return;
-  const due = prompt("วันครบกำหนด (YYYY-MM-DD, เว้นว่างได้):", "");
-  reservedItems.push({ id: makeId(), name: name.trim(), amount: amt, dueDate: due ? due.trim() : "", note: "" });
+document.getElementById("addReservedBtn").addEventListener("click", async () => {
+  const v = await vaultetForm({ title: "เพิ่มเงินกันไว้", okText: "เพิ่ม", fields: [
+    { key: "name", label: "กันเงินไว้สำหรับอะไร", required: true, placeholder: "เช่น ค่าเช่าห้อง, ค่าเน็ต" },
+    { key: "amt", label: "จำนวนเงินที่กันไว้ (บาท)", type: "number", required: true, positive: true },
+    { key: "due", label: "วันครบกำหนด (ไม่บังคับ)", type: "date" }
+  ] });
+  if(!v) return;
+  reservedItems.push({ id: makeId(), name: v.name, amount: v.amt, dueDate: v.due || "", note: "" });
   saveReserved();
   renderReservedManageList();
   render();
@@ -2400,16 +2407,6 @@ function getLoanRepaymentGrossCap(loan, repaymentId){
   const other=(loan.repayments||[]).reduce((sum,r)=>r.id===repaymentId?sum:sum+toCents(r.amount),0);
   return Math.max(0,(gross-other)/100);
 }
-function chooseAccountForLoanMovement(defaultAccountId){
-  if(!accounts.length) return null;
-  if(accounts.length===1) return accounts[0].id;
-  const currentIndex=Math.max(0,accounts.findIndex(a=>a.id===defaultAccountId));
-  const names=accounts.map((a,i)=>`${i+1}. ${a.name}`).join("\n");
-  const raw=prompt(`เงินเข้าบัญชีไหน?\n${names}\nพิมพ์หมายเลข:`,String(currentIndex+1));
-  if(raw===null) return null;
-  const idx=(parseInt(raw)||currentIndex+1)-1;
-  return accounts[idx]?.id || null;
-}
 function createLoanRepayment(loanId, amount, accountId, date=todayISO(), note=""){
   const loan=loans.find(l=>l.id===loanId); if(!loan) return {ok:false,error:"loan_not_found"};
   if(!Array.isArray(loan.repayments)) loan.repayments=[];
@@ -2424,28 +2421,30 @@ function createLoanRepayment(loanId, amount, accountId, date=todayISO(), note=""
   saveEntries(); saveLoans();
   return {ok:true,repayment,entry:findLoanRepaymentEntry(loan.id,repayment.id)};
 }
-function editLoanRepayment(loanId, repaymentId){
+async function editLoanRepayment(loanId, repaymentId){
   const loan=loans.find(l=>l.id===loanId); if(!loan) return {ok:false,error:"loan_not_found"};
   const r=(loan.repayments||[]).find(x=>x.id===repaymentId); if(!r) return {ok:false,error:"repayment_not_found"};
   const max=getLoanRepaymentGrossCap(loan,repaymentId);
-  const raw=prompt(`แก้ยอดเงินคืนของ ${loan.person} (สูงสุด ฿${fmt(max)}):`,String(r.amount));
-  if(raw===null) return {ok:false,error:"cancelled"};
-  const amount=Math.round(parseFloat(raw)*100)/100;
-  if(!Number.isFinite(amount)||amount<=0||amount>max){showToast(`ยอดเงินคืนต้องอยู่ระหว่าง 0 ถึง ฿${fmt(max)}`);return {ok:false,error:"invalid_amount"};}
-  const accountId=chooseAccountForLoanMovement(r.accountId); if(!accountId) return {ok:false,error:"cancelled"};
-  const dateRaw=prompt("วันที่รับเงินคืน (YYYY-MM-DD):",r.date||todayISO()); if(dateRaw===null)return{ok:false,error:"cancelled"};
-  const date=/^\d{4}-\d{2}-\d{2}$/.test(dateRaw.trim())?dateRaw.trim():r.date||todayISO();
-  const note=prompt("โน้ต (ไม่บังคับ):",r.note||`รับคืนเงินจาก ${loan.person}`); if(note===null)return{ok:false,error:"cancelled"};
+  const v=await vaultetForm({ title:`แก้ไขเงินที่ ${loan.person} คืน`, fields:[
+    { key:"amount", label:"ยอดที่คืน (บาท)", type:"number", value:r.amount, required:true, positive:true, max:max, hint:`สูงสุด ฿${fmt(max)}` },
+    ...(accounts.length>1 ? [{ key:"account", label:"เงินเข้าบัญชี", type:"select", options:accountOptions(), value:r.accountId||accounts[0].id }] : []),
+    { key:"date", label:"วันที่รับเงินคืน", type:"date", value:r.date||todayISO(), required:true },
+    { key:"note", label:"โน้ต (ไม่บังคับ)", value:r.note||`รับคืนเงินจาก ${loan.person}` }
+  ] });
+  if(!v) return {ok:false,error:"cancelled"};
+  const amount=Math.round(v.amount*100)/100;
+  const accountId=v.account||accounts[0]?.id; if(!accountId) return {ok:false,error:"cancelled"};
+  const date=v.date, note=v.note;
   r.amount=amount; r.accountId=accountId; r.date=date; r.note=note.trim();
   const entry=(r.financialEntryId&&entries.find(e=>e.id===r.financialEntryId))||findLoanRepaymentEntry(loanId,repaymentId)||createLoanRepaymentEntry(loan,r);
   entry.type="income";entry.category=loanRepaymentCategory();entry.accountId=accountId;entry.amount=amount;entry.date=date;entry.note=r.note;entry.source="loan_repayment";entry.loanId=loanId;entry.repaymentId=repaymentId;r.financialEntryId=entry.id;
   saveEntries();saveLoans();renderLoansManageList();render();
   return {ok:true,repayment:r,entry};
 }
-function deleteLoanRepayment(loanId, repaymentId){
+async function deleteLoanRepayment(loanId, repaymentId){
   const loan=loans.find(l=>l.id===loanId); if(!loan)return{ok:false,error:"loan_not_found"};
   const idx=(loan.repayments||[]).findIndex(x=>x.id===repaymentId);if(idx<0)return{ok:false,error:"repayment_not_found"};
-  if(!confirm("ลบรายการรับเงินคืนนี้ใช่ไหม? เงินที่เคยรับคืนจะถูกหักกลับจากบัญชีโดยอัตโนมัติ"))return{ok:false,error:"cancelled"};
+  if(!(await vaultetAsk("ลบ", "ลบรายการรับเงินคืนนี้ใช่ไหม? เงินที่เคยรับคืนจะถูกหักกลับจากบัญชีโดยอัตโนมัติ", true)))return{ok:false,error:"cancelled"};
   const r=loan.repayments[idx]; const entryId=r.financialEntryId; loan.repayments.splice(idx,1);
   entries=entries.filter(e=>!(e.source==="loan_repayment"&&(e.id===entryId||(e.loanId===loanId&&e.repaymentId===repaymentId))));
   saveEntries();saveLoans();renderLoansManageList();render();
@@ -2473,35 +2472,33 @@ function renderLoansManageList(){
     </div>`;
   }).join("");
   el.querySelectorAll(".repay-loan-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const l = loans.find(x => x.id === btn.dataset.id);
       if(!l) return;
       const outstanding = loanOutstanding(l);
-      const amtStr = prompt(`${l.person} คืนเงินเท่าไหร่ (บาท) — ค้างอยู่ ฿${fmt(outstanding)}:`, outstanding);
-      const amt = parseFloat(amtStr);
-      if(!amt || amt<=0) return;
       if(!accounts.length) return;
-      const accNames = accounts.map((a,i) => `${i+1}. ${a.name}`).join("\n");
-      const accIdxStr = accounts.length===1 ? "1" : prompt(`เงินเข้าบัญชีไหน?\n${accNames}\nพิมพ์หมายเลข:`, "1");
-      const accIdx = (parseInt(accIdxStr) || 1) - 1;
-      const accountId = accounts[accIdx]?.id || accounts[0].id;
-      const result=createLoanRepayment(l.id, Math.min(amt, outstanding), accountId, todayISO());
+      const v = await vaultetForm({ title: `${l.person} คืนเงิน`, okText: "บันทึกรับคืน", fields: [
+        { key: "amt", label: "คืนเท่าไหร่ (บาท)", type: "number", value: outstanding, required: true, positive: true, max: outstanding, hint: `ค้างอยู่ ฿${fmt(outstanding)}` },
+        ...(accounts.length > 1 ? [{ key: "acc", label: "เงินเข้าบัญชี", type: "select", options: accountOptions(), value: l.accountId || accounts[0].id }] : [])
+      ] });
+      if(!v) return;
+      const accountId = v.acc || accounts[0].id;
+      const result=createLoanRepayment(l.id, Math.min(v.amt, outstanding), accountId, todayISO());
       if(!result.ok){ showToast("บันทึกเงินคืนไม่สำเร็จ"); return; }
       renderLoansManageList();
       render();
     });
   });
   el.querySelectorAll(".edit-loan-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const l = loans.find(x => x.id === btn.dataset.id);
       if(!l) return;
       const current = loanOutstanding(l);
-      const next = prompt(`ยอดหนี้คงเหลือของ ${l.person} ต้องการแก้เป็นเท่าไหร่?
-ปัจจุบัน ฿${fmt(current)}
-การแก้จะปรับเงินกลางเฉพาะส่วนต่าง และไม่ซ้ำกับยอดที่คืนไปแล้ว`, current);
-      if(next === null) return;
-      const desired = parseFloat(next);
-      if(!Number.isFinite(desired) || desired < 0){ showToast("ยอดหนี้ไม่ถูกต้อง"); return; }
+      const v = await vaultetForm({ title: `แก้ยอดค้างของ ${l.person}`, fields: [
+        { key: "next", label: "ยอดหนี้คงเหลือที่ต้องการ (บาท)", type: "number", value: current, required: true, min: 0, hint: `ตอนนี้ ฿${fmt(current)} · การแก้จะปรับเงินเฉพาะส่วนต่าง ไม่ซ้ำกับยอดที่คืนไปแล้ว` }
+      ] });
+      if(!v) return;
+      const desired = v.next;
       if(!accounts.some(a=>a.id===l.accountId)){ showToast("บัญชีเดิมของรายการนี้หายไปแล้ว"); return; }
       const result = commitLoan({ person:l.person, amount:desired, accountId:l.accountId, dueDate:l.dueDate, note:l.note, editingId:l.id });
       if(!result.ok){ showToast("แก้ไขรายการไม่สำเร็จ"); return; }
@@ -2515,8 +2512,8 @@ function renderLoansManageList(){
     btn.addEventListener("click", () => deleteLoanRepayment(btn.dataset.loanId, btn.dataset.repaymentId));
   });
   el.querySelectorAll(".delete-loan-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if(!confirm("ลบรายการเงินให้ยืมนี้ใช่ไหม? (เงินที่หักออกจากบัญชีไปแล้วจะถูกคืนกลับเข้าบัญชี)")) return;
+    btn.addEventListener("click", async () => {
+      if(!(await vaultetAsk("ลบ", "ลบรายการเงินให้ยืมนี้ใช่ไหม? (เงินที่หักออกจากบัญชีไปแล้วจะถูกคืนกลับเข้าบัญชี)", true))) return;
       const loanId=btn.dataset.id;
       entries=entries.filter(e=>!(e.source==="loan_repayment"&&e.loanId===loanId));
       loans = loans.filter(x => x.id !== loanId);
@@ -2581,18 +2578,16 @@ function commitLoan(payload){
   return { ok:true, loan };
 }
 
-document.getElementById("addLoanBtn").addEventListener("click", () => {
+document.getElementById("addLoanBtn").addEventListener("click", async () => {
   if(!accounts.length){ showToast("ยังไม่มีบัญชีเลย เพิ่มบัญชีก่อน"); return; }
-  const person = prompt("ให้ใครยืม:");
-  if(!person || !person.trim()) return;
-  const amtStr = prompt("จำนวนเงินที่ให้ยืม (บาท):");
-  const amt = parseFloat(amtStr);
-  if(!amt || amt<=0) return;
-  const accNames = accounts.map((a,i) => `${i+1}. ${a.name}`).join("\n");
-  const accIdxStr = accounts.length===1 ? "1" : prompt(`เงินออกจากบัญชีไหน?\n${accNames}\nพิมพ์หมายเลข:`, "1");
-  const accIdx = (parseInt(accIdxStr) || 1) - 1;
-  const accountId = accounts[accIdx]?.id || accounts[0].id;
-  const due = prompt("วันครบกำหนดคืน (YYYY-MM-DD, เว้นว่างได้):", "");
+  const v = await vaultetForm({ title: "บันทึกเงินให้ยืม", okText: "บันทึก", fields: [
+    { key: "person", label: "ให้ใครยืม", required: true },
+    { key: "amt", label: "จำนวนเงินที่ให้ยืม (บาท)", type: "number", required: true, positive: true },
+    ...(accounts.length > 1 ? [{ key: "acc", label: "เงินออกจากบัญชี", type: "select", options: accountOptions(), value: accounts[0].id }] : []),
+    { key: "due", label: "วันครบกำหนดคืน (ไม่บังคับ)", type: "date" }
+  ] });
+  if(!v) return;
+  const person = v.person, amt = v.amt, accountId = v.acc || accounts[0].id, due = v.due || "";
 
   const result = commitLoan({ person, amount: amt, accountId, dueDate: due });
   if(!result.ok) return; // เดิม validate ผ่าน prompt flow ครบแล้ว จุดนี้ไม่ควรพลาดในทางปฏิบัติ
@@ -2655,20 +2650,23 @@ function renderDebtsManageList(){
   document.getElementById("debtActionNote").value = "";
 
   if(el._bound) return; el._bound = true;
-  el.addEventListener("click", ev => {
+  el.addEventListener("click", async ev => {
     const btn = ev.target.closest("button"); if(!btn) return;
     const d = debts.find(x => x.id === btn.dataset.id); if(!d) return;
     const done = msg => { renderDebtsManageList(); render(); if(msg) showToast(msg); };
     if(btn.dataset.qi !== undefined){               // ปุ่มลัด: ถามยืนยันกันกดพลาด
       const q = d.quick[+btn.dataset.qi]; if(!q) return;
-      if(confirm(`เพิ่มหนี้ "${d.name}" +฿${fmt(q.amount)} (${q.note||"ไม่มีโน้ต"}) ใช่ไหม?`)){ addDebtHistory(d.id,"increase",q.amount,q.note); done("บันทึกยอดหนี้เพิ่มแล้ว (กด ↶ ถ้าพลาดได้)"); }
+      if((await vaultetAsk("เพิ่มยอด", `เพิ่มหนี้ "${d.name}" +฿${fmt(q.amount)} (${q.note||"ไม่มีโน้ต"}) ใช่ไหม?`, false))){ addDebtHistory(d.id,"increase",q.amount,q.note); done("บันทึกยอดหนี้เพิ่มแล้ว (กด ↶ ถ้าพลาดได้)"); }
     }else if(btn.dataset.qd !== undefined){
       const q = d.quick[+btn.dataset.qd];
-      if(q && confirm(`ลบปุ่มลัด "+${fmt(q.amount)} ${q.note||""}" ?`)){ d.quick.splice(+btn.dataset.qd,1); saveDebts(); done(); }
+      if(q && (await vaultetAsk("ลบ", `ลบปุ่มลัด "+${fmt(q.amount)} ${q.note||""}" ?`, true))){ d.quick.splice(+btn.dataset.qd,1); saveDebts(); done(); }
     }else if(btn.dataset.act === "addq"){
-      const amt = parseFloat(prompt(`ปุ่มลัดของ "${d.name}" — จำนวนเงิน (บาท):`)); if(!amt || amt<=0) return;
-      const note = prompt("ชื่อปุ่ม/โน้ต เช่น ค่าเทอม:","") || "";
-      d.quick.push({amount:amt,note:note.trim()}); saveDebts(); done();
+      const q = await vaultetForm({ title: `เพิ่มปุ่มลัดของ "${d.name}"`, okText: "เพิ่มปุ่มลัด", fields: [
+        { key: "amt", label: "จำนวนเงิน (บาท)", type: "number", required: true, positive: true },
+        { key: "note", label: "ชื่อปุ่ม/โน้ต", placeholder: "เช่น ค่าเทอม" }
+      ] });
+      if(!q) return;
+      d.quick.push({amount:q.amt,note:q.note}); saveDebts(); done();
     }else if(btn.dataset.act){                       // เพิ่มยอด / ชำระคืน / แก้ยอด -> ชี้ฟอร์มด้านล่างมาที่หนี้นี้
       const t = btn.dataset.act;
       document.getElementById("debtActionSelect").value = d.id;
@@ -2680,7 +2678,7 @@ function renderDebtsManageList(){
     }else if(btn.dataset.undo){                      // ยกเลิกรายการประวัติ (ย้อนยอดกลับ)
       const h = d.history.find(x => x.id === btn.dataset.undo); if(!h) return;
       const e = eff(h);
-      if(!confirm(`ยกเลิกรายการนี้?\n${debtHistoryLabel(h.type)} ${e>=0?"+":"−"}฿${fmt(Math.abs(e))}${h.note?" ("+h.note+")":""}\nยอดหนี้จะย้อนกลับ ${e>=0?"ลดลง":"เพิ่มขึ้น"} ฿${fmt(Math.abs(e))}`)) return;
+      if(!(await vaultetAsk("ยกเลิกรายการ", `ยกเลิกรายการนี้?\n${debtHistoryLabel(h.type)} ${e>=0?"+":"−"}฿${fmt(Math.abs(e))}${h.note?" ("+h.note+")":""}\nยอดหนี้จะย้อนกลับ ${e>=0?"ลดลง":"เพิ่มขึ้น"} ฿${fmt(Math.abs(e))}`, true))) return;
       d.outstandingBalance = Math.max(0, toCents(d.outstandingBalance) - toCents(e)) / 100;
       d.history = d.history.filter(x => x.id !== h.id); saveDebts(); done("ยกเลิกรายการแล้ว");
     }else if(btn.classList.contains("delete-debt-btn")){
@@ -2688,7 +2686,7 @@ function renderDebtsManageList(){
       const msg = linked.length
         ? `หนี้ "${d.name}" เชื่อมกับ ${linked.length} รายการรับเงิน กยศ.\\nถ้าลบ รายการรับเงินเหล่านั้นจะยังอยู่ แต่เลิกเชื่อมกับหนี้นี้\\nลบหนี้พร้อมประวัติทั้งหมดใช่ไหม?`
         : `ลบหนี้ "${d.name}" พร้อมประวัติทั้งหมดใช่ไหม?`;
-      if(!confirm(msg.replace(/\\n/g,"\n"))) return;
+      if(!(await vaultetAsk("ลบ", msg.replace(/\\n/g,"\n"), true))) return;
       linked.forEach(e => { e.debtId = null; e.debtPrincipalImpact = 0; });
       if(linked.length) saveEntries();
       debts = debts.filter(x => x.id !== d.id); saveDebts(); done("ลบหนี้แล้ว");
@@ -2781,14 +2779,24 @@ document.getElementById("debtBumpDismissBtn").addEventListener("click", hideDebt
 
 // ===== Phase 4: Recurring Expenses + Upcoming Payments — UI =====
 
-function promptFrequency(defaultVal){
-  const opts = [["1","weekly","รายสัปดาห์"],["2","monthly","รายเดือน"],["3","bimonthly","ทุก 2 เดือน"],["4","quarterly","รายไตรมาส"],["5","yearly","รายปี"]];
-  const defIdx = opts.findIndex(o => o[1] === defaultVal);
-  const msg = "ความถี่:\n" + opts.map(o => `${o[0]}. ${o[2]}`).join("\n") + "\nพิมพ์หมายเลข:";
-  const ans = prompt(msg, defIdx>=0 ? opts[defIdx][0] : "2");
-  if(ans === null) return null;
-  const found = opts.find(o => o[0] === String(ans).trim());
-  return found ? found[1] : (defaultVal || "monthly");
+const FREQ_OPTIONS = [
+  { value: "weekly", label: "รายสัปดาห์" }, { value: "monthly", label: "รายเดือน" }, { value: "bimonthly", label: "ทุก 2 เดือน" },
+  { value: "quarterly", label: "รายไตรมาส" }, { value: "yearly", label: "รายปี" }
+];
+// ฟอร์มค่าใช้จ่ายประจำ (ใช้ทั้งเพิ่มและแก้ไข) — r = รายการเดิม หรือ null ถ้าเพิ่มใหม่
+async function askRecurringForm(r){
+  const cats = CATS_BY_TYPE.expense || [];
+  return vaultetForm({ title: r ? "แก้ไขค่าใช้จ่ายประจำ" : "เพิ่มค่าใช้จ่ายประจำ", okText: r ? "บันทึก" : "เพิ่ม", fields: [
+    { key: "name", label: "ชื่อค่าใช้จ่ายประจำ", value: r ? r.name : "", required: true, placeholder: "เช่น ค่าเช่าห้อง, Netflix" },
+    { key: "amt", label: "จำนวนเงินโดยประมาณ (บาท)", type: "number", value: r ? r.amount : "", required: true, positive: true },
+    { key: "cat", label: "หมวดหมู่", type: "select", options: cats.map(c => ({ value: c, label: c })), value: r && cats.includes(r.category) ? r.category : cats[0] },
+    ...(accounts.length > 1 ? [{ key: "acc", label: "หักจากบัญชี", type: "select", options: accountOptions(), value: (r && r.accountId) || accounts[0].id }] : []),
+    { key: "freq", label: "ความถี่", type: "select", options: FREQ_OPTIONS, value: r ? r.frequency : "monthly" },
+    { key: "next", label: "วันครบกำหนดจ่ายครั้งถัดไป", type: "date", value: r ? r.nextDueDate : todayISO(), required: true },
+    ...(r ? [{ key: "end", label: "วันสิ้นสุด (ไม่บังคับ)", type: "date", value: r.endDate || "" }] : []),
+    ...(reservedItems.length ? [{ key: "link", label: "เชื่อมกับเงินกันไว้", type: "select", options: [{ value: "", label: "ไม่เชื่อม" }, ...reservedItems.map(x => ({ value: x.id, label: `${x.name} (฿${fmt(x.amount)})` }))], value: r ? (r.reservedItemId || "") : "" }] : []),
+    { key: "note", label: "โน้ต (ไม่บังคับ)", value: r ? (r.note || "") : "" }
+  ] });
 }
 function isValidISODate(s){
   return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s.trim()) && !isNaN(new Date(s.trim()).getTime());
@@ -2867,10 +2875,10 @@ function renderUpcomingOverlay(){
     btn.addEventListener("click", () => openMarkPaid(btn.dataset.id));
   });
   listEl.querySelectorAll(".skip-recurring-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const r = recurringExpenses.find(x => x.id === btn.dataset.id);
       if(!r) return;
-      if(!confirm(`ข้ามรอบนี้ของ "${r.name}" ใช่ไหม? จะไม่สร้างรายจ่าย และเลื่อนไปกำหนดครั้งถัดไป`)) return;
+      if(!(await vaultetAsk("ข้ามรอบนี้", `ข้ามรอบนี้ของ "${r.name}" ใช่ไหม? จะไม่สร้างรายจ่าย และเลื่อนไปกำหนดครั้งถัดไป`, false))) return;
       r.nextDueDate = computeNextDueDate(r.nextDueDate, r.frequency);
       saveRecurring();
       renderUpcomingOverlay();
@@ -2913,53 +2921,23 @@ function renderRecurringManageList(){
         <span class="mono" style="font-size:12px;color:var(--faint)">฿${fmt(r.amount)} · ${frequencyLabel(r.frequency)} · ${escapeHtml(accName)} · ครบกำหนด ${r.nextDueDate}</span>
       </span>
       <span class="acc-actions">
-        <button class="icon-btn edit-recurring-btn" data-id="${r.id}" aria-label="แก้ไข">✏️</button>
-        ${r.status==="active" ? `<button class="icon-btn pause-recurring-btn" data-id="${r.id}" aria-label="หยุดชั่วคราว">⏸</button>` : `<button class="icon-btn resume-recurring-btn" data-id="${r.id}" aria-label="เปิดใช้งาน">▶️</button>`}
-        ${r.status!=="cancelled" ? `<button class="icon-btn cancel-recurring-btn" data-id="${r.id}" aria-label="ยกเลิก">🚫</button>` : ""}
-        <button class="icon-btn delete-recurring-btn" data-id="${r.id}" aria-label="ลบ">🗑</button>
+        <button class="icon-btn edit-recurring-btn" data-id="${r.id}" aria-label="แก้ไข">${ICON_EDIT}</button>
+        ${r.status==="active" ? `<button class="icon-btn pause-recurring-btn" data-id="${r.id}" aria-label="หยุดชั่วคราว" title="หยุดชั่วคราว">${ICON_PAUSE}</button>` : `<button class="icon-btn resume-recurring-btn" data-id="${r.id}" aria-label="เปิดใช้งาน" title="เปิดใช้งาน">${ICON_PLAY}</button>`}
+        ${r.status!=="cancelled" ? `<button class="icon-btn cancel-recurring-btn" data-id="${r.id}" aria-label="ยกเลิก" title="ยกเลิกรายการนี้">${ICON_BAN}</button>` : ""}
+        <button class="icon-btn delete-recurring-btn" data-id="${r.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>`;
   }).join("");
 
   el.querySelectorAll(".edit-recurring-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const r = recurringExpenses.find(x => x.id === btn.dataset.id);
       if(!r) return;
-      const name = prompt("ชื่อค่าใช้จ่ายประจำ:", r.name);
-      if(!name || !name.trim()) return;
-      const amtStr = prompt("จำนวนเงินโดยประมาณ (บาท):", r.amount);
-      const amt = parseFloat(amtStr);
-      if(!amt || amt<=0) return;
-      const cats = CATS_BY_TYPE.expense;
-      const catNames = cats.map((c,i) => `${i+1}. ${c}`).join("\n");
-      const curCatIdx = cats.indexOf(r.category);
-      const catIdxStr = prompt(`หมวดหมู่:\n${catNames}\nพิมพ์หมายเลข:`, curCatIdx>=0 ? String(curCatIdx+1) : "1");
-      const catIdx = (parseInt(catIdxStr) || 1) - 1;
-      const category = cats[catIdx] || r.category;
-      const accNames = accounts.map((a,i) => `${i+1}. ${a.name}`).join("\n");
-      const curAccIdx = accounts.findIndex(a => a.id === r.accountId);
-      const accIdxStr = accounts.length===1 ? "1" : prompt(`หักจากบัญชีไหน?\n${accNames}\nพิมพ์หมายเลข:`, curAccIdx>=0 ? String(curAccIdx+1) : "1");
-      const accIdx = (parseInt(accIdxStr) || 1) - 1;
-      const accountId = accounts[accIdx]?.id || r.accountId;
-      const frequency = promptFrequency(r.frequency);
-      if(frequency === null) return;
-      const nextDue = prompt("วันครบกำหนดจ่ายครั้งถัดไป (YYYY-MM-DD):", r.nextDueDate);
-      if(!isValidISODate(nextDue || "")){ showToast("รูปแบบวันที่ไม่ถูกต้อง"); return; }
-      const endDate = prompt("วันสิ้นสุด (YYYY-MM-DD, เว้นว่างได้):", r.endDate || "");
-      const note = prompt("โน้ต:", r.note || "");
-      let reservedItemId = r.reservedItemId || "";
-      if(reservedItems.length){
-        const curLinkIdx = reservedItems.findIndex(x => x.id === reservedItemId);
-        const linkNames = "0. ไม่เชื่อมกับเงินกันไว้\n" + reservedItems.map((x,i) => `${i+1}. ${x.name} (฿${fmt(x.amount)})`).join("\n");
-        const linkAns = prompt(`เชื่อมกับเงินกันไว้รายการไหน?\n${linkNames}\nพิมพ์หมายเลข:`, curLinkIdx>=0 ? String(curLinkIdx+1) : "0");
-        if(linkAns !== null){
-          const linkIdx = parseInt(linkAns);
-          reservedItemId = (linkIdx>0 && reservedItems[linkIdx-1]) ? reservedItems[linkIdx-1].id : "";
-        }
-      }
-      r.name = name.trim(); r.amount = amt; r.category = category; r.accountId = accountId;
-      r.frequency = frequency; r.nextDueDate = nextDue.trim(); r.endDate = endDate ? endDate.trim() : "";
-      r.note = note || ""; r.reservedItemId = reservedItemId;
+      const v = await askRecurringForm(r);
+      if(!v) return;
+      r.name = v.name; r.amount = v.amt; r.category = v.cat || r.category; r.accountId = v.acc || r.accountId;
+      r.frequency = v.freq; r.nextDueDate = v.next; r.endDate = v.end || "";
+      r.note = v.note || ""; if(reservedItems.length) r.reservedItemId = v.link || "";
       saveRecurring();
       renderRecurringManageList();
       renderUpcomingWidget();
@@ -2983,16 +2961,16 @@ function renderRecurringManageList(){
     });
   });
   el.querySelectorAll(".cancel-recurring-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if(!confirm("ยกเลิกค่าใช้จ่ายประจำนี้ใช่ไหม? จะไม่แสดงใน Upcoming อีก แต่ประวัติการจ่ายเดิมจะยังอยู่เหมือนเดิม")) return;
+    btn.addEventListener("click", async () => {
+      if(!(await vaultetAsk("ยกเลิกค่าใช้จ่าย", "ยกเลิกค่าใช้จ่ายประจำนี้ใช่ไหม? จะไม่แสดงใน Upcoming อีก แต่ประวัติการจ่ายเดิมจะยังอยู่เหมือนเดิม", true))) return;
       const r = recurringExpenses.find(x => x.id === btn.dataset.id);
       if(!r) return;
       r.status = "cancelled"; saveRecurring(); renderRecurringManageList(); renderUpcomingWidget();
     });
   });
   el.querySelectorAll(".delete-recurring-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if(!confirm("ลบค่าใช้จ่ายประจำนี้ใช่ไหม? รายการที่เคยบันทึกว่าจ่ายไปแล้วจะไม่ถูกลบ")) return;
+    btn.addEventListener("click", async () => {
+      if(!(await vaultetAsk("ลบ", "ลบค่าใช้จ่ายประจำนี้ใช่ไหม? รายการที่เคยบันทึกว่าจ่ายไปแล้วจะไม่ถูกลบ", true))) return;
       recurringExpenses = recurringExpenses.filter(x => x.id !== btn.dataset.id);
       saveRecurring(); renderRecurringManageList(); renderUpcomingWidget();
     });
@@ -3013,41 +2991,15 @@ document.getElementById("closeRecurringBtn").addEventListener("click", () => {
 document.getElementById("recurringOverlay").addEventListener("click", () => {
   document.getElementById("recurringOverlay").classList.remove("open");
 });
-document.getElementById("addRecurringBtn").addEventListener("click", () => {
+document.getElementById("addRecurringBtn").addEventListener("click", async () => {
   if(!accounts.length){ showToast("ยังไม่มีบัญชีเลย เพิ่มบัญชีก่อน"); return; }
-  const name = prompt("ชื่อค่าใช้จ่ายประจำ เช่น ค่าเช่าห้อง, Netflix:");
-  if(!name || !name.trim()) return;
-  const amtStr = prompt("จำนวนเงินโดยประมาณ (บาท):");
-  const amt = parseFloat(amtStr);
-  if(!amt || amt<=0) return;
-  const cats = CATS_BY_TYPE.expense;
-  if(!cats.length){ showToast("ยังไม่มีหมวดรายจ่ายเลย เพิ่มหมวดก่อน"); return; }
-  const catNames = cats.map((c,i) => `${i+1}. ${c}`).join("\n");
-  const catIdxStr = prompt(`หมวดหมู่:\n${catNames}\nพิมพ์หมายเลข:`, "1");
-  const catIdx = (parseInt(catIdxStr) || 1) - 1;
-  const category = cats[catIdx] || cats[0];
-  const accNames = accounts.map((a,i) => `${i+1}. ${a.name}`).join("\n");
-  const accIdxStr = accounts.length===1 ? "1" : prompt(`หักจากบัญชีไหน?\n${accNames}\nพิมพ์หมายเลข:`, "1");
-  const accIdx = (parseInt(accIdxStr) || 1) - 1;
-  const accountId = accounts[accIdx]?.id || accounts[0].id;
-  const frequency = promptFrequency("monthly");
-  if(frequency === null) return;
-  const nextDueDate = prompt("วันครบกำหนดจ่ายครั้งถัดไป (YYYY-MM-DD):", todayISO());
-  if(!isValidISODate(nextDueDate || "")){ showToast("รูปแบบวันที่ไม่ถูกต้อง"); return; }
-  const note = prompt("โน้ต (ไม่บังคับ):", "");
-  let reservedItemId = "";
-  if(reservedItems.length){
-    const linkNames = "0. ไม่เชื่อมกับเงินกันไว้\n" + reservedItems.map((x,i) => `${i+1}. ${x.name} (฿${fmt(x.amount)})`).join("\n");
-    const linkAns = prompt(`เชื่อมกับเงินกันไว้รายการไหนไหม? (ไม่บังคับ)\n${linkNames}\nพิมพ์หมายเลข:`, "0");
-    if(linkAns !== null){
-      const linkIdx = parseInt(linkAns);
-      reservedItemId = (linkIdx>0 && reservedItems[linkIdx-1]) ? reservedItems[linkIdx-1].id : "";
-    }
-  }
+  if(!(CATS_BY_TYPE.expense || []).length){ showToast("ยังไม่มีหมวดรายจ่ายเลย เพิ่มหมวดก่อน"); return; }
+  const v = await askRecurringForm(null);
+  if(!v) return;
   recurringExpenses.push({
-    id: makeId(), name: name.trim(), amount: amt, category, accountId,
-    frequency, nextDueDate: nextDueDate.trim(), startDate: nextDueDate.trim(), endDate: "",
-    note: note || "", status: "active", reservedItemId, lastPaidDate: ""
+    id: makeId(), name: v.name, amount: v.amt, category: v.cat, accountId: v.acc || accounts[0].id,
+    frequency: v.freq, nextDueDate: v.next, startDate: v.next, endDate: "",
+    note: v.note || "", status: "active", reservedItemId: v.link || "", lastPaidDate: ""
   });
   saveRecurring();
   renderRecurringManageList();
@@ -3305,7 +3257,7 @@ function renderBudgetManager(){
   const rows=s.rows.concat(sv.rows);
   listEl.innerHTML=rows.map(r=>budgetRowHtml(r,true)).join("");
   listEl.querySelectorAll(".budget-edit-btn").forEach(btn=>btn.addEventListener("click",()=>{const b=budgets.find(x=>x.id===btn.dataset.id);if(!b)return;budgetEditingId=b.id;budgetFormKind=b.kind==="saving"?"saving":"expense";document.getElementById("budgetMonthInput").value=b.month;renderBudgetCategorySelect(b.categories);updateBudgetKindUI();document.getElementById("budgetNameInput").value=b.name||"";document.getElementById("budgetAmountInput").value=b.amount;document.getElementById("saveBudgetBtn").textContent="บันทึกการแก้ไข";}));
-  listEl.querySelectorAll(".budget-delete-btn").forEach(btn=>btn.addEventListener("click",()=>{const b=budgets.find(x=>x.id===btn.dataset.id);if(!b)return;if(!confirm(`ลบงบ ${b.category} เดือน ${monthLabel(b.month)} ใช่ไหม?`))return;budgets=budgets.filter(x=>x.id!==b.id);saveBudgets();budgetEditingId=null;renderBudgetManager();render();showToast("ลบงบประมาณแล้ว");}));
+  listEl.querySelectorAll(".budget-delete-btn").forEach(btn=>btn.addEventListener("click",async ()=>{const b=budgets.find(x=>x.id===btn.dataset.id);if(!b)return;if(!(await vaultetAsk("ลบ", `ลบงบ ${b.category} เดือน ${monthLabel(b.month)} ใช่ไหม?`, true)))return;budgets=budgets.filter(x=>x.id!==b.id);saveBudgets();budgetEditingId=null;renderBudgetManager();render();showToast("ลบงบประมาณแล้ว");}));
 }
 function renderBudgetDashboard(){
   const card=document.getElementById("budgetDashboardCard");if(!card)return;
@@ -3347,11 +3299,11 @@ function renderBudgetDashboard(){
   }
   document.getElementById("budgetDashboardRows").innerHTML=html;
 }
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   const b=e.target.closest&&e.target.closest("#bufferSweepBtn"); if(!b) return;
   const bf=getBufferInfo(); if(!bf||bf.remaining<=0){ showToast("ไม่มีเศษเงินสำรองให้ย้าย"); return; }
   const amt=Math.round(bf.remaining*100)/100;
-  if(!confirm(`ย้ายเศษเงินสำรอง ฿${fmt(amt)} ไปบันทึกเป็นรายการออมใช่ไหม?`)) return;
+  if(!(await vaultetAsk("ย้ายเศษ", `ย้ายเศษเงินสำรอง ฿${fmt(amt)} ไปบันทึกเป็นรายการออมใช่ไหม?`, false))) return;
   const r=sweepBufferToSaving(bf.month,amt,"เงินออม");
   if(!r.ok){ showToast(r.msg||"บันทึกไม่สำเร็จ"); return; }
   render(); showToast("ย้ายไปออมแล้ว ✓ (ลบได้ที่รายการออมถ้ากดผิด)");
@@ -3787,7 +3739,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
       <section class="profile-card full"><h3>🧠 ให้ AI รู้จักฉัน</h3><p class="hint">ใส่บริบทที่ช่วยให้คำแนะนำเข้ากับชีวิตจริงของคุณ เช่น นิสัย เป้าหมายระยะยาว หรือสิ่งที่อยากให้ AI ช่วย</p><div class="profile-fields"><label><span class="profile-label">เกี่ยวกับฉัน</span><textarea class="profile-textarea" id="vpContext" placeholder="เช่น กำลังเรียนและทำงานพาร์ตไทม์ ปีนี้อยากเก็บเงินไปเที่ยว..."></textarea></label><label><span class="profile-label">นิสัยการใช้เงิน</span><textarea class="profile-textarea" id="vpHabits" placeholder="เช่น เวลาเครียดมักซื้อของออนไลน์..."></textarea></label><label><span class="profile-label">สิ่งที่อยากให้ AI ช่วย</span><textarea class="profile-textarea" id="vpHelp" placeholder="เช่น ช่วยเตือนเมื่อใช้เงินเกิน และช่วยวางแผนก่อนสิ้นเดือน..."></textarea></label><label><span class="profile-label">ข้อจำกัด / หมายเหตุทางการเงิน</span><textarea class="profile-textarea" id="vpNotes" placeholder="เช่น ห้ามแตะเงินออม..."></textarea></label></div></section>
       <section class="profile-card full"><h3>🤖 ข้อมูลที่ AI เข้าถึงได้</h3><p class="hint">คุณควบคุมได้ว่า AI จะนำข้อมูลประเภทไหนไปปรับคำตอบ ข้อมูลที่ปิดจะไม่ถูกใส่เป็นบริบทโปรไฟล์ของ AI</p><label class="profile-permission"><span>ตัวตน<small>ชื่อ อายุ และชื่อที่อยากให้เรียก</small></span><input class="profile-switch" type="checkbox" data-vp-perm="identity"></label><label class="profile-permission"><span>ชีวิต / การเรียน / งาน<small>สถานะ อาชีพ การศึกษา และรูปแบบงาน</small></span><input class="profile-switch" type="checkbox" data-vp-perm="life"></label><label class="profile-permission"><span>การเงินและเป้าหมาย<small>รายได้ เงินสำรอง และเป้าหมายจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="financial"></label><label class="profile-permission"><span>บริบทส่วนตัว<small>ความสนใจ นิสัย ลำดับความสำคัญ และสิ่งที่อยากให้ช่วย</small></span><input class="profile-switch" type="checkbox" data-vp-perm="personal"></label><label class="profile-permission"><span>Memory จากบทสนทนา<small>ความจำที่ AI บันทึกไว้แยกจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="memory"></label></section>
       </div><button class="profile-save" id="vpSave">บันทึกโปรไฟล์</button><button class="profile-danger" id="vpClear">ล้างข้อมูลโปรไฟล์ของฉัน</button></div>`;document.body.append(ov);
-    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=()=>{if(confirm('ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?')){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpAddGoal').onclick=()=>{const n=document.getElementById('vpGoalName').value.trim(),a=parseFloat(document.getElementById('vpGoalAmount').value);if(!n||!Number.isFinite(a)||a<=0){if(typeof showToast==='function')showToast('กรอกชื่อและยอดเป้าหมายให้ถูกต้อง');return;}const x=profile();x.financialGoals=x.financialGoals||[];x.financialGoals.push({id:(typeof makeId==='function'?makeId():Date.now().toString(36)),name:n,targetAmount:a,deadline:null});if(!write(x)){if(typeof showToast==='function')showToast('บันทึกเป้าหมายไม่สำเร็จ — พื้นที่จัดเก็บอาจเต็ม');return;}document.getElementById('vpGoalName').value='';document.getElementById('vpGoalAmount').value='';renderGoals();if(typeof showToast==='function')showToast('เพิ่มเป้าหมายแล้ว');};
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpAddGoal').onclick=()=>{const n=document.getElementById('vpGoalName').value.trim(),a=parseFloat(document.getElementById('vpGoalAmount').value);if(!n||!Number.isFinite(a)||a<=0){if(typeof showToast==='function')showToast('กรอกชื่อและยอดเป้าหมายให้ถูกต้อง');return;}const x=profile();x.financialGoals=x.financialGoals||[];x.financialGoals.push({id:(typeof makeId==='function'?makeId():Date.now().toString(36)),name:n,targetAmount:a,deadline:null});if(!write(x)){if(typeof showToast==='function')showToast('บันทึกเป้าหมายไม่สำเร็จ — พื้นที่จัดเก็บอาจเต็ม');return;}document.getElementById('vpGoalName').value='';document.getElementById('vpGoalAmount').value='';renderGoals();if(typeof showToast==='function')showToast('เพิ่มเป้าหมายแล้ว');};
   }
   window.vaultetOpenProfile=open;
   function init(){build();const top=document.querySelector('.ux-topbar');if(top){const b=document.createElement('button');b.className='ux-profile-trigger';b.id='uxProfileTrigger';b.innerHTML='<div class="ux-profile-avatar">👤</div><div class="ux-profile-mini"><strong>โปรไฟล์ของฉัน</strong><span>ตั้งค่าข้อมูลส่วนตัว</span></div>';b.onclick=open;top.insertBefore(b,top.querySelector('.ux-month')||null);refreshTrigger();}}
@@ -4074,43 +4026,67 @@ const pin=ov.querySelector("#lockPin"),msg=ov.querySelector("#lockMsg");
 const show=()=>{const c=get();if(!c||!c.on)return;ov.style.display="flex";pin.value="";msg.textContent="";setTimeout(()=>pin.focus(),50);};
 const hide=()=>{ov.style.display="none";};
 pin.addEventListener("input",()=>{const c=get();if(pin.value.length<6)return;if(c&&H(pin.value,c.salt)===c.pin)hide();else{msg.textContent="รหัสไม่ถูกต้อง";pin.value="";}});
-const ask6=t=>{const p=prompt(t);if(p===null)return null;if(!/^\d{6}$/.test(p)){alert("ต้องเป็นตัวเลข 6 หลักเท่านั้น");return null;}return p;};
-const newPin=()=>{const p=ask6("ตั้งรหัสใหม่ (ตัวเลข 6 หลัก):");if(!p)return null;if(prompt("พิมพ์รหัสซ้ำอีกครั้ง:")!==p){alert("รหัสไม่ตรงกัน");return null;}return p;};
-const newQA=salt=>{const q=prompt("เขียนคำถามไว้กู้รหัส (เช่น สัตว์เลี้ยงตัวแรกชื่ออะไร):");if(!q||!q.trim())return null;const a=prompt("คำตอบของคำถามนี้:");if(!a||!a.trim())return null;return {q:q.trim(),a:H(a.trim().toLowerCase(),salt)};};
-const verify=c=>{const o=prompt("ใส่รหัสปัจจุบัน:");if(o===null)return false;if(H(o,c.salt)!==c.pin){alert("รหัสไม่ถูกต้อง");return false;}return true;};
-ov.querySelector("#lockForgot").onclick=()=>{const c=get();if(!c)return;const a=prompt("คำถามกู้รหัส:\n"+c.q);if(a===null)return;if(H(a.trim().toLowerCase(),c.salt)!==c.a){alert("คำตอบไม่ถูกต้อง");return;}const p=newPin();if(!p)return;c.pin=H(p,c.salt);c.on=true;put(c);hide();};
-const openLockMenu=()=>{
+const pinField=(key,label)=>({key,label,type:"password",inputmode:"numeric",maxlength:6,required:true,pattern:"^\\d{6}$",patternMessage:"ต้องเป็นตัวเลข 6 หลักเท่านั้น"});
+const newPin=async()=>{
+  const v=await vaultetForm({title:"ตั้งรหัสล็อกแอป",okText:"ตั้งรหัส",fields:[pinField("p","รหัสใหม่ (ตัวเลข 6 หลัก)"),Object.assign(pinField("p2","พิมพ์รหัสซ้ำอีกครั้ง"),{validate:(val,out)=>val!==out.p?"รหัสไม่ตรงกัน":""})]});
+  return v?v.p:null;
+};
+const newQA=async salt=>{
+  const v=await vaultetForm({title:"คำถามกู้รหัส",message:"ไว้ใช้ตอนลืมรหัส ตอบคำถามนี้ได้ถึงจะตั้งรหัสใหม่ได้",okText:"บันทึก",fields:[{key:"q",label:"คำถาม",required:true,placeholder:"เช่น สัตว์เลี้ยงตัวแรกชื่ออะไร"},{key:"a",label:"คำตอบของคำถามนี้",required:true}]});
+  return v?{q:v.q,a:H(v.a.toLowerCase(),salt)}:null;
+};
+const verify=async c=>{
+  const v=await vaultetForm({title:"ยืนยันตัวตน",okText:"ยืนยัน",fields:[pinField("o","ใส่รหัสปัจจุบัน")]});
+  if(!v)return false;
+  if(H(v.o,c.salt)!==c.pin){await vaultetAlert("รหัสไม่ถูกต้อง");return false;}
+  return true;
+};
+ov.querySelector("#lockForgot").onclick=async()=>{
+  const c=get();if(!c)return;
+  const v=await vaultetForm({title:"กู้รหัส",message:"คำถามกู้รหัส: "+c.q,okText:"ตรวจคำตอบ",fields:[{key:"a",label:"คำตอบ",required:true}]});
+  if(!v)return;
+  if(H(v.a.toLowerCase(),c.salt)!==c.a){await vaultetAlert("คำตอบไม่ถูกต้อง");return;}
+  const p=await newPin();if(!p)return;c.pin=H(p,c.salt);c.on=true;put(c);hide();
+};
+const openLockMenu=async()=>{
   const c=get();
-  if(!c){const p=newPin();if(!p)return;const salt=Math.random().toString(36).slice(2),qa=newQA(salt);if(!qa){alert("ต้องมีคำถามและคำตอบกู้รหัส");return;}put({on:true,salt,pin:H(p,salt),q:qa.q,a:qa.a});alert("เปิดล็อกแอปแล้ว");return;}
-  const x=prompt("ล็อกแอป: "+(c.on?"เปิดอยู่":"ปิดอยู่")+"\n1 = "+(c.on?"ปิด":"เปิด")+"ล็อก\n2 = เปลี่ยนรหัส\n3 = เปลี่ยนคำถาม/คำตอบกู้รหัส\n4 = ลบการตั้งค่าล็อกทั้งหมด");
-  if(!x||!["1","2","3","4"].includes(x.trim()))return;
-  if(!verify(c))return;
-  if(x==="1"){c.on=!c.on;put(c);alert(c.on?"เปิดล็อกแล้ว":"ปิดล็อกแล้ว");}
-  else if(x==="2"){const p=newPin();if(p){c.pin=H(p,c.salt);put(c);alert("เปลี่ยนรหัสแล้ว");}}
-  else if(x==="3"){const qa=newQA(c.salt);if(qa){c.q=qa.q;c.a=qa.a;put(c);alert("เปลี่ยนแล้ว");}}
-  else{localStorage.removeItem(K);alert("ลบการตั้งค่าล็อกแล้ว");}
+  if(!c){
+    const p=await newPin();if(!p)return;
+    const salt=Math.random().toString(36).slice(2),qa=await newQA(salt);
+    if(!qa){await vaultetAlert("ต้องมีคำถามและคำตอบกู้รหัส");return;}
+    put({on:true,salt,pin:H(p,salt),q:qa.q,a:qa.a});await vaultetAlert("เปิดล็อกแอปแล้ว");return;
+  }
+  const x=await vaultetChoice({title:"ล็อกแอป: "+(c.on?"เปิดอยู่":"ปิดอยู่"),options:[{value:"1",label:(c.on?"ปิด":"เปิด")+"ล็อก"},{value:"2",label:"เปลี่ยนรหัส"},{value:"3",label:"เปลี่ยนคำถาม/คำตอบกู้รหัส"},{value:"4",label:"ลบการตั้งค่าล็อกทั้งหมด",danger:true}]});
+  if(!x)return;
+  if(!(await verify(c)))return;
+  if(x==="1"){c.on=!c.on;put(c);await vaultetAlert(c.on?"เปิดล็อกแล้ว":"ปิดล็อกแล้ว");}
+  else if(x==="2"){const p=await newPin();if(p){c.pin=H(p,c.salt);put(c);await vaultetAlert("เปลี่ยนรหัสแล้ว");}}
+  else if(x==="3"){const qa=await newQA(c.salt);if(qa){c.q=qa.q;c.a=qa.a;put(c);await vaultetAlert("เปลี่ยนแล้ว");}}
+  else{localStorage.removeItem(K);await vaultetAlert("ลบการตั้งค่าล็อกแล้ว");}
 };
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#lockSettingsBtn"))openLockMenu();},true);
 const addLockBtn=()=>{const more=document.getElementById("ux-more");if(!more||document.getElementById("lockSettingsBtn"))return !!more;
   const c=document.createElement("div");c.className="ux-section-card";
-  c.innerHTML='<div style="font-weight:700">🔒 ล็อกแอป</div><div style="font-size:12px;color:var(--faint);margin-top:2px">ตั้งรหัส PIN 6 หลักก่อนเข้าแอป</div><button type="button" id="lockSettingsBtn" class="manage-accounts-btn" style="width:auto;padding:8px 18px;margin-top:10px">ตั้งค่าล็อก</button>';
+  c.innerHTML='<div style="font-weight:600">ล็อกแอป</div><div style="font-size:12px;color:var(--faint);margin-top:2px">ตั้งรหัส PIN 6 หลักก่อนเข้าแอป</div><button type="button" id="lockSettingsBtn" class="manage-accounts-btn" style="width:auto;padding:8px 18px;margin-top:10px">ตั้งค่าล็อก</button>';
   more.appendChild(c);return true;};
 if(!addLockBtn()){let n=0;const iv=setInterval(()=>{if(addLockBtn()||++n>40)clearInterval(iv);},250);}
 let t0=0;document.addEventListener("visibilitychange",()=>{if(document.hidden)t0=Date.now();else if(t0&&Date.now()-t0>60000)show();});
 show();
 })();
 
-function mergeCategories(){
+async function mergeCategories(){
   const type=formType;
   const names=[...new Set([...(CATS_BY_TYPE[type]||[]),...entries.filter(e=>e.type===type&&e.category&&!e.source).map(e=>e.category)])];
-  if(names.length<2){alert("มีหมวดไม่พอให้รวม");return;}
+  if(names.length<2){vaultetAlert("มีหมวดไม่พอให้รวม");return;}
   const cnt=n=>entries.filter(e=>e.type===type&&e.category===n&&!e.source).length;
-  const list=names.map((n,i)=>`${i+1}. ${n} (${cnt(n)} รายการ)`).join("\n");
-  const a=prompt("รวมหมวด — เลือกหมวดที่จะ 'เลิกใช้' (พิมพ์เลข):\n"+list); if(a===null)return;
-  const src=names[parseInt(a,10)-1]; if(!src){alert("เลขไม่ถูกต้อง");return;}
-  const b=prompt(`ย้ายทุกอย่างของ "${src}" ไปรวมกับหมวดไหน (พิมพ์เลข):\n`+list); if(b===null)return;
-  const dst=names[parseInt(b,10)-1]; if(!dst||dst===src){alert("เลขไม่ถูกต้อง หรือเลือกหมวดเดียวกัน");return;}
-  if(!confirm(`รวม "${src}" เข้ากับ "${dst}"\n• ย้าย ${cnt(src)} รายการ + งบ + รายการประจำ\n• ลบหมวด "${src}" ออกจากตัวเลือก\nยืนยันไหม? (ควร export สำรองไว้ก่อน)`))return;
+  const opts=names.map(n=>({value:n,label:`${n} (${cnt(n)} รายการ)`}));
+  const v=await vaultetForm({title:"รวมหมวด",message:"ย้ายทุกอย่างของหมวดที่เลิกใช้ ไปรวมกับอีกหมวด",okText:"ถัดไป",fields:[
+    {key:"src",label:"หมวดที่จะเลิกใช้",type:"select",options:opts,value:names[0]},
+    {key:"dst",label:"รวมเข้ากับหมวด",type:"select",options:opts,value:names[1],validate:(val,out)=>val===out.src?"เลือกหมวดที่ต่างจากหมวดที่เลิกใช้":""}
+  ]});
+  if(!v)return;
+  const src=v.src,dst=v.dst;
+  if(!(await vaultetAsk("รวมหมวด", `รวม "${src}" เข้ากับ "${dst}"\n• ย้าย ${cnt(src)} รายการ + งบ + รายการประจำ\n• ลบหมวด "${src}" ออกจากตัวเลือก\nยืนยันไหม? (ควร export สำรองไว้ก่อน)`, true)))return;
   entries.forEach(e=>{if(e.type===type&&e.category===src&&!e.source)e.category=dst;});
   if(typeof budgets!=="undefined"){
     budgets=budgets.filter(x=>!(x.categories.includes(src)&&budgets.some(y=>y!==x&&y.month===x.month&&y.categories.includes(dst))));
@@ -4173,7 +4149,7 @@ function renderTpl(){
   // ไม่มีเทมเพลตของประเภทนี้ → ซ่อนหัวข้อ (ปุ่มบันทึกเป็นเทมเพลตยังโผล่ในโหมดจัดการ)
   document.getElementById("tplHead").classList.toggle("v-has-none", mine.length===0);
 }
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   const row=document.getElementById("tplRow");if(!row||!e.target.closest||!e.target.closest("#tplRow"))return;
   const use=e.target.closest("[data-use]"),del=e.target.closest("[data-del]");
   const t=jget(TK);
@@ -4182,13 +4158,13 @@ document.addEventListener("click",e=>{
     const a=document.getElementById("amount");a.value=x.amount;a.dispatchEvent(new Event("input"));
     document.getElementById("note").value=x.note||"";
     renderCatGrid();
-  }else if(del){const x=t[+del.dataset.del];if(x&&confirm(`ลบเทมเพลต "${x.name}"?`)){t.splice(+del.dataset.del,1);jput(TK,t);renderTpl();}}
+  }else if(del){const x=t[+del.dataset.del];if(x&&(await vaultetAsk("ลบ", `ลบเทมเพลต "${x.name}"?`, true))){t.splice(+del.dataset.del,1);jput(TK,t);renderTpl();}}
   else if(e.target.closest("#tplSave")){
     const amt=parseFloat(document.getElementById("amount").value);
-    if(formType==="transfer"||!amt||amt<=0||!selectedCategory){alert("กรอกจำนวนเงินและเลือกหมวด (รายจ่าย/รายรับ/ออม) ก่อน แล้วค่อยกดบันทึกเป็นเทมเพลต");return;}
+    if(formType==="transfer"||!amt||amt<=0||!selectedCategory){vaultetAlert("กรอกจำนวนเงินและเลือกหมวด (รายจ่าย/รายรับ/ออม) ก่อน แล้วค่อยกดบันทึกเป็นเทมเพลต");return;}
     const note=document.getElementById("note").value.trim();
-    const name=prompt("ตั้งชื่อเทมเพลต:",note||selectedCategory);if(!name||!name.trim())return;
-    t.push({id:Date.now().toString(36),name:name.trim(),type:formType,category:selectedCategory,amount:amt,note});
+    const name=await vaultetPrompt("ชื่อเทมเพลต",note||selectedCategory,{title:"บันทึกเป็นเทมเพลต",required:true,okText:"บันทึก"});if(!name)return;
+    t.push({id:Date.now().toString(36),name:name,type:formType,category:selectedCategory,amount:amt,note});
     jput(TK,t);renderTpl();showToast("บันทึกเทมเพลตแล้ว");
   }
 },true);
@@ -4199,20 +4175,24 @@ function renderGoalsBox(){
   const card=document.getElementById("financialBrainCard");if(!card)return;
   let box=document.getElementById("goalsBox");
   if(!box){box=document.createElement("div");box.id="goalsBox";box.style.cssText="margin-top:18px;padding-top:14px;border-top:1px solid var(--border,#2a2a2e)";card.appendChild(box);
-    box.addEventListener("click",ev=>{
+    box.addEventListener("click",async ev=>{
       const g=jget(GK);
       if(ev.target.closest("#goalAdd")){
-        const name=prompt("ชื่อเป้าหมาย (เช่น ซื้อโน้ตบุ๊ก):");if(!name||!name.trim())return;
-        const target=parseFloat(prompt("ต้องการเก็บให้ได้กี่บาท:"));if(!target||target<=0){alert("จำนวนเงินไม่ถูกต้อง");return;}
-        const saved=parseFloat(prompt("ตอนนี้เก็บได้แล้วเท่าไร (ไม่มีใส่ 0):","0"))||0;
-        const dl=(prompt("วันที่อยากได้ครบ รูปแบบ ปปปป-ดด-วว เช่น 2026-12-31 (ไม่กำหนดให้เว้นว่าง):","")||"").trim();
-        if(dl&&!/^\d{4}-\d{2}-\d{2}$/.test(dl)){alert("รูปแบบวันที่ไม่ถูกต้อง");return;}
-        g.push({id:Date.now().toString(36),name:name.trim(),target,saved,deadline:dl});jput(GK,g);renderGoalsBox();return;}
+        const gv=await vaultetForm({title:"เพิ่มเป้าหมายเก็บเงิน",okText:"เพิ่ม",fields:[
+          {key:"name",label:"ชื่อเป้าหมาย",required:true,placeholder:"เช่น ซื้อโน้ตบุ๊ก"},
+          {key:"target",label:"ต้องการเก็บให้ได้ (บาท)",type:"number",required:true,positive:true},
+          {key:"saved",label:"ตอนนี้เก็บได้แล้ว (บาท)",type:"number",value:0,min:0},
+          {key:"dl",label:"วันที่อยากได้ครบ (ไม่บังคับ)",type:"date"}
+        ]});
+        if(!gv)return;
+        const name=gv.name,target=gv.target,saved=gv.saved||0,dl=gv.dl||"";
+        g.push({id:Date.now().toString(36),name,target,saved,deadline:dl});jput(GK,g);renderGoalsBox();return;}
       const add=ev.target.closest("[data-gadd]"),del=ev.target.closest("[data-gdel]");
       if(add){const x=g.find(y=>y.id===add.dataset.gadd);if(!x)return;
-        const v=parseFloat(prompt(`"${x.name}" — เพิ่มเงินเก็บกี่บาท (ใส่ติดลบถ้าเอาออก):`));
+        const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:"ใส่ค่าติดลบถ้าจะเอาเงินออก"}]});
+        const v=gv?gv.v:0;
         if(!v)return;x.saved=Math.max(0,(x.saved||0)+v);jput(GK,g);renderGoalsBox();
-      }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(x&&confirm(`ลบเป้าหมาย "${x.name}"?`)){jput(GK,g.filter(y=>y.id!==x.id));renderGoalsBox();}}
+      }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(x&&(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`, true))){jput(GK,g.filter(y=>y.id!==x.id));renderGoalsBox();}}
     });}
   const g=jget(GK),today=new Date();today.setHours(0,0,0,0);
   const items=g.map(x=>{
@@ -4232,12 +4212,12 @@ const get=()=>{const r=localStorage.getItem(QK);if(r===null)return [20,50,100,50
 const put=a=>{try{localStorage.setItem(QK,JSON.stringify(a))}catch(e){}};
 function render(){const el=document.getElementById("qaChips");if(!el)return;
   el.innerHTML=get().map((n,i)=>`<span class="v-chip-wrap"><button type="button" class="v-chip" data-qa="${n}">+${n}</button><button type="button" class="v-chip-x" data-qd="${i}" aria-label="ลบ +${n}">×</button></span>`).join("")+`<button type="button" class="v-chip v-chip-add v-manage-only" id="qaAdd">+ เพิ่มตัวเลข</button>`;}
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   if(!e.target.closest)return;const box=e.target.closest("#qaChips");if(!box)return;
   const use=e.target.closest("[data-qa]"),del=e.target.closest("[data-qd]");
   if(use){const inp=document.getElementById("amount");inp.value=(toCents(parseFloat(inp.value)||0)+toCents(parseFloat(use.dataset.qa)))/100;inp.dispatchEvent(new Event("input"));}
   else if(del){const a=get();a.splice(+del.dataset.qd,1);put(a);render();}
-  else if(e.target.closest("#qaAdd")){const v=parseFloat(prompt("เพิ่มตัวเลขปุ่มลัด (บาท) เช่น 40:"));if(!v||v<=0)return;const a=get();if(!a.includes(v)){a.push(v);a.sort((x,y)=>x-y);put(a);}render();}
+  else if(e.target.closest("#qaAdd")){const v=await vaultetPrompt("จำนวนเงิน (บาท)","",{title:"เพิ่มปุ่มลัดจำนวนเงิน",type:"number",required:true,positive:true,placeholder:"เช่น 40",okText:"เพิ่ม"});if(!v||v<=0)return;const a=get();if(!a.includes(v)){a.push(v);a.sort((x,y)=>x-y);put(a);}render();}
 },true);
 render();
 try{renderTrendCard();}catch(e){console.error(e);}
@@ -4579,7 +4559,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   }
   function closePf(){ overlay.classList.remove('open'); }
 
-  overlay.addEventListener('click',e=>{
+  overlay.addEventListener('click',async e=>{
     const t=e.target;
     if(t.closest('#pfClose')) return closePf();
     if(t.closest('#pfRefresh')){ refreshPrices().then(r=>{ if(r&&r.reason==='no_key') showToast('ใส่ API key ด้านล่างก่อน'); else if(r&&r.reason==='no_holdings') showToast('ยังไม่มีหุ้นในพอร์ต'); else if(r&&r.ok) showToast('อัปเดตราคาแล้ว ✓'); }); return; }
@@ -4603,14 +4583,14 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     const manual=t.closest('[data-manual]');
     if(manual){
       const tk=manual.dataset.manual, c=readCache(), cur=c.quotes[tk]?c.quotes[tk].price:'';
-      const v=prompt('ราคาต่อหุ้นของ '+tk+' (USD):',cur);
-      const p=pfNum(v); if(p>0){ c.quotes[tk]={price:p,prev:null,pct:null,at:Date.now(),manual:true}; writeCache(c); render(); }
+      const v=await vaultetPrompt('ราคาต่อหุ้น (USD)',cur,{title:'ราคาของ '+tk,type:'number',required:true,positive:true,okText:'บันทึกราคา'});
+      const p=v===null?0:pfNum(String(v)); if(p>0){ c.quotes[tk]={price:p,prev:null,pct:null,at:Date.now(),manual:true}; writeCache(c); render(); }
       return;
     }
     const buy=t.closest('[data-buy]'); if(buy) return startBuy(buy.dataset.buy);
     const lot=t.closest('[data-lot]');
     if(lot){
-      if(lot.dataset.lot==='sell'){ delSell(lot.dataset.id); } else if(lot.dataset.lot==='open'){ if(confirm('ลบยอดยกมานี้ใช่ไหม?')){ setOpen(getOpen().filter(o=>o.id!==lot.dataset.id)); render(); } }
+      if(lot.dataset.lot==='sell'){ delSell(lot.dataset.id); } else if(lot.dataset.lot==='open'){ if((await vaultetAsk("ลบ", 'ลบยอดยกมานี้ใช่ไหม?', true))){ setOpen(getOpen().filter(o=>o.id!==lot.dataset.id)); render(); } }
       else{ const en=entries.find(x=>x.id===lot.dataset.id); if(en) openForm(en); }
       return;
     }
@@ -4632,7 +4612,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     document.getElementById('pfSellSh').value=''; document.getElementById('pfSellAmt').value='';
     document.getElementById('pfSellAcc').innerHTML=accounts.map(a=>'<option value="'+esc(a.id)+'">'+esc(a.name)+'</option>').join('');
     sell.classList.add('open'); }
-  function delSell(id){ if(!confirm('ลบรายการขายนี้? รายรับที่เกี่ยวข้องจะถูกลบด้วย')) return; const a=getSells(), x=a.find(q=>q.id===id); setSells(a.filter(q=>q.id!==id));
+  async function delSell(id){ if(!(await vaultetAsk("ลบ", 'ลบรายการขายนี้? รายรับที่เกี่ยวข้องจะถูกลบด้วย', true))) return; const a=getSells(), x=a.find(q=>q.id===id); setSells(a.filter(q=>q.id!==id));
     if(x&&x.entryId){ const i=entries.findIndex(e=>e.id===x.entryId); if(i>-1){ entries.splice(i,1); saveEntries(); } }
     render(); try{ renderAccountsSummary(); }catch(_){} }
   overlay.addEventListener('click',e=>{

@@ -232,13 +232,13 @@ function renderAIMemoryList(){
     </div>
   `).join("");
   el.querySelectorAll(".edit-ai-memory-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       const list = loadAIMemory();
       const target = list.find(m => m.id === btn.dataset.id);
       if(!target){ showToast("ไม่พบความจำนี้แล้ว"); return; }
-      const next = prompt("แก้ไขความจำของ AI", target.text);
-      if(next === null) return;
-      const t = next.trim();
+      const mv = await vaultetForm({ title: "แก้ไขความจำของ AI", okText: "บันทึก", fields: [{ key: "text", label: "ข้อความที่ AI จำไว้", type: "textarea", rows: 5, value: target.text, required: true }] });
+      if(!mv) return;
+      const t = mv.text;
       if(!t){ showToast("ข้อความความจำต้องไม่ว่าง"); return; }
       if(t === target.text) return;
       target.text = t;
@@ -284,8 +284,8 @@ document.getElementById("saveAIProfileBtn").addEventListener("click", () => {
   showToast("บันทึกโปรไฟล์แล้ว");
   refreshProactiveCard(true);
 });
-document.getElementById("clearAIProfileBtn").addEventListener("click", () => {
-  if(!confirm("ลบโปรไฟล์การเงินทั้งหมด (รวมเป้าหมายทุกรายการ) ใช่ไหม?")) return;
+document.getElementById("clearAIProfileBtn").addEventListener("click", async () => {
+  if(!(await vaultetAsk("ลบ", "ลบโปรไฟล์การเงินทั้งหมด (รวมเป้าหมายทุกรายการ) ใช่ไหม?", true))) return;
   localStorage.removeItem(AI_PROFILE_KEY);
   aiProfileDraft = { nickname:"", monthlyIncomeEstimate:null, minReserveTarget:null, financialGoals:[], notes:"" };
   renderAIProfileForm();
@@ -2675,9 +2675,9 @@ function renderAiChatList(){
     });
   });
   el.querySelectorAll(".delete-ai-chat-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if(!confirm("ลบแชทนี้ทั้งหมดใช่ไหม? กู้คืนไม่ได้")) return;
+      if(!(await vaultetAsk("ลบ", "ลบแชทนี้ทั้งหมดใช่ไหม? กู้คืนไม่ได้", true))) return;
       deleteChat(btn.dataset.id);
       renderAiChatList();
       renderAiChatBubbles();
