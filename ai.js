@@ -2586,7 +2586,8 @@ function closeAiInputSheet(){
 }
 document.getElementById("aiFabBtn").addEventListener("click", () => {
   if(getApiKeys().length === 0){
-    showToast("ยังไม่ได้ตั้งค่า API Key — กดไอคอน ⚙️ เพื่อตั้งค่าก่อน");
+    showToast("ใส่ Gemini API Key ก่อนถึงจะใช้ AI ได้");
+    if(window.vaultetOpenAiSettings) window.vaultetOpenAiSettings();
     return;
   }
   document.getElementById("aiInputText").value = "";

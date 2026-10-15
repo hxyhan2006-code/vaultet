@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds6">
-<link rel="stylesheet" href="ds.css?v=ds6">
+<link rel="stylesheet" href="style.css?v=ds7">
+<link rel="stylesheet" href="ds.css?v=ds7">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -255,6 +255,7 @@
       <button class="close-btn" id="closeBtn" type="button" aria-label="ปิด"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="v-sheet-body">
+      <button type="button" class="v-ai-entry" id="vAiEntryBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.500l4.700-1.800z"/></svg>พิมพ์เป็นประโยคด้วย AI เช่น "ข้าว 60 กาแฟ 45"</button>
       <div class="type-toggle" id="typeToggle">
         <button class="type-btn" data-type="expense" type="button"><span class="type-btn-label">รายจ่าย</span></button>
         <button class="type-btn" data-type="income" type="button"><span class="type-btn-label">รายรับ</span></button>
@@ -547,6 +548,7 @@
       <textarea id="aiAdvisorInstruction" class="ai-textarea" placeholder="ตัวอย่าง: เป็นที่ปรึกษาการเงินที่ตรงไปตรงมา ตอบสั้น ใช้ bullet เมื่อมีหลายประเด็น เน้นเนื้อหา ไม่เอาน้ำ..."></textarea>
       <div class="ai-advisor-settings-actions"><button type="button" id="saveAiAdvisorInstructionBtn">บันทึกคำสั่ง</button><button type="button" id="resetAiAdvisorInstructionBtn">รีเซ็ต</button></div>
       <div class="ai-advisor-settings-status" id="aiAdvisorInstructionStatus"></div>
+      <button type="button" class="v-btn-block" id="vAiDataBtn">ความจำ โปรไฟล์ เป้าหมาย และ API key ของ AI</button>
     </div>
     <div class="ai-analyst-body" id="aiAnalystBody"></div>
     <div class="ai-chat-input-row">
@@ -771,8 +773,8 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="app.js?v=ds6"></script>
-<script src="ai.js?v=ds6"></script>
-<script src="ui.js?v=ds6"></script>
+<script src="app.js?v=ds7"></script>
+<script src="ai.js?v=ds7"></script>
+<script src="ui.js?v=ds7"></script>
 </body>
 </html>

@@ -1707,6 +1707,7 @@ function setFormManaging(on){
 function openForm(entry){
   setFormManaging(false);
   document.getElementById("vDeleteEntryBtn").hidden = !entry;
+  document.getElementById("vAiEntryBtn").hidden = !!entry;
   editingId = entry ? entry.id : null;
   document.getElementById("modalTitle").textContent = entry ? "แก้ไขรายการ" : "เพิ่มรายการ";
   document.getElementById("overlay").classList.add("open");
@@ -1727,6 +1728,10 @@ function closeForm(){
 }
 
 document.getElementById("fabBtn").addEventListener("click", () => openForm(null));
+document.getElementById("vAiEntryBtn").addEventListener("click", () => {
+  closeForm();
+  document.getElementById("aiFabBtn").click();
+});
 document.getElementById("vDeleteEntryBtn").addEventListener("click", () => {
   if(!editingId || !confirm("ลบรายการนี้ใช่ไหม?")) return;
   const id = editingId;
@@ -3428,9 +3433,11 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   const shell=document.createElement('div');
   shell.className='ux-shell';
   shell.innerHTML=`<div class="ux-topbar">
+    <button class="ux-back" id="uxBackBtn" type="button" aria-label="ย้อนกลับ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
     <div class="ux-brand"><div class="ux-brand-name">Vaultet</div><div class="ux-brand-page" id="uxPageName">ภาพรวม</div></div>
     <select class="ux-month" id="uxMonthSelect" aria-label="เลือกเดือน"></select>
     <button class="ux-bell" id="uxBellBtn" aria-label="การแจ้งเตือน" aria-expanded="false">🔔<i class="ux-bell-dot" id="uxBellDot" style="display:none"></i></button>
+    <button class="ux-avatar" id="uxAvatarBtn" type="button" aria-label="ตั้งค่า"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-7 8-7s8 2.600 8 7"/></svg></button>
   </div>`;
   page.insertBefore(shell,page.firstChild);
 
@@ -3490,14 +3497,16 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   bottom.innerHTML=`
     <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>หน้าหลัก</button>
     <button class="ux-bottom-item" data-page="analysis"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1112 3v9z"/><path d="M15 3.500A9 9 0 0120.500 9H15z"/></svg>วิเคราะห์</button>
+    <button class="ux-bottom-add" id="uxAddBtn" type="button" aria-label="เพิ่มรายการ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>แผน</button>
-    <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/></svg>ที่ปรึกษา AI</button>
-    <button class="ux-bottom-item" data-page="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.300 16.300l2.100 2.100M18.400 5.600l-2.100 2.100M7.700 16.300l-2.100 2.100"/></svg>ตั้งค่า</button>`;
+    <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.700L18.500 9.500l-4.700 1.800L12 16l-1.800-4.700L5.500 9.500l4.700-1.800z"/><path d="M19 15l.7 1.800 1.800.7-1.800.7L19 20l-.7-1.800-1.800-.7 1.800-.7z"/></svg>AI</button>`;
   document.body.append(bottom);
 
   const names={home:'หน้าหลัก',analysis:'วิเคราะห์',plan:'แผน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า'};
+  window.vaultetLastTab='home';
   function go(id){
     if(!views[id]) id='home';
+    if(id!=='more') window.vaultetLastTab=id;
     Object.entries(views).forEach(([k,v])=>v.classList.toggle('active',k===id));
     document.body.classList.toggle('ux-home-active',id==='home');
     document.body.classList.toggle('ux-chat-active',id==='chat');
@@ -3511,6 +3520,9 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   }
 
   window.vaultetGo=go;
+  document.getElementById('uxAddBtn')?.addEventListener('click',()=>openForm(null));
+  document.getElementById('uxAvatarBtn')?.addEventListener('click',()=>go('more'));
+  document.getElementById('uxBackBtn')?.addEventListener('click',()=>go(window.vaultetLastTab||'home'));
   document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.addEventListener('click',()=>{
     const id=x.dataset.page;
     if(id==='chat' && window.bancheeOpenChatPage){ window.bancheeOpenChatPage(); }

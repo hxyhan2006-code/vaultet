@@ -302,8 +302,6 @@ html body .ux-view.active:not(#ux-home):not(#ux-chat) { padding-top: 16px !impor
 .v-del-link[hidden] { display: none; }
 .v-del-link:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 
-/* กันปุ่ม + ลอยทับแถวสุดท้ายของรายการ */
-html body.ux-home-active .page { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
 
 /* =====================================================================
    หน้า "ตั้งค่า": กลุ่มรายการ (แต่ละเรื่องอยู่จุดเดียว)
@@ -361,3 +359,40 @@ html body:not(.ux-home-active) .backup-banner, html body:not(.ux-home-active) .d
 html body .backup-banner:has(~ .debt-bump-banner.show) { display: none !important; }
 html body .backup-banner.show ~ .backup-banner.dd { display: none !important; }
 html body #ux-more [hidden] { display: none !important; }
+
+/* =====================================================================
+   แถบล่าง: 4 แท็บ + ปุ่ม + ตรงกลาง / แถบบน: ย้อนกลับ, เดือน, กระดิ่ง, โปรไฟล์
+   ===================================================================== */
+/* ปุ่มลอย (+ และประกาย) ถูกแทนด้วยปุ่ม + ในแถบล่าง */
+html body .page-anchor, html body .fab, html body .fab-ai { display: none !important; }
+
+html body .ux-bottom-nav { grid-template-columns: 1fr 1fr 72px 1fr 1fr; }
+html body .ux-bottom-add {
+  justify-self: center; align-self: center; width: 56px; height: 56px; margin-top: -22px; padding: 0; display: grid; place-items: center;
+  background: var(--v-accent) !important; color: var(--v-accent-ink) !important; border: 0 !important; border-radius: 20px !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--v-accent) 35%, transparent) !important; cursor: pointer;
+}
+html body .ux-bottom-add svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+html body .ux-bottom-add:active { transform: scale(.96); }
+html body .ux-bottom-add:focus-visible { outline: 2px solid var(--v-fg); outline-offset: 3px; }
+html body .ux-bottom-item { position: relative; line-height: 1.5; }
+html body .ux-bottom-item.has-unread::after { content: ""; position: absolute; top: 6px; left: calc(50% + 8px); width: 8px; height: 8px; border-radius: 50%; background: var(--v-out); }
+
+html body .ux-topbar { display: flex; align-items: center; gap: 10px; }
+html body .ux-topbar .ux-brand { flex: 1; min-width: 0; }
+html body .ux-month { min-width: 0 !important; width: auto !important; max-width: 150px; }
+html body .ux-back, html body .ux-avatar { flex: none; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: 50% !important; color: var(--v-fg); cursor: pointer; }
+html body .ux-back svg, html body .ux-avatar svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html body .ux-back { display: none; }
+html body.ux-more-active .ux-back { display: grid; }
+html body.ux-chat-active .ux-avatar, html body.ux-more-active .ux-avatar { display: none; }
+html body .ux-back:focus-visible, html body .ux-avatar:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* หน้าต่างตั้งค่าเดิม: โชว์เฉพาะการ์ดที่เกี่ยวกับจุดที่เปิดมา (AI / Drive / หุ้น) */
+html body #settingsOverlay .settings-card.v-hide { display: none !important; }
+
+/* ลิงก์ "พิมพ์เป็นประโยคด้วย AI" ในหน้าเพิ่มรายการ */
+.v-ai-entry { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: var(--v-surface-2); border: 1px dashed var(--v-line); border-radius: var(--v-r-md); color: var(--v-muted); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.v-ai-entry[hidden] { display: none; }
+.v-ai-entry svg { flex: none; width: 18px; height: 18px; fill: none; stroke: var(--v-accent); stroke-width: 1.8; stroke-linejoin: round; }
+.v-ai-entry:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
