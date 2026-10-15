@@ -1567,7 +1567,50 @@ function isSafeHistoryMessage(m){
 }
 
 // ส่งข้อความต่อเนื่อง (พร้อมประวัติแชท) ให้ Gemini ตอบ และตรวจคำตอบที่ถูกตัด/เป็นข้อมูลดิบก่อนบันทึก
-async function generateChatReply(priorHistory, userText, snapshot, profile, signal){
+// ===== คำตอบ AI แบบค่อยๆ พิมพ์ (สตรีม) =====
+// ซ่อนคำสั่งหลังบ้านท้ายคำตอบ (@@ACTION@@ / @@MEMORY_*@@) ไม่ให้ผู้ใช้เห็นตอนกำลังพิมพ์
+function aiStreamDisplayText(t){
+  return String(t||"").replace(/^@@[A-Z_]+@@.*$/gm, "").replace(/@@[^\n]*$/, "").replace(/\s+$/, "");
+}
+function createAiStreamUI(chatId){
+  let target = "", shown = 0, raf = 0, el = null, drainers = [];
+  const bodyEl = () => document.getElementById("aiAnalystBody");
+  function ensure(){
+    const body = bodyEl();
+    if(!body || loadAllChats().activeId !== chatId) return null;
+    if(el && el.isConnected) return el;
+    hideAiChatTyping();
+    el = document.createElement("div");
+    el.className = "ai-chat-msg role-model is-streaming";
+    el.innerHTML = '<div class="ai-chat-bubble ai-chat-model"></div>';
+    body.appendChild(el);
+    return el;
+  }
+  function paint(){
+    raf = 0;
+    const full = aiStreamDisplayText(target);
+    const node = ensure();
+    if(node){
+      if(shown < full.length) shown = Math.min(full.length, shown + Math.max(1, Math.ceil((full.length - shown) / 10)));
+      const body = bodyEl();
+      const stick = body.scrollHeight - body.scrollTop - body.clientHeight < 90;
+      node.firstChild.innerHTML = simpleMarkdownToHtml(full.slice(0, shown)) + '<span class="ai-stream-caret"></span>';
+      if(stick) body.scrollTop = body.scrollHeight;
+    }
+    if(shown < full.length) raf = requestAnimationFrame(paint);
+    else { const d = drainers; drainers = []; d.forEach(f => f()); }
+  }
+  const kick = () => { if(!raf) raf = requestAnimationFrame(paint); };
+  return {
+    push(text){ target = String(text || ""); if(!target) shown = 0; kick(); },
+    // รอให้ตัวหนังสือที่ค้างอยู่ค่อยๆ ขึ้นจนครบก่อน (สูงสุด 1.5 วิ) แล้วค่อยแทนด้วยข้อความจริง
+    drain(){ return new Promise(res => { if(shown >= aiStreamDisplayText(target).length){ res(); return; } drainers.push(res); setTimeout(res, 1500); kick(); }); },
+    remove(){ if(raf) cancelAnimationFrame(raf); raf = 0; if(el) el.remove(); el = null; }
+  };
+}
+
+// onPartial(text) — ถ้าส่งมา จะรับคำตอบแบบสตรีม (ทีละท่อน) เพื่อแสดงสดๆ; ถ้าสตรีมใช้ไม่ได้จะถอยกลับไปแบบรอทั้งก้อนเอง
+async function generateChatReply(priorHistory, userText, snapshot, profile, signal, onPartial){
   if(getApiKeys().length === 0) return { ok:false, error:"missing_api_key" };
   if(!userText || !userText.trim()) return { ok:false, error:"empty_input" };
 
@@ -1578,11 +1621,12 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
     .map(m => ({ role: m.role === "user" ? "user" : "model", parts:[{ text: String(m.text).trim() }] }))
     .concat([{ role:"user", parts:[{ text: userText.trim() }] }]);
 
-  async function requestReply(extraInstruction){
+  async function requestReplyOnce(extraInstruction, stream){
     let res;
+    const method = stream ? "streamGenerateContent?alt=sse&" : "generateContent?";
     try{
       res = await fetchGeminiWithRetry(
-        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_ADVISOR_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        (apiKey) => `https://generativelanguage.googleapis.com/v1beta/models/${AI_ADVISOR_MODEL}:${method}key=${encodeURIComponent(apiKey)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1606,6 +1650,38 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
       return { ok:false, error: res.status === 400 ? "invalid_api_key" : "api_error", detail, status: res.status };
     }
 
+    if(stream){
+      if(!res.body || !res.body.getReader) return { ok:false, error:"stream_unsupported" };
+      const reader = res.body.getReader(), dec = new TextDecoder();
+      let buf = "", full = "", finishReason = "", gotText = false;
+      const eat = line => {
+        if(!line.startsWith("data:")) return;
+        const payload = line.slice(5).trim();
+        if(!payload || payload === "[DONE]") return;
+        let j; try{ j = JSON.parse(payload); }catch(e){ return; }
+        const cand = j?.candidates?.[0];
+        if(cand?.finishReason) finishReason = cand.finishReason;
+        const piece = (cand?.content?.parts || []).map(p => typeof p?.text === "string" ? p.text : "").join("");
+        if(piece){ full += piece; gotText = true; try{ onPartial(full); }catch(e){} }
+      };
+      try{
+        while(true){
+          const { done, value } = await reader.read();
+          if(done) break;
+          buf += dec.decode(value, { stream:true });
+          const lines = buf.split(/\r?\n/); buf = lines.pop();
+          lines.forEach(eat);
+        }
+        if(buf) eat(buf);
+      }catch(e){
+        if(e && e.name === "AbortError") return { ok:false, error:"aborted", partialText: cleanAiChatReply(full) };
+        return { ok:false, error:"network_error", gotText };
+      }
+      const rawText = full.trim();
+      if(!rawText) return { ok:false, error:"empty_response", gotText:false };
+      return { ok:true, text: cleanAiChatReply(rawText), data:{ candidates:[{ finishReason }] } };
+    }
+
     let data;
     try{ data = await res.json(); }catch(e){ return { ok:false, error:"invalid_json" }; }
     const rawText = collectGeminiText(data);
@@ -1614,11 +1690,22 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
     return { ok:true, text, data };
   }
 
+  async function requestReply(extraInstruction){
+    if(typeof onPartial !== "function") return requestReplyOnce(extraInstruction, false);
+    let r = await requestReplyOnce(extraInstruction, true);
+    // สตรีมไม่สำเร็จก่อนได้ข้อความใดๆ → ถอยกลับไปแบบเดิมเงียบๆ (ไม่นับกรณีกดหยุด/คีย์ผิด)
+    if(!r.ok && r.error !== "aborted" && r.error !== "invalid_api_key" && !r.gotText){
+      r = await requestReplyOnce(extraInstruction, false);
+    }
+    return r;
+  }
+
   let result=await requestReply("");
   if(!result.ok) return result;
   if(isUsableAiChatReply(result.text,result.data)) return { ok:true, text:result.text };
 
-  // ถ้ารอบแรกถูกตัดหรือคืนเศษข้อมูล ให้ลองใหม่ครั้งเดียวด้วยกติกาที่เข้มขึ้น แทนการบันทึกคำตอบเสียลงประวัติ
+  // ถ้ารอบแรกถูกตัดหรือคืนเศษข้อมูล ให้ลองใหม่ครั้งเดียวด้วยกติกาที่เข้มขึ้น
+  if(typeof onPartial === "function") { try{ onPartial(""); }catch(e){} }
   result=await requestReply("คำตอบรอบก่อนมีความเสี่ยงเป็นเศษข้อความหรือถูกตัด ให้ตอบคำถามล่าสุดใหม่ทั้งหมดเป็นภาษาไทยแบบสมบูรณ์ ห้ามอ้างชื่อฟิลด์ภายใน และต้องจบคำตอบอย่างเป็นธรรมชาติ.");
   if(!result.ok) return result;
   if(!isUsableAiChatReply(result.text,result.data)) return { ok:false, error:"invalid_ai_response" };
@@ -2852,7 +2939,10 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
   const profile = loadAIProfile();
   aiChatAbortController = new AbortController();
   const aiRequestStartedAt = performance.now();
-  const result = await generateChatReply(priorHistory, text, snapshot, profile, aiChatAbortController.signal);
+  const streamUI = createAiStreamUI(requestChatId);
+  const result = await generateChatReply(priorHistory, text, snapshot, profile, aiChatAbortController.signal, t => streamUI.push(t));
+  if(result.ok) await streamUI.drain();
+  streamUI.remove();
   const aiElapsedMs = Math.round(performance.now() - aiRequestStartedAt);
   aiChatAbortController = null;
 
@@ -2864,7 +2954,7 @@ document.getElementById("aiChatSendBtn").addEventListener("click", async () => {
   input.disabled = false;
 
   if(!result.ok){
-    if(result.error === "aborted"){ aiRequestState=null; renderAiChatBubbles(); return; }
+    if(result.error === "aborted"){ const pt = aiStreamDisplayText(result.partialText || "").trim(); if(pt) saveAIChatHistoryForChat(requestChatId, historyWithUserMsg.concat([{ role:"model", text: pt }])); aiRequestState=null; renderAiChatBubbles(); return; }
     const label = aiErrorLabel(result);
     const codeLine = result.error ? ` (โค้ด: ${result.error}${result.status ? " HTTP " + result.status : ""})` : "";
     errBox.textContent = label + codeLine + " — ข้อความที่พิมพ์ไว้ยังอยู่ ลองกดส่งใหม่ได้เลย";
@@ -2921,7 +3011,10 @@ async function regenerateLastReply(priorHistory, userText){
   const snapshot = buildFinancialSnapshot();
   const profile = loadAIProfile();
   aiChatAbortController = new AbortController();
-  const result = await generateChatReply(priorHistory, userText, snapshot, profile, aiChatAbortController.signal);
+  const streamUI = createAiStreamUI(requestChatId);
+  const result = await generateChatReply(priorHistory, userText, snapshot, profile, aiChatAbortController.signal, t => streamUI.push(t));
+  if(result.ok) await streamUI.drain();
+  streamUI.remove();
   aiChatAbortController = null;
 
   if(!isAiRequestCurrent(requestId)) return;
@@ -2932,7 +3025,7 @@ async function regenerateLastReply(priorHistory, userText){
   document.getElementById("aiChatInput").disabled = false;
 
   if(!result.ok){
-    if(result.error === "aborted"){aiRequestState=null;renderAiChatBubbles();return;}
+    if(result.error === "aborted"){ const pt = aiStreamDisplayText(result.partialText || "").trim(); if(pt) saveAIChatHistoryForChat(requestChatId, priorHistory.concat([{ role:"user", text: userText }, { role:"model", text: pt }])); aiRequestState=null; renderAiChatBubbles(); return; }
     const label = aiErrorLabel(result);
     errBox.textContent = label + " — ลองตอบใหม่อีกครั้ง";
     errBox.style.display = "block";
