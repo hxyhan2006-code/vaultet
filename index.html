@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds37">
-<link rel="stylesheet" href="ds.css?v=ds37">
+<link rel="stylesheet" href="style.css?v=ds38">
+<link rel="stylesheet" href="ds.css?v=ds38">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -568,10 +568,10 @@
     </div>
     <div class="ai-advisor-settings-panel" id="aiAdvisorSettingsPanel">
       <div class="v-sheet-head"><div class="ai-advisor-settings-title">ปรับแต่งที่ปรึกษาการเงิน AI</div><button type="button" class="v-sheet-x" id="aiAdvisorCloseBtn" aria-label="ปิด"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="ai-advisor-settings-help">กำหนดบุคลิก น้ำเสียง ความยาว และรูปแบบคำตอบ เช่น “ตอบสั้น กระชับ ใช้หัวข้อย่อย เน้นตัวเลขสำคัญ ไม่เอาน้ำ”</div>
-      <textarea id="aiAdvisorInstruction" class="ai-textarea" placeholder="ตัวอย่าง: เป็นที่ปรึกษาการเงินที่ตรงไปตรงมา ตอบสั้น ใช้ bullet เมื่อมีหลายประเด็น เน้นเนื้อหา ไม่เอาน้ำ..."></textarea>
-      <div class="ai-advisor-settings-actions"><button type="button" id="saveAiAdvisorInstructionBtn">บันทึกคำสั่ง</button><button type="button" id="resetAiAdvisorInstructionBtn">รีเซ็ต</button></div>
-      <div class="ai-advisor-settings-status" id="aiAdvisorInstructionStatus"></div>
+      <div class="ai-advisor-settings-help">บอก AI ทีละข้อ เช่น “เริ่มคำตอบด้วยสรุปสั้นๆ” หรือ “พูดเป็นกันเอง ไม่ต้องสุภาพมาก”</div>
+      <label class="v-ins-switch"><span>ใช้คำสั่งของฉัน</span><input type="checkbox" id="aiInsOn"><i aria-hidden="true"></i></label>
+      <div class="v-ins-bar"><button type="button" class="v-ins-add" id="aiInsAdd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>เพิ่ม</button><button type="button" class="v-ins-clear" id="aiInsClear"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M8 10v8M12 10v8M16 10v8M6 7l1 14h10l1-14"/></svg>ลบทั้งหมด</button></div>
+      <div class="v-ins-list" id="aiInsList"></div>
     </div>
     <div class="ai-analyst-body" id="aiAnalystBody"></div>
     <div class="ai-chat-input-row">
@@ -765,10 +765,10 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds37"></script>
-<script src="app.js?v=ds37"></script>
-<script src="openrouter.js?v=ds37"></script>
-<script src="ai.js?v=ds37"></script>
-<script src="ui.js?v=ds37"></script>
+<script src="dialog.js?v=ds38"></script>
+<script src="app.js?v=ds38"></script>
+<script src="openrouter.js?v=ds38"></script>
+<script src="ai.js?v=ds38"></script>
+<script src="ui.js?v=ds38"></script>
 </body>
 </html>

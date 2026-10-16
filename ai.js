@@ -1625,8 +1625,18 @@ function setAiChatSendBtnState(isBusy){
   syncAiChatSendBtnVisibility();
 }
 
-function loadAIAdvisorInstruction(){ return (localStorage.getItem(AI_ADVISOR_INSTRUCTION_KEY) || "").trim().slice(0,2000); }
-function saveAIAdvisorInstruction(value){ localStorage.setItem(AI_ADVISOR_INSTRUCTION_KEY, String(value || "").trim().slice(0,2000)); }
+// คำสั่งปรับแต่ง AI แบบทีละข้อ (เปิด/ปิดได้) — ถ้ายังไม่เคยบันทึกแบบใหม่ จะแตกข้อความเดิมของแบบเก่าเป็นรายข้อให้
+const AI_INSTR_KEY = "vaultet_ai_instructions_v1", AI_INSTR_MAX = 20, AI_INSTR_LEN = 300;
+function loadAIInstructions(){
+  try{ const o = JSON.parse(localStorage.getItem(AI_INSTR_KEY) || "null"); if(o && Array.isArray(o.items)) return { on: o.on !== false, items: o.items.filter(x => x && typeof x.text === "string" && x.text.trim()) }; }catch(e){}
+  const old = (localStorage.getItem(AI_ADVISOR_INSTRUCTION_KEY) || "").trim();
+  return { on: true, items: old ? old.split(/\n+/).map(t => t.trim()).filter(Boolean).slice(0, AI_INSTR_MAX).map(t => ({ id: makeId(), text: t.slice(0, AI_INSTR_LEN) })) : [] };
+}
+function saveAIInstructions(o){ try{ localStorage.setItem(AI_INSTR_KEY, JSON.stringify({ on: o.on !== false, items: o.items })); }catch(e){} }
+function loadAIAdvisorInstruction(){
+  const o = loadAIInstructions();
+  return (o.on && o.items.length) ? o.items.map(x => "- " + x.text).join("\n").slice(0, 2000) : "";
+}
 
 // ระบบพรอมป์เดียวกับ buildFinancialAnalystSystemPrompt แต่เปิดกว้างขึ้นสำหรับการคุยแบบต่อเนื่อง/พูดคุยทั่วไป ไม่ใช่แค่ถามตัวเลข
 function buildAIChatSystemPrompt(snapshot, profile){
@@ -2988,23 +2998,46 @@ document.getElementById("aiAnalystBody").addEventListener("click", (e) => {
   }
 });
 
+function renderAiInstructions(){
+  const list = document.getElementById("aiInsList"); if(!list) return;
+  const o = loadAIInstructions();
+  const on = document.getElementById("aiInsOn"); if(on) on.checked = o.on;
+  const wrap = document.getElementById("aiAdvisorSettingsPanel"); if(wrap) wrap.classList.toggle("v-ins-off", !o.on);
+  document.getElementById("aiInsClear")?.toggleAttribute("disabled", !o.items.length);
+  document.getElementById("aiInsAdd")?.toggleAttribute("disabled", o.items.length >= AI_INSTR_MAX);
+  list.innerHTML = o.items.length
+    ? o.items.map(x => `<div class="v-ins-item" data-id="${escapeHtml(x.id)}"><div class="v-ins-text">${escapeHtml(x.text)}</div><button type="button" class="v-ins-more" aria-label="ตัวเลือก"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button></div>`).join("")
+    : '<div class="v-ins-empty">ยังไม่มีคำสั่ง — AI จะตอบตามรูปแบบมาตรฐาน กด “เพิ่ม” เพื่อเริ่ม</div>';
+}
 const aiAdvisorSettingsBtn = document.getElementById("aiAdvisorSettingsBtn");
 const aiAdvisorSettingsPanel = document.getElementById("aiAdvisorSettingsPanel");
-const aiAdvisorInstructionEl = document.getElementById("aiAdvisorInstruction");
-const aiAdvisorInstructionStatus = document.getElementById("aiAdvisorInstructionStatus");
-if(aiAdvisorInstructionEl) aiAdvisorInstructionEl.value = loadAIAdvisorInstruction();
+renderAiInstructions();
 aiAdvisorSettingsBtn?.addEventListener("click", () => {
   aiAdvisorSettingsPanel?.classList.toggle("is-open");
-  if(aiAdvisorSettingsPanel?.classList.contains("is-open")) aiAdvisorInstructionEl?.focus();
+  if(aiAdvisorSettingsPanel?.classList.contains("is-open")) renderAiInstructions();
 });
-document.getElementById("saveAiAdvisorInstructionBtn")?.addEventListener("click", () => {
-  saveAIAdvisorInstruction(aiAdvisorInstructionEl?.value || "");
-  if(aiAdvisorInstructionStatus) aiAdvisorInstructionStatus.textContent = "บันทึกแล้ว — จะใช้กับข้อความถัดไปทันที";
+async function aiInsEdit(id){
+  const o = loadAIInstructions(), it = id ? o.items.find(x => x.id === id) : null;
+  if(!id && o.items.length >= AI_INSTR_MAX) return;
+  const v = await vaultetPrompt("คำสั่ง", it ? it.text : "", { title: it ? "แก้คำสั่ง" : "เพิ่มคำสั่ง", type: "textarea", required: true, okText: "บันทึก", placeholder: "เช่น เริ่มคำตอบด้วยสรุปสั้นๆ", maxlen: AI_INSTR_LEN });
+  if(v == null) return;
+  const t = String(v).trim().slice(0, AI_INSTR_LEN); if(!t) return;
+  if(it) it.text = t; else o.items.push({ id: makeId(), text: t });
+  saveAIInstructions(o); renderAiInstructions();
+}
+document.getElementById("aiInsAdd")?.addEventListener("click", () => aiInsEdit(null));
+document.getElementById("aiInsOn")?.addEventListener("change", e => { const o = loadAIInstructions(); o.on = !!e.target.checked; saveAIInstructions(o); renderAiInstructions(); });
+document.getElementById("aiInsClear")?.addEventListener("click", async () => {
+  const o = loadAIInstructions(); if(!o.items.length) return;
+  if(!(await vaultetAsk("ลบทั้งหมด", "ลบคำสั่งทั้งหมด " + o.items.length + " ข้อใช่ไหม?", true))) return;
+  o.items = []; saveAIInstructions(o); renderAiInstructions();
 });
-document.getElementById("resetAiAdvisorInstructionBtn")?.addEventListener("click", () => {
-  if(aiAdvisorInstructionEl) aiAdvisorInstructionEl.value = "";
-  saveAIAdvisorInstruction("");
-  if(aiAdvisorInstructionStatus) aiAdvisorInstructionStatus.textContent = "รีเซ็ตเป็นรูปแบบมาตรฐานแล้ว";
+document.getElementById("aiInsList")?.addEventListener("click", async e => {
+  const row = e.target.closest(".v-ins-item"); if(!row) return;
+  const id = row.dataset.id;
+  const x = await vaultetChoice({ title: "คำสั่งนี้", options: [{ value: "edit", label: "แก้ไข" }, { value: "del", label: "ลบ", danger: true }] });
+  if(x === "edit") aiInsEdit(id);
+  else if(x === "del"){ const o = loadAIInstructions(); o.items = o.items.filter(i => i.id !== id); saveAIInstructions(o); renderAiInstructions(); }
 });
 
 function hideAiCompletionNotification(){

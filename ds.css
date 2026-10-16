@@ -813,3 +813,23 @@ html body .v-act-btn.link{color:var(--v-muted) !important;background:none !impor
 html body .ai-chat-typing{flex-wrap:wrap;max-width:92%}
 html body .ai-run-status{flex-basis:100%;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--v-muted)}
 html body .ai-chat-latency{color:var(--v-muted);font-size:11.5px;line-height:1.5;text-align:left}
+
+/* ds38: AI instructions as a list (Gemini-style) */
+html body .v-ins-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:0 0 12px;background:var(--v-surface-2);border:1px solid var(--v-line);border-radius:var(--v-r-md);font-size:15px;color:var(--v-fg);cursor:pointer}
+html body .v-ins-switch input{position:absolute;opacity:0;width:0;height:0}
+html body .v-ins-switch i{position:relative;flex:none;width:46px;height:28px;border-radius:999px;background:var(--v-line);transition:background .18s}
+html body .v-ins-switch i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--v-muted);transition:transform .18s,background .18s}
+html body .v-ins-switch input:checked + i{background:rgba(29,185,84,.35)}
+html body .v-ins-switch input:checked + i::after{transform:translateX(18px);background:var(--v-accent)}
+html body .v-ins-bar{display:flex;gap:10px;margin:0 0 12px}
+html body .v-ins-bar button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:999px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;border:1px solid var(--v-line);background:transparent;color:var(--v-fg)}
+html body .v-ins-bar button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html body .v-ins-bar .v-ins-add{background:var(--v-accent);border-color:var(--v-accent);color:var(--v-accent-ink)}
+html body .v-ins-bar button[disabled]{opacity:.4;cursor:default}
+html body .v-ins-list{display:flex;flex-direction:column;gap:8px}
+html body .v-ins-item{display:flex;align-items:center;gap:8px;padding:14px;background:var(--v-surface-2);border-radius:var(--v-r-md);cursor:pointer}
+html body .v-ins-text{flex:1;min-width:0;font-size:14.5px;line-height:1.5;color:var(--v-fg);overflow-wrap:anywhere;white-space:pre-wrap}
+html body .v-ins-more{flex:none;width:34px;height:34px;display:grid;place-items:center;padding:0;border:0;background:none;color:var(--v-muted);cursor:pointer}
+html body .v-ins-more svg{width:20px;height:20px;fill:currentColor}
+html body .v-ins-empty{padding:18px 8px;text-align:center;font-size:13px;color:var(--v-muted)}
+html body .ai-advisor-settings-panel.v-ins-off .v-ins-list,html body .ai-advisor-settings-panel.v-ins-off .v-ins-bar{opacity:.45}

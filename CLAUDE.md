@@ -36,6 +36,7 @@
 - ใช้ Gemini ฟรี (คีย์ได้สูงสุด 10 อัน หมุนเมื่อ 429/503) โมเดลหลัก `gemini-3.8-flash` (สำรอง `gemini-3.6-flash`) เมื่อโควต้าฟรีเต็มทั้งหมดสลับไป OpenRouter เงียบ ๆ ผ่าน `fetchGeminiWithRetry`
 - คำสั่งหลังบ้านที่ AI ส่งมา: `@@ACTION@@ {json}`, `@@MEMORY_ADD@@`, `@@MEMORY_DELETE@@` — การปรับข้อมูลต้องผ่านการ์ดให้ผู้ใช้กดยืนยันเสมอ (เก็บใน `m.actions[]` ของข้อความ)
 - ข้อมูลที่ส่งให้ AI: snapshot การเงิน + รายการล่าสุด ~60 + ความจำ ≤40 + ประวัติแชท ≤16 ข้อความ (`buildFinancialAnalystSystemPrompt`, `slimSnapshotForPrompt`)
+- คำสั่งปรับแต่ง AI เป็นรายข้อ (เพิ่ม/แก้/ลบ/สวิตช์เปิดปิด) เก็บที่ `vaultet_ai_instructions_v1` (ของเก่าแบบข้อความก้อนเดียวถูกแตกเป็นรายข้อให้เอง) แล้วต่อเข้า prompt ใน `loadAIAdvisorInstruction()`
 - สถานะคีย์ล่าสุดเก็บที่ `vaultet_ai_keystate_local` (กันออกจากไฟล์สำรอง)
 - คีย์ API ต้องอยู่ในเครื่องเท่านั้น ห้ามเข้าไฟล์สำรอง/คอมมิต (ดู `VAULTET_BACKUP_EXCLUDED_KEYS` ใน app.js; localStorage prefix `finance_tracker_`/`vaultet_` ถูกสำรองโดยอัตโนมัติ ถ้าเพิ่มคีย์ใหม่ที่เป็นความลับหรือเฉพาะเครื่อง ต้องเพิ่มในรายการยกเว้น)
 - ในแซนด์บอกซ์นี้ openrouter.ai ถูกบล็อก จึงทดสอบ OpenRouter จริงไม่ได้ ทุกอย่างของ AI ทดสอบด้วย fetch จำลองเท่านั้น
