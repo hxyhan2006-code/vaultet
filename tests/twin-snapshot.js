@@ -21,6 +21,8 @@ const read=()=>pg.evaluate(()=>{const r=localStorage.getItem('vaultet_twin_snaps
 let r=await read();
 ok('เปิดแอปแล้วมีสรุปให้ Twin อ่าน (v1 มีเวลา at และ data)', r&&r.v===1&&r.at>0&&r.data);
 ok('มียอดรวม หนี้ เป้าหมาย รายจ่ายหลักเดือนนี้', r&&r.data.netWorth.totalMoneyAllAccounts>0&&r.data.debts.totalDebt===12000&&r.data.goals.length===1&&r.data.thisMonth.topExpenseCategories.length>=1);
+const shown=await pg.evaluate(()=>{render();return document.getElementById('netWorthNum').textContent});
+ok('มีสินทรัพย์รวมและมูลค่าสุทธิ ตรงกับที่หน้าหลักโชว์ ('+shown+')', r.data.totals&&r.data.totals.assets===49500&&r.data.totals.netWorthValue===37500&&shown==='฿37,500');
 const raw=JSON.stringify(r);
 ok('ไม่มีรายการทีละรายการ ไม่มีโน้ต ไม่มีชื่อบัญชี', !raw.includes('โน้ตส่วนตัวห้ามหลุด')&&!raw.includes('ข้าวมันไก่ร้านลับ')&&!raw.includes('บัญชีลับกสิกร'));
 ok('ไม่มี API key ในสรุป', !raw.toLowerCase().includes('apikey'));

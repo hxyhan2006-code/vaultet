@@ -778,10 +778,14 @@ function buildFinancialSnapshot(){
 // ส่งเฉพาะภาพรวม: ยอดรวม หนี้ งบ เป้าหมาย รายจ่ายหลัก ไม่มีรายการทีละรายการและไม่มีชื่อบัญชี
 function buildTwinSnapshot(){
   const s = buildFinancialSnapshot();
+  // ค่ารวมที่หน้าหลักโชว์ (สินทรัพย์รวม / มูลค่าสุทธิ / พอร์ตหุ้น) ใช้สูตรเดียวกับหน้าจอ ไม่ให้ Twin คำนวณเอง
+  const A = vaultetAssets();
+  const totals = { assets:A.assets, stock:A.stock, netWorthValue:A.assets + getTotalReceivablesOutstanding() - getTotalDebts() };
   const month = (m, withTop) => ({ income:m.income, expense:m.expense, saving:m.saving, netCashFlow:m.netCashFlow, ...(withTop ? { topExpenseCategories:m.topExpenseCategories } : {}) });
   return {
     asOfDate: s.generatedAt,
     netWorth: s.netWorth,
+    totals,
     thisMonth: month(s.thisMonth, true),
     lastMonth: month(s.lastMonth, true),
     forecastToMonthEnd: s.forecastToMonthEnd,
