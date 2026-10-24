@@ -1,0 +1,34 @@
+const { chromium } = require('playwright');
+const http=require('http'),fs=require('fs'),path=require('path');const root=require('path').resolve(__dirname,'..');
+const types={'.html':'text/html','.js':'text/javascript','.css':'text/css'};
+const srv=http.createServer((q,s)=>{let p=q.url.split('?')[0];if(p==='/')p='/index.html';const f=path.join(root,p);fs.readFile(f,(e,d)=>{if(e){s.writeHead(404);s.end();return}s.writeHead(200,{'content-type':types[path.extname(f)]||'text/plain'});s.end(d)})});
+(async()=>{await new Promise(r=>srv.listen(8190,r));
+const b=await chromium.launch({...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox']});
+const pg=await (await b.newContext({viewport:{width:380,height:820},serviceWorkers:'block'})).newPage();
+const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+await pg.route(/accounts\.google\.com|fonts\./,r=>r.abort());
+await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.setItem('__s','1');
+ const d0=new Date().toISOString().slice(0,10);
+ localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'บัญชีลับกสิกร',initialBalance:20000}]));
+ localStorage.setItem('finance_tracker_entries_v1',JSON.stringify([
+  {id:'e1',type:'income',category:'เงินเดือน',amount:30000,note:'โน้ตส่วนตัวห้ามหลุด',date:d0,accountId:'a1'},
+  {id:'e2',type:'expense',category:'กิน',amount:500,note:'ข้าวมันไก่ร้านลับ',date:d0,accountId:'a1'}]));
+ localStorage.setItem('finance_tracker_debts_v1',JSON.stringify([{id:'d1',name:'ผ่อนมือถือ',outstandingBalance:12000,gracePeriod:false,history:[],createdAt:new Date().toISOString()}]));
+ localStorage.setItem('vaultet_goals_v1',JSON.stringify([{id:'g1',name:'โน้ตบุ๊ก',target:30000,saved:7500,deadline:'2027-06-01'}]));});
+await pg.goto('http://localhost:8190/index.html');await pg.waitForTimeout(1200);
+const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
+const read=()=>pg.evaluate(()=>{const r=localStorage.getItem('vaultet_twin_snapshot_v1');return r&&JSON.parse(r)});
+let r=await read();
+ok('เปิดแอปแล้วมีสรุปให้ Twin อ่าน (v1 มีเวลา at และ data)', r&&r.v===1&&r.at>0&&r.data);
+ok('มียอดรวม หนี้ เป้าหมาย รายจ่ายหลักเดือนนี้', r&&r.data.netWorth.totalMoneyAllAccounts>0&&r.data.debts.totalDebt===12000&&r.data.goals.length===1&&r.data.thisMonth.topExpenseCategories.length>=1);
+const raw=JSON.stringify(r);
+ok('ไม่มีรายการทีละรายการ ไม่มีโน้ต ไม่มีชื่อบัญชี', !raw.includes('โน้ตส่วนตัวห้ามหลุด')&&!raw.includes('ข้าวมันไก่ร้านลับ')&&!raw.includes('บัญชีลับกสิกร'));
+ok('ไม่มี API key ในสรุป', !raw.toLowerCase().includes('apikey'));
+ok('ขนาดสรุปไม่ใหญ่เกินไป ('+raw.length+' ตัวอักษร)', raw.length<8000);
+await pg.evaluate(()=>{localStorage.removeItem('vaultet_twin_snapshot_v1');Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});document.dispatchEvent(new Event('visibilitychange'))});
+r=await read();
+ok('ออกจากแอป (ซ่อนหน้า) แล้วเขียนสรุปใหม่', r&&r.data&&r.at>0);
+const inBackup=await pg.evaluate(()=>'vaultet_twin_snapshot_v1' in collectVaultetLocalStorage());
+ok('สรุปนี้ไม่ติดเข้าไฟล์สำรอง', !inBackup);
+console.log(errs.join('\n')||'no js errors');
+await b.close();srv.close()})();

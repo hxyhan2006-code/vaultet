@@ -82,8 +82,10 @@ async function ensureGDriveToken(){
 // ศูนย์กลาง Backup/Restore ของแอป: เก็บข้อมูลที่จำเป็นต่อการกู้ Vaultet
 // พร้อมจับ localStorage namespace ใหม่ๆ โดยอัตโนมัติ เพื่อไม่ต้องแก้ buildBackupPayload() ทุกครั้งที่เพิ่มฟีเจอร์
 const VAULTET_BACKUP_SCHEMA_VERSION = 3;
+// สรุปการเงินสั้นๆ ที่เขียนไว้ให้แอป Twin อ่าน (ข้อมูลที่คำนวณซ้ำได้ทุกครั้ง จึงไม่เอาเข้าไฟล์สำรอง)
+const VAULTET_TWIN_SNAPSHOT_KEY = "vaultet_twin_snapshot_v1";
 const VAULTET_BACKUP_EXCLUDED_KEYS = new Set([
-  AI_APIKEY_KEY, AI_APIKEYS_KEY,
+  AI_APIKEY_KEY, AI_APIKEYS_KEY, VAULTET_TWIN_SNAPSHOT_KEY,
   "vaultet_ai_keystate_local",
   GDRIVE_CLIENT_ID_KEY, GDRIVE_FILE_ID_KEY, GDRIVE_LAST_SYNC_KEY, GDRIVE_AUTOSYNC_KEY,
   BACKUP_KEY

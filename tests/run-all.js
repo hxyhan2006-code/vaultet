@@ -24,6 +24,7 @@ const FILES = [
   ['ai-instructions.js', 'คำสั่งปรับแต่ง AI ทีละข้อ (เพิ่ม แก้ ลบ สวิตช์ ย้ายของเก่า)'],
   ['ai-stream.js', 'คำตอบ AI แบบค่อยๆ พิมพ์ (สตรีม) กดหยุด ถอยกลับ ตอบใหม่'],
   ['ai-snapshot.js', 'ข้อมูลที่ส่งให้ AI (พอร์ตหุ้น เป้าหมาย ประวัติ 6 เดือน)'],
+  ['twin-snapshot.js', 'สรุปการเงินให้แอป Twin อ่าน (ครบ ไม่มีรายการ/ชื่อบัญชี ไม่ติดไฟล์สำรอง)'],
   ['top-spacing.js', 'เนื้อหาไม่ชิดแถบบน'],
 ];
 const KNOWN = /^(PASS |FAIL |no js errors|no leaks|snapshot chars|\[agent-proxy\]|- .*:443 |\(oldest|For details|$)/;

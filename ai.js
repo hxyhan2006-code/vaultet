@@ -772,6 +772,32 @@ function buildFinancialSnapshot(){
   return snapshot;
 }
 
+// ===== สรุปการเงินให้แอป Twin อ่าน (อ่านอย่างเดียว) =====
+// Twin เป็นเว็บแอปของ Han บนโดเมนเดียวกัน จึงอ่าน localStorage ตัวนี้ได้ ไม่ต้องมีเซิร์ฟเวอร์
+// เขียนตอนเปิดแอปและตอนออกจากแอป ใช้ตัวเลขจาก buildFinancialSnapshot() ที่ทดสอบแล้ว (ไม่ให้ Twin คำนวณเอง)
+// ส่งเฉพาะภาพรวม: ยอดรวม หนี้ งบ เป้าหมาย รายจ่ายหลัก ไม่มีรายการทีละรายการและไม่มีชื่อบัญชี
+function buildTwinSnapshot(){
+  const s = buildFinancialSnapshot();
+  const month = (m, withTop) => ({ income:m.income, expense:m.expense, saving:m.saving, netCashFlow:m.netCashFlow, ...(withTop ? { topExpenseCategories:m.topExpenseCategories } : {}) });
+  return {
+    asOfDate: s.generatedAt,
+    netWorth: s.netWorth,
+    thisMonth: month(s.thisMonth, true),
+    lastMonth: month(s.lastMonth, true),
+    forecastToMonthEnd: s.forecastToMonthEnd,
+    debts: s.debts,
+    budgetOverview: s.budgetOverview,
+    emergencyFund: s.emergencyFund,
+    recurringMonthlyEstimated: s.recurringExpenses && s.recurringExpenses.monthlyEstimated,
+    goals: s.goals,
+  };
+}
+function publishTwinSnapshot(){
+  try{ localStorage.setItem(VAULTET_TWIN_SNAPSHOT_KEY, JSON.stringify({ v:1, at:Date.now(), data:buildTwinSnapshot() })); }catch(e){}
+}
+window.addEventListener("load", publishTwinSnapshot);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") publishTwinSnapshot(); });
+
 // ===== Round 12: Financial Advisor Intelligence Layer =====
 // Lightweight decision-support only — not a validated financial-health score.
 function buildAdvisorHistoricalBaseline(snapshot){
