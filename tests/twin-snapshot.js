@@ -23,6 +23,11 @@ ok('เปิดแอปแล้วมีสรุปให้ Twin อ่า�
 ok('มียอดรวม หนี้ เป้าหมาย รายจ่ายหลักเดือนนี้', r&&r.data.netWorth.totalMoneyAllAccounts>0&&r.data.debts.totalDebt===12000&&r.data.goals.length===1&&r.data.thisMonth.topExpenseCategories.length>=1);
 const shown=await pg.evaluate(()=>{render();return document.getElementById('netWorthNum').textContent});
 ok('มีสินทรัพย์รวมและมูลค่าสุทธิ ตรงกับที่หน้าหลักโชว์ ('+shown+')', r.data.totals&&r.data.totals.assets===49500&&r.data.totals.netWorthValue===37500&&shown==='฿37,500');
+const num=x=>Number((x||'').replace(/[^0-9-]/g,'').replace(/^(-?)฿?/,'$1'));
+await pg.evaluate(()=>{localStorage.setItem('vaultet_portfolio_open_v1',JSON.stringify([{id:'o1',ticker:'VOO',shares:2,cost:30000,date:'2026-01-01'}]));localStorage.setItem('vaultet_pf_prices_v1',JSON.stringify({fx:{rate:35,at:Date.now()},quotes:{VOO:{price:500,prev:495,pct:1,at:Date.now()}},fetchedAt:Date.now()}));renderAccountsSummary()});
+const nw=await pg.evaluate(()=>({assets:document.getElementById('totalMoneyNum').textContent,net:document.getElementById('netWorthNum').textContent,snap:vaultetNetWorth()}));
+const assetsN=Number(nw.assets.replace(/[^0-9]/g,'')), netN=(nw.net.startsWith('-')?-1:1)*Number(nw.net.replace(/[^0-9]/g,''));
+ok('ราคาหุ้นเปลี่ยนแล้ว มูลค่าสุทธิบนหน้าหลักรีเฟรชตามสินทรัพย์รวม ('+nw.assets+' / '+nw.net+')', netN===assetsN-12000 && netN===nw.snap);
 const raw=JSON.stringify(r);
 ok('ไม่มีรายการทีละรายการ ไม่มีโน้ต ไม่มีชื่อบัญชี', !raw.includes('โน้ตส่วนตัวห้ามหลุด')&&!raw.includes('ข้าวมันไก่ร้านลับ')&&!raw.includes('บัญชีลับกสิกร'));
 ok('ไม่มี API key ในสรุป', !raw.toLowerCase().includes('apikey'));

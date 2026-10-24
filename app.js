@@ -1399,6 +1399,10 @@ function vaultetAssets(){
   const rest=Math.max(0,other-pf.cost);
   return {total,em,stock:pf.value,rest,assets:total+em+rest+pf.value};
 }
+  // มูลค่าสุทธิที่แท้จริง = เงินรวมทุกบัญชี (นับรวมเงินออม/เงินลงทุนที่อยู่ในบัญชีอยู่แล้ว) + เงินที่คนอื่นติดค้างเรา − หนี้สินรวม (Milestone 5)
+  // ไม่ใช่รายรับลบรายจ่ายของเดือนนี้ ซึ่งเป็นคนละความหมายกัน (นั่นคือกระแสเงินสดของเดือน ไม่ใช่มูลค่าสุทธิสะสม)
+// ค่าเดียวที่ใช้ทั้งหน้าหลัก (renderAccountsSummary) และสรุปให้ Twin (ai.js) กันตัวเลขสองที่ไม่ตรงกัน
+function vaultetNetWorth(){ return vaultetAssets().assets + getTotalReceivablesOutstanding() - getTotalDebts(); }
 function renderAccountsSummary(){
   // มีบัญชีเดียว → ซ่อนช่องเลือกบัญชี/โอนเงิน/แยกตามบัญชี (เพิ่มบัญชีที่สองเมื่อไหร่ก็กลับมาเอง)
   document.body.classList.toggle("v-single-account", accounts.length <= 1);
@@ -1406,6 +1410,9 @@ function renderAccountsSummary(){
   const reserved = getTotalReserved();
   const A = vaultetAssets(), vis=(id,on)=>{ const el=document.getElementById(id); const r=el&&(el.classList.contains("v-row")?el:el.parentElement); if(r) r.style.display=on?"":"none"; };
   document.getElementById("totalMoneyNum").textContent = "฿" + fmt(A.assets);
+  // อยู่ที่นี่ (ไม่ใช่ใน render) เพื่อให้รีเฟรชพร้อมสินทรัพย์รวมทุกครั้งที่ราคาหุ้น/พอร์ตเปลี่ยน
+  const netWorth = vaultetNetWorth();
+  document.getElementById("netWorthNum").textContent = (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
   document.getElementById("inAccountsNum").textContent = "฿" + fmt(total);
   document.getElementById("inAccLabel").textContent = reserved > 0 ? "ในบัญชี" : "ในบัญชี (ใช้ได้จริง)";
   document.getElementById("reservedNum").textContent = "฿" + fmt(reserved);
@@ -1495,10 +1502,6 @@ function render(){
   document.getElementById("balanceNum").textContent = (heroBal<0?"-":"") + "฿" + fmt(Math.abs(heroBal));
   document.getElementById("balanceNum").style.color = heroBal<0 ? "var(--expense)" : "var(--ink)";
   document.getElementById("carryNum").textContent = beforeStart ? "ยังไม่ได้เริ่มใช้งานในเดือนนี้" : (monthKey(firstDate) === selectedMonth ? "ยอดตั้งต้นบัญชี " : "ยกมาจากเดือนก่อน ") + (carry<0?"-":"") + "฿" + fmt(Math.abs(carry)) + (loanOut>0 ? " · ให้ยืมไป ฿" + fmt(loanOut) : "");
-  // มูลค่าสุทธิที่แท้จริง = เงินรวมทุกบัญชี (นับรวมเงินออม/เงินลงทุนที่อยู่ในบัญชีอยู่แล้ว) + เงินที่คนอื่นติดค้างเรา − หนี้สินรวม (Milestone 5)
-  // ไม่ใช่รายรับลบรายจ่ายของเดือนนี้ ซึ่งเป็นคนละความหมายกัน (นั่นคือกระแสเงินสดของเดือน ไม่ใช่มูลค่าสุทธิสะสม)
-  const netWorth = getTotalMoneyAllAccounts() + (vaultetAssets().assets-getTotalMoneyAllAccounts()) + getTotalReceivablesOutstanding() - getTotalDebts();
-  document.getElementById("netWorthNum").textContent = (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
   document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
