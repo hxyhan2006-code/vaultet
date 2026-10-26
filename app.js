@@ -10,9 +10,10 @@ const THAI_MONTHS_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","�
 const DEFAULT_CATS = {
   income: ["กยศ.", "เงินคืนจากการยืม", "เงินแม่", "ยูทูป", "อื่นๆ"],
   expense: ["กิน", "คาเฟ่", "ค่าหอ (น้ำ/ไฟ)", "ค่าเดินทาง", "ของใช้จำเป็น", "ของชอบ", "เงินหาย/จิปาถะ"],
-  saving: ["เงินออม", "ลงทุนหุ้น", "อื่นๆ"],
+  saving: ["เงินออม", "ลงทุนหุ้น", "เป้าหมาย", "อื่นๆ"],
 };
 
+const GOAL_CAT = "เป้าหมาย"; // หมวดออมของเงินที่เก็บเข้าเป้าหมาย (รายการต้องมี goalId ด้วย)
 const WITHDRAW_CAT = "ถอนเงินออม"; // รายรับหมวดนี้ = ดึงเงินออมกลับมาใช้ (ไม่นับเป็นรายได้จริง)
 const ENTRIES_KEY = "finance_tracker_entries_v1";
 const CATS_KEY = "finance_tracker_categories_v1";
@@ -326,6 +327,7 @@ let txVisibleLimit = 20;
 let searchQuery = "";
 let formType = "expense";
 let selectedCategory = "";
+let selectedGoalId = ""; // เป้าหมายที่เลือกในฟอร์มรายการออม
 let orphanCategory = null; // category from an existing entry that no longer exists in CATS_BY_TYPE; kept visible so editing doesn't silently reassign it
 let editingId = null;
 let searchAllMonths = false;
@@ -421,6 +423,7 @@ function loadCategories(){
     }
   }catch(e){ /* keep defaults */ }
   try{ if(!localStorage.getItem("vaultet_wd_cat_v1")){ if(!CATS_BY_TYPE.income.includes(WITHDRAW_CAT)){ CATS_BY_TYPE.income.push(WITHDRAW_CAT); saveCategories(); } localStorage.setItem("vaultet_wd_cat_v1","1"); } }catch(e){}
+  try{ if(!localStorage.getItem("vaultet_goal_cat_v1")){ if(!CATS_BY_TYPE.saving.includes(GOAL_CAT)){ const i=CATS_BY_TYPE.saving.indexOf("อื่นๆ"); CATS_BY_TYPE.saving.splice(i>=0?i:CATS_BY_TYPE.saving.length,0,GOAL_CAT); saveCategories(); } localStorage.setItem("vaultet_goal_cat_v1","1"); } }catch(e){}
 }
 function saveCategories(){
   try{ localStorage.setItem(CATS_KEY, JSON.stringify(CATS_BY_TYPE)); }catch(e){}
@@ -1353,7 +1356,7 @@ function goalLinkedSaved(goalId){
 }
 function goalSaved(g){ return (toCents(Number(g.saved)||0) + toCents(goalLinkedSaved(g.id))) / 100; }
 function getGoalsHeld(){ return readGoals().reduce((s,g) => s + toCents(goalLinkedSaved(g.id)), 0) / 100; }
-function goalSavingCategory(){ const s = CATS_BY_TYPE.saving || []; return s.includes("เงินออม") ? "เงินออม" : (s.find(c => !/สำรอง|หุ้น|ลงทุน/.test(c)) || s[0] || "เงินออม"); }
+function goalSavingCategory(){ if(!(CATS_BY_TYPE.saving||[]).includes(GOAL_CAT)){ CATS_BY_TYPE.saving.push(GOAL_CAT); try{ saveCategories(); }catch(e){} } return GOAL_CAT; }
 function getLastBackup(){
   try{ return localStorage.getItem(BACKUP_KEY) || ""; }catch(e){ return ""; }
 }
@@ -1594,6 +1597,20 @@ function render(){
   scheduleGDriveAutoSync();
 }
 
+// เลือกเป้าหมายตอนลงรายการออม (แทนการพิมพ์โน้ตเอง): เลือกแล้วหมวดเป็น "เป้าหมาย" ให้อัตโนมัติ
+function renderGoalPick(){
+  const wrap = document.getElementById("goalPickWrap"); if(!wrap) return;
+  const goals = readGoals().filter(g => g && g.name);
+  if(selectedGoalId && !goals.some(g => g.id === selectedGoalId)) selectedGoalId = "";
+  wrap.style.display = (formType === "saving" && goals.length) ? "" : "none";
+  if(wrap.style.display === "none") return;
+  document.getElementById("goalPickRow").innerHTML = goals.map(g => `<span class="v-chip-wrap ${selectedGoalId===g.id?`is-selected v-t-saving`:""}"><button type="button" class="v-chip" data-goal="${escapeHtml(g.id)}">${escapeHtml(g.name)}</button></span>`).join("");
+  document.querySelectorAll("#goalPickRow [data-goal]").forEach(btn => btn.addEventListener("click", () => {
+    if(selectedGoalId === btn.dataset.goal){ selectedGoalId = ""; if(selectedCategory === GOAL_CAT){ const c = (CATS_BY_TYPE.saving||[]).find(x => x !== GOAL_CAT); selectedCategory = c || ""; } }
+    else { selectedGoalId = btn.dataset.goal; selectedCategory = goalSavingCategory(); orphanCategory = null; }
+    renderCatGrid();
+  }));
+}
 function renderCatGrid(){
   const cats = CATS_BY_TYPE[formType];
   const catGrid = document.getElementById("catGrid");
@@ -1616,6 +1633,8 @@ function renderCatGrid(){
   catGrid.querySelectorAll(".cat-chip-label").forEach(btn => {
     btn.addEventListener("click", () => {
       selectedCategory = btn.dataset.cat;
+      if(selectedCategory === GOAL_CAT){ if(!selectedGoalId) selectedGoalId = (readGoals()[0]||{}).id || ""; }
+      else selectedGoalId = "";
       // เลือกหมวดจริงแล้ว ไม่ต้องเตือนเรื่องหมวดที่ถูกลบอีก
       if(cats.includes(selectedCategory)) orphanCategory = null;
       renderCatGrid();
@@ -1659,6 +1678,7 @@ function renderCatGrid(){
     selectedCategory = trimmed;
     renderCatGrid();
   });
+  renderGoalPick();
 }
 
 function populateAccountSelects(){
@@ -1670,6 +1690,7 @@ function populateAccountSelects(){
 
 function setFormType(t, isInit, entry){
   formType = t;
+  if(t !== "saving") selectedGoalId = "";
   const isTransfer = t === "transfer";
   document.getElementById("categoryFieldGroup").style.display = isTransfer ? "none" : "block";
   document.getElementById("transferFieldGroup").style.display = isTransfer ? "block" : "none";
@@ -1686,6 +1707,7 @@ function setFormType(t, isInit, entry){
       if(b.dataset.type===t) b.classList.add("active-transfer");
     });
     document.getElementById("submitBtn").style.background = "var(--transfer)";
+    renderGoalPick();
     return;
   }
   const cats = CATS_BY_TYPE[t] || [];
@@ -1697,7 +1719,7 @@ function setFormType(t, isInit, entry){
       // รายการใหม่ หรือผู้ใช้กดสลับประเภทเอง — เลือกหมวดล่าสุดที่เคยใช้กับประเภทนี้ ถ้ามี ไม่งั้นเลือกหมวดแรก
       orphanCategory = null;
       const last = lastUsedCat[t];
-      selectedCategory = (last && cats.includes(last)) ? last : (cats.length ? cats[0] : "");
+      selectedCategory = (last && last !== GOAL_CAT && cats.includes(last)) ? last : (cats.find(c => c !== GOAL_CAT) || "");
     }
   }else{
     orphanCategory = null;
@@ -1729,6 +1751,7 @@ function openForm(entry){
   document.getElementById("amount").value = entry ? entry.amount : "";
   document.getElementById("note").value = entry ? (entry.note || "") : "";
   selectedCategory = entry ? entry.category : "";
+  selectedGoalId = entry && entry.type === "saving" ? (entry.goalId || "") : "";
   orphanCategory = null;
   setFormType(entry ? entry.type : "expense", true, entry);
   const v = parseFloat(document.getElementById("amount").value);
@@ -1865,8 +1888,8 @@ function commitEntry(payload){
     saveEntries(); return {ok:true,entry};
   }
   const accountId=payload.accountId||UNASSIGNED_ACCOUNT_ID,category=payload.category; let entry;
-  if(editingId){ const idx=entries.findIndex(e=>e.id===editingId); if(idx===-1)return{ok:false,error:"entry_not_found"}; const old={...entries[idx]}; entry=entries[idx]; Object.assign(entry,{type,category,accountId,amount,date,note}); syncStudentLoanEntry(old,entry); }
-  else { entry={id:makeId(),type,category,accountId,amount,date,note}; entries.unshift(entry); if(type==="income"&&category==="กยศ."){ syncStudentLoanEntry(null,entry); } }
+  if(editingId){ const idx=entries.findIndex(e=>e.id===editingId); if(idx===-1)return{ok:false,error:"entry_not_found"}; const old={...entries[idx]}; entry=entries[idx]; Object.assign(entry,{type,category,accountId,amount,date,note}); if(type==="saving"&&payload.goalId) entry.goalId=payload.goalId; else delete entry.goalId; syncStudentLoanEntry(old,entry); }
+  else { entry={id:makeId(),type,category,accountId,amount,date,note}; if(type==="saving"&&payload.goalId) entry.goalId=payload.goalId; entries.unshift(entry); if(type==="income"&&category==="กยศ."){ syncStudentLoanEntry(null,entry); } }
   lastUsedCat[type]=category; saveLastCat(); lastUsedAccountId=accountId; saveLastAccount(); saveEntries();
   return {ok:true,entry};
 }
@@ -1874,7 +1897,9 @@ function commitEntry(payload){
 document.getElementById("submitBtn").addEventListener("click", () => {
   const amountRaw = document.getElementById("amount").value;
   const date = document.getElementById("date").value || todayISO();
-  const note = document.getElementById("note").value;
+  let note = document.getElementById("note").value;
+  const goalId = formType === "saving" ? selectedGoalId : "";
+  if(goalId && !note.trim()){ const g = readGoals().find(x => x.id === goalId); if(g) note = "เป้าหมาย: " + g.name; }
 
   const payload = formType === "transfer"
     ? {
@@ -1887,7 +1912,7 @@ document.getElementById("submitBtn").addEventListener("click", () => {
         type: formType,
         category: selectedCategory,
         accountId: document.getElementById("entryAccount").value,
-        amount: amountRaw, date, note, editingId
+        amount: amountRaw, date, note, editingId, goalId
       };
 
   const result = commitEntry(payload);

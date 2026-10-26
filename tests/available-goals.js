@@ -34,6 +34,7 @@ await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(400);
 await pg.click('[data-gadd="g1"]'); await T.dlgOK(pg,{v:'2000'}); await pg.waitForTimeout(300);
 const e=await pg.evaluate(()=>entries.find(x=>x.goalId==='g1'));
 ok('goal money creates a saving entry with its own note', !!e && e.type==='saving' && e.amount===2000 && e.note==='เป้าหมาย: คอม' && e.accountId==='a1');
+ok('goal money goes to its own category เป้าหมาย', e.category==='เป้าหมาย' && await pg.evaluate(()=>CATS_BY_TYPE.saving.includes('เป้าหมาย')));
 ok('goal card shows ฿2,000 saved', /฿2,000/.test(await pg.textContent('#goalsCard .v-brow-amt')));
 ok('hero (available) drops by 2,000 → ฿365', (await txt('balanceNum')).trim()==='฿365');
 ok('in account drops to ฿6,365', (await txt('inAccountsNum')).trim()==='฿6,365');
@@ -52,6 +53,29 @@ ok('total assets still unchanged', (await assets())===a0);
 await pg.evaluate(()=>{ const x=entries.find(e=>e.goalId==='g1'&&e.type==='saving'); return deleteEntryById(x.id); }); await pg.waitForTimeout(300);
 ok('deleting the saving entry updates the goal card', (await pg.evaluate(()=>goalSaved(readGoals()[0])))===0 && /฿0/.test(await pg.textContent('#goalsCard .v-brow-amt')));
 await pg.screenshot({path:shots+'goals-linked.png'});
+
+// ===== ฟอร์มเพิ่มรายการ: เลือกเป้าหมายแทนพิมพ์โน้ต =====
+await pg.evaluate(()=>{ entries=entries.filter(x=>x.goalId!=='g1'); saveEntries(); render(); });
+await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);
+ok('goal picker hidden for expense', !(await pg.isVisible('#goalPickWrap')));
+await pg.click('.type-btn[data-type="saving"]'); await pg.waitForTimeout(150);
+ok('goal picker shows goals on saving type', await pg.isVisible('#goalPickWrap') && (await pg.locator('#goalPickRow [data-goal]').count())===1);
+await pg.fill('#amount','300'); await pg.click('#goalPickRow [data-goal="g1"]'); await pg.waitForTimeout(100);
+ok('picking a goal selects category เป้าหมาย', await pg.evaluate(()=>selectedCategory==='เป้าหมาย'&&selectedGoalId==='g1'));
+await pg.click('#submitBtn'); await pg.waitForTimeout(300);
+const f=await pg.evaluate(()=>entries.find(x=>x.goalId==='g1'&&x.amount===300));
+ok('saved with goalId, category and auto note', !!f && f.type==='saving' && f.category==='เป้าหมาย' && f.note==='เป้าหมาย: คอม');
+ok('goal now has the 300 (and hero drops)', (await pg.evaluate(()=>goalSaved(readGoals()[0])))===300);
+await pg.evaluate(()=>openForm(entries.find(x=>x.goalId==='g1'&&x.amount===300))); await pg.waitForTimeout(250);
+ok('editing shows the goal selected', await pg.evaluate(()=>selectedGoalId==='g1') && (await pg.locator('#goalPickRow .is-selected').count())===1);
+await pg.click('#goalPickRow [data-goal="g1"]'); await pg.waitForTimeout(100);
+ok('tapping the selected goal clears it and leaves category เป้าหมาย', await pg.evaluate(()=>selectedGoalId===''&&selectedCategory!=='เป้าหมาย'));
+await pg.click('#submitBtn'); await pg.waitForTimeout(300);
+ok('goal link removed after edit', await pg.evaluate(()=>!entries.some(x=>x.goalId==='g1'&&x.amount===300)));
+await pg.evaluate(()=>openForm(null)); await pg.click('.type-btn[data-type="saving"]'); await pg.waitForTimeout(100);
+ok('new saving form does not preselect เป้าหมาย', await pg.evaluate(()=>selectedCategory!=='เป้าหมาย'&&selectedGoalId===''));
+await pg.screenshot({path:shots+'form-goal-pick.png'});
+await pg.evaluate(()=>closeForm());
 
 // ===== ไม่มีเงินกันไว้ → กลับเป็นคงเหลือเดือนนี้ =====
 await pg.evaluate(()=>{ reservedItems=[]; saveReserved(); render(); }); await pg.waitForTimeout(200);
