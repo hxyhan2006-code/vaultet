@@ -23,8 +23,9 @@ const assets=async()=>(await txt('totalMoneyNum')).trim();
 // ===== เงินกันไว้: เลขใหญ่เป็นใช้ได้จริง =====
 ok('hero label says ใช้ได้จริง when money is reserved', (await txt('heroLabel')).trim()==='ใช้ได้จริง');
 ok('hero number = in account − reserved (8,365 − 6,000 = 2,365)', (await txt('balanceNum')).trim()==='฿2,365');
-ok('hero sub shows in-account and reserved', /ในบัญชี ฿8,365 · กันไว้ ฿6,000/.test(await txt('heroSplit')));
-ok('hero sub still shows the carry line', /ยอดตั้งต้นบัญชี|ยกมาจากเดือนก่อน/.test(await txt('carryNum')));
+ok('hero has no split/carry lines (moved away)', !(await pg.$('#heroSplit')) && (await txt('carryNum')).trim()==='' && !(await pg.isVisible('#carryNum')));
+await pg.evaluate(()=>{ analysisPreset='thisMonth'; renderPeriodAnalysis(); });
+ok('analysis tab shows carry-over before the period', /ยกมาก่อนช่วงนี้\s*฿10,000/.test(await txt('periodAnalysisSection')));
 ok('assets panel still shows the real in-account amount', (await txt('inAccountsNum')).trim()==='฿8,365' && (await txt('availableNum')).trim()==='฿2,365');
 const a0=await assets();
 await pg.screenshot({path:shots+'hero-available.png'});

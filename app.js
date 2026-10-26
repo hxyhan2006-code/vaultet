@@ -1022,8 +1022,14 @@ function renderPeriodAnalysis(){
   const container = document.getElementById("periodAnalysisSection");
   const statBox = (label, val, color) => `<div class="stat-box"><div class="stat-box-label">${label}</div><div class="stat-box-num mono" ${color?`style="color:${color}"`:""}>${val}</div></div>`;
   const money = n => (n<0?"-":"") + "฿" + fmt(Math.abs(n));
+  // ยอดเงินจริงก่อนวันแรกของช่วงที่เลือก (ย้ายมาจากหน้าหลัก) + เงินให้ยืมที่ออกไปในช่วงนี้
+  const { start: aStart, end: aEnd } = getAnalysisRange();
+  const carry = aStart ? (analysisAccountFilter ? computeAccountBalance(analysisAccountFilter, aStart) : getTotalMoneyAllAccounts(aStart)) : null;
+  const loanOut = loans.filter(l => l.date && (!aStart || l.date >= aStart) && (!aEnd || l.date <= aEnd) && (!analysisAccountFilter || l.accountId === analysisAccountFilter)).reduce((t,l) => t + toCents(l.amount), 0) / 100;
   container.innerHTML = `
     <div class="stats-grid">
+      ${carry === null ? "" : statBox("ยกมาก่อนช่วงนี้", money(carry))}
+      ${loanOut > 0 ? statBox("ให้ยืมไป", money(loanOut)) : ""}
       ${statBox("รายรับ", money(a.income), "var(--income)")}
       ${statBox("รายจ่าย", money(a.expense), "var(--expense)")}
       ${statBox("ออม/ลงทุน", money(a.saving), "var(--saving)")}
@@ -1520,11 +1526,7 @@ function render(){
   document.getElementById("heroLabel").textContent = showAvail ? "ใช้ได้จริง" : "คงเหลือเดือนนี้";
   document.getElementById("balanceNum").textContent = (heroNum<0?"-":"") + "฿" + fmt(Math.abs(heroNum));
   document.getElementById("balanceNum").style.color = heroNum<0 ? "var(--expense)" : "var(--ink)";
-  const carryText = beforeStart ? "ยังไม่ได้เริ่มใช้งานในเดือนนี้" : (monthKey(firstDate) === selectedMonth ? "ยอดตั้งต้นบัญชี " : "ยกมาจากเดือนก่อน ") + (carry<0?"-":"") + "฿" + fmt(Math.abs(carry)) + (loanOut>0 ? " · ให้ยืมไป ฿" + fmt(loanOut) : "");
-  const carryEl = document.getElementById("carryNum");
-  carryEl.textContent = "";
-  if(showAvail){ const l = document.createElement("div"); l.id = "heroSplit"; l.textContent = "ในบัญชี " + (heroBal<0?"-":"") + "฿" + fmt(Math.abs(heroBal)) + " · กันไว้ ฿" + fmt(reservedNow); carryEl.appendChild(l); }
-  carryEl.appendChild(document.createTextNode(carryText));
+  document.getElementById("carryNum").textContent = ""; // ยอดยกมาย้ายไปแท็บวิเคราะห์ (renderPeriodAnalysis)
   document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
