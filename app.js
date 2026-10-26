@@ -1597,17 +1597,16 @@ function render(){
   scheduleGDriveAutoSync();
 }
 
-// เลือกเป้าหมายตอนลงรายการออม (แทนการพิมพ์โน้ตเอง): เลือกแล้วหมวดเป็น "เป้าหมาย" ให้อัตโนมัติ
+// เลือกเป้าหมายตอนลงรายการออม (แทนการพิมพ์โน้ตเอง): แสดงเฉพาะเมื่อเลือกหมวด "เป้าหมาย"
 function renderGoalPick(){
   const wrap = document.getElementById("goalPickWrap"); if(!wrap) return;
   const goals = readGoals().filter(g => g && g.name);
   if(selectedGoalId && !goals.some(g => g.id === selectedGoalId)) selectedGoalId = "";
-  wrap.style.display = (formType === "saving" && goals.length) ? "" : "none";
+  wrap.style.display = (formType === "saving" && selectedCategory === GOAL_CAT && goals.length) ? "" : "none";
   if(wrap.style.display === "none") return;
   document.getElementById("goalPickRow").innerHTML = goals.map(g => `<span class="v-chip-wrap ${selectedGoalId===g.id?`is-selected v-t-saving`:""}"><button type="button" class="v-chip" data-goal="${escapeHtml(g.id)}">${escapeHtml(g.name)}</button></span>`).join("");
   document.querySelectorAll("#goalPickRow [data-goal]").forEach(btn => btn.addEventListener("click", () => {
-    if(selectedGoalId === btn.dataset.goal){ selectedGoalId = ""; if(selectedCategory === GOAL_CAT){ const c = (CATS_BY_TYPE.saving||[]).find(x => x !== GOAL_CAT); selectedCategory = c || ""; } }
-    else { selectedGoalId = btn.dataset.goal; selectedCategory = goalSavingCategory(); orphanCategory = null; }
+    selectedGoalId = btn.dataset.goal;
     renderCatGrid();
   }));
 }
