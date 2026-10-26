@@ -73,8 +73,10 @@ await closeAll();
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(400);
 await pg.click('#goalAdd'); await T.dlgOK(pg,{name:'โน้ตบุ๊ก',target:'30000',saved:'5000',dl:'2027-03-01'}); await pg.waitForTimeout(300);
 let gl=await get('vaultet_goals_v1'); ok('goal added', gl.length===1&&gl[0].name==='โน้ตบุ๊ก'&&gl[0].target===30000&&gl[0].saved===5000&&gl[0].deadline==='2027-03-01');
-await pg.click('[data-gadd]'); await T.dlgOK(pg,{v:'2500'}); await pg.waitForTimeout(250); gl=await get('vaultet_goals_v1'); ok('add money to goal (+2500)', gl[0].saved===7500);
-await pg.click('[data-gadd]'); await T.dlgOK(pg,{v:'-1000'}); await pg.waitForTimeout(250); gl=await get('vaultet_goals_v1'); ok('negative amount takes money out (-1000)', gl[0].saved===6500);
+const gs=()=>pg.evaluate(()=>goalSaved(readGoals()[0]));
+await pg.click('[data-gadd]'); await T.dlgOK(pg,{v:'2500',acc:'a2'}); await pg.waitForTimeout(250); gl=await get('vaultet_goals_v1'); ok('add money to goal (+2500)', (await gs())===7500 && gl[0].saved===5000);
+ok('goal money is a saving entry from the chosen account', await pg.evaluate(id=>entries.some(e=>e.goalId===id&&e.type==='saving'&&e.amount===2500&&e.accountId==='a2'),gl[0].id));
+await pg.click('[data-gadd]'); await T.dlgOK(pg,{v:'-1000'}); await pg.waitForTimeout(250); ok('negative amount takes money out (-1000)', (await gs())===6500);
 await pg.click('[data-gdel]'); await T.dlgOK(pg); await pg.waitForTimeout(250); gl=await get('vaultet_goals_v1'); ok('goal delete (confirm) works', gl.length===0);
 
 // ===== AI memory edit =====

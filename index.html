@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=ds41">
-<link rel="stylesheet" href="ds.css?v=ds41">
+<link rel="stylesheet" href="style.css?v=ds42">
+<link rel="stylesheet" href="ds.css?v=ds42">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -33,7 +33,7 @@
   <header class="v-hero" id="vHero">
     <div style="display:none"><select id="monthSelect"></select></div>
     <div class="v-hero-label">
-      <span>คงเหลือเดือนนี้</span>
+      <span id="heroLabel">คงเหลือเดือนนี้</span>
       <button type="button" class="v-eye" id="vEyeBtn" aria-label="ซ่อนตัวเลข" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
@@ -74,6 +74,7 @@
         <div class="v-row" id="availRow"><span>ใช้ได้จริง</span><span class="v-sens" id="availableNum">฿0</span></div>
         <div class="v-row"><span>เงินสำรองฉุกเฉิน</span><span class="v-sens" id="emergencySavedNum">฿0</span></div>
         <div class="v-row" id="stockRow" style="display:none"><span>พอร์ตหุ้น (มูลค่าตลาด)</span><span class="v-sens" id="stockNum">฿0</span></div>
+        <div class="v-row" id="goalsHeldRow" style="display:none"><span>ในเป้าหมายเก็บเงิน</span><span class="v-sens" id="goalsHeldNum">฿0</span></div>
         <div class="v-row" id="otherSavedRow"><span>ออม/ลงทุนอื่นๆ</span><span class="v-sens" id="otherSavedNum">฿0</span></div>
         <div class="v-row"><span>คนอื่นติดเงิน</span><span class="v-sens" id="receivablesNum">฿0</span></div>
         <div class="v-row"><span>หนี้สินรวม</span><span class="v-sens" id="totalDebtsNum" style="color:var(--expense)">฿0</span></div>
@@ -765,10 +766,10 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds41"></script>
-<script src="app.js?v=ds41"></script>
-<script src="openrouter.js?v=ds41"></script>
-<script src="ai.js?v=ds41"></script>
-<script src="ui.js?v=ds41"></script>
+<script src="dialog.js?v=ds42"></script>
+<script src="app.js?v=ds42"></script>
+<script src="openrouter.js?v=ds42"></script>
+<script src="ai.js?v=ds42"></script>
+<script src="ui.js?v=ds42"></script>
 </body>
 </html>

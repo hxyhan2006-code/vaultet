@@ -641,7 +641,7 @@ function getGoalsForAI(){
     if(!Array.isArray(g)) return [];
     const today=new Date(); today.setHours(0,0,0,0);
     return g.filter(x=>x&&x.name).map(x=>{
-      const target=Number(x.target)||0, saved=Number(x.saved)||0, remaining=Math.max(0,target-saved);
+      const target=Number(x.target)||0, saved=goalSaved(x), remaining=Math.max(0,target-saved);
       const o={ name:String(x.name), targetAmount:target, saved, remaining, progressPct:target>0?Math.min(100,Math.round(saved/target*100)):null };
       if(x.deadline){ o.deadline=x.deadline; const d=Math.ceil((new Date(x.deadline+"T00:00:00")-today)/86400000); if(isFinite(d)) o.daysLeft=d; }
       return o;

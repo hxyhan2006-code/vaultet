@@ -1343,6 +1343,17 @@ function getSavedByCategory(){
 }
 function getTotalSaved(){ return Object.values(getSavedByCategory()).reduce((s,v) => s + toCents(v), 0) / 100; }
 function getEmergencySaved(){ return Object.entries(getSavedByCategory()).filter(([c]) => c.includes("สำรอง")).reduce((s,[,v]) => s + toCents(v), 0) / 100; }
+// เป้าหมายเก็บเงิน: ปุ่ม "+ เงิน" สร้างรายการออมจริง (มี goalId) เงินจึงออกจากบัญชี/ใช้ได้จริง แต่ยังนับเป็นสินทรัพย์
+// ยอดเก็บแล้ว = ยอดตั้งต้นที่จดเอง (g.saved) + รายการที่ผูกกับเป้าหมาย (ลบรายการ = ยอดคืนเอง)
+function readGoals(){ try{ const g=JSON.parse(localStorage.getItem("vaultet_goals_v1")||"[]"); return Array.isArray(g)?g:[]; }catch(e){ return []; } }
+function goalLinkedSaved(goalId){
+  let c = 0;
+  entries.forEach(e => { if(!goalId || e.goalId !== goalId) return; if(e.type === "saving") c += toCents(e.amount); else if(e.type === "income" && e.category === WITHDRAW_CAT) c -= toCents(e.amount); });
+  return Math.max(0, c) / 100;
+}
+function goalSaved(g){ return (toCents(Number(g.saved)||0) + toCents(goalLinkedSaved(g.id))) / 100; }
+function getGoalsHeld(){ return readGoals().reduce((s,g) => s + toCents(goalLinkedSaved(g.id)), 0) / 100; }
+function goalSavingCategory(){ const s = CATS_BY_TYPE.saving || []; return s.includes("เงินออม") ? "เงินออม" : (s.find(c => !/สำรอง|หุ้น|ลงทุน/.test(c)) || s[0] || "เงินออม"); }
 function getLastBackup(){
   try{ return localStorage.getItem(BACKUP_KEY) || ""; }catch(e){ return ""; }
 }
@@ -1396,8 +1407,8 @@ function getByCategory(type, totals){
 function vaultetAssets(){
   const total=getTotalMoneyAllAccounts(), em=getEmergencySaved(), other=Math.max(0,getTotalSaved()-em);
   let pf={value:0,cost:0}; try{ pf=(window.vaultetPortfolioSummary&&window.vaultetPortfolioSummary())||pf; }catch(e){}
-  const rest=Math.max(0,other-pf.cost);
-  return {total,em,stock:pf.value,rest,assets:total+em+rest+pf.value};
+  const goals=Math.min(getGoalsHeld(),Math.max(0,other-pf.cost)), rest=Math.max(0,other-pf.cost-goals);
+  return {total,em,stock:pf.value,goals,rest,assets:total+em+goals+rest+pf.value};
 }
   // มูลค่าสุทธิที่แท้จริง = เงินรวมทุกบัญชี (นับรวมเงินออม/เงินลงทุนที่อยู่ในบัญชีอยู่แล้ว) + เงินที่คนอื่นติดค้างเรา − หนี้สินรวม (Milestone 5)
   // ไม่ใช่รายรับลบรายจ่ายของเดือนนี้ ซึ่งเป็นคนละความหมายกัน (นั่นคือกระแสเงินสดของเดือน ไม่ใช่มูลค่าสุทธิสะสม)
@@ -1420,6 +1431,7 @@ function renderAccountsSummary(){
   vis("reservedRow", reserved > 0); vis("availRow", reserved > 0);
   document.getElementById("emergencySavedNum").textContent = "฿" + fmt(A.em); vis("emergencySavedNum", A.em > 0);
   document.getElementById("stockNum").textContent = "฿" + fmt(A.stock); vis("stockRow", A.stock > 0);
+  document.getElementById("goalsHeldNum").textContent = "฿" + fmt(A.goals); vis("goalsHeldRow", A.goals > 0);
   document.getElementById("otherSavedNum").textContent = "฿" + fmt(A.rest); vis("otherSavedRow", A.rest > 0);
   const rc = getTotalReceivablesOutstanding(), db = getTotalDebts();
   document.getElementById("receivablesNum").textContent = "฿" + fmt(rc); vis("receivablesNum", rc > 0);
@@ -1499,9 +1511,17 @@ function render(){
   const beforeStart = !firstDate || nextMonthStart <= firstDate;
   const heroBal = beforeStart ? 0 : getTotalMoneyAllAccounts(nextMonthStart); // เงินจริง ณ สิ้นเดือนที่เลือก (รวมเงินให้ยืมที่ออกไปด้วย)
   const loanOut = loans.filter(l => l.date && monthKey(l.date) === selectedMonth).reduce((a,l) => a + toCents(l.amount), 0) / 100;
-  document.getElementById("balanceNum").textContent = (heroBal<0?"-":"") + "฿" + fmt(Math.abs(heroBal));
-  document.getElementById("balanceNum").style.color = heroBal<0 ? "var(--expense)" : "var(--ink)";
-  document.getElementById("carryNum").textContent = beforeStart ? "ยังไม่ได้เริ่มใช้งานในเดือนนี้" : (monthKey(firstDate) === selectedMonth ? "ยอดตั้งต้นบัญชี " : "ยกมาจากเดือนก่อน ") + (carry<0?"-":"") + "฿" + fmt(Math.abs(carry)) + (loanOut>0 ? " · ให้ยืมไป ฿" + fmt(loanOut) : "");
+  // เดือนปัจจุบันที่มีเงินกันไว้: เลขใหญ่ = ใช้ได้จริง (ในบัญชี − กันไว้) เงินกันไว้เป็นยอด ณ ตอนนี้ จึงไม่หักย้อนหลังในเดือนเก่า
+  const reservedNow = getTotalReserved(), showAvail = !beforeStart && reservedNow > 0 && selectedMonth === monthKey(todayISO());
+  const heroNum = showAvail ? (toCents(heroBal) - toCents(reservedNow)) / 100 : heroBal;
+  document.getElementById("heroLabel").textContent = showAvail ? "ใช้ได้จริง" : "คงเหลือเดือนนี้";
+  document.getElementById("balanceNum").textContent = (heroNum<0?"-":"") + "฿" + fmt(Math.abs(heroNum));
+  document.getElementById("balanceNum").style.color = heroNum<0 ? "var(--expense)" : "var(--ink)";
+  const carryText = beforeStart ? "ยังไม่ได้เริ่มใช้งานในเดือนนี้" : (monthKey(firstDate) === selectedMonth ? "ยอดตั้งต้นบัญชี " : "ยกมาจากเดือนก่อน ") + (carry<0?"-":"") + "฿" + fmt(Math.abs(carry)) + (loanOut>0 ? " · ให้ยืมไป ฿" + fmt(loanOut) : "");
+  const carryEl = document.getElementById("carryNum");
+  carryEl.textContent = "";
+  if(showAvail){ const l = document.createElement("div"); l.id = "heroSplit"; l.textContent = "ในบัญชี " + (heroBal<0?"-":"") + "฿" + fmt(Math.abs(heroBal)) + " · กันไว้ ฿" + fmt(reservedNow); carryEl.appendChild(l); }
+  carryEl.appendChild(document.createTextNode(carryText));
   document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
@@ -3176,7 +3196,8 @@ function renderBudgetDashboard(){
     if(s.overCount) tips.push(`เกินงบ ${s.overCount} หมวด`);
     if(tips.length){
       html=`<div class="v-note"><div class="v-note-title">ใกล้สิ้นเดือน (เหลือ ${s.remainingDays} วัน)</div>${tips.map(t=>escapeHtml(t)).join("<br>")}</div>`+html;
-      try{
+      // ตอนโหลดหน้าแรก ai.js (ที่มีระบบแจ้งเตือน) ยังไม่โหลด: ข้ามไปก่อน รอบ render ถัดไปค่อยเพิ่ม
+      if(typeof loadVaultetNotifications==="function") try{
         const mk=monthKey(todayISO()), nid="monthend-"+mk, list=loadVaultetNotifications();
         if(!list.some(n=>n.id===nid)){ list.unshift({id:nid,icon:"🗓",title:"ใกล้สิ้นเดือนแล้ว",body:tips.join(" · "),read:false,day:todayISO(),createdAt:new Date().toISOString()}); saveVaultetNotifications(list); if(typeof renderVaultetNotifications==="function") renderVaultetNotifications(); }
       }catch(err){ console.error(err); }
@@ -3540,7 +3561,7 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   // ---- เป้าหมาย: ระบบเดียว = เป้าหมายเก็บเงินในแท็บแผน (vaultet_goals_v1) ----
   const PLAN_GOALS_KEY='vaultet_goals_v1', GOALS_MERGED_FLAG='vaultet_goals_merged_v1', LEGACY_AI_PROFILE_KEY='finance_tracker_ai_profile_v1';
   function readPlanGoals(){try{const g=JSON.parse(localStorage.getItem(PLAN_GOALS_KEY)||'[]');return Array.isArray(g)?g:[];}catch(e){return [];}}
-  function planGoalsForAI(){return readPlanGoals().filter(x=>x&&x.name).map(x=>({id:x.id,name:x.name,targetAmount:Number(x.target)||0,saved:Number(x.saved)||0,deadline:x.deadline||null}));}
+  function planGoalsForAI(){return readPlanGoals().filter(x=>x&&x.name).map(x=>({id:x.id,name:x.name,targetAmount:Number(x.target)||0,saved:goalSaved(x),deadline:x.deadline||null}));}
   window.vaultetPlanGoals=planGoalsForAI;
   // ย้ายเป้าหมายเก่าจากโปรไฟล์มารวมในแท็บแผนครั้งเดียว (ไม่ซ้ำ ไม่หาย): ลบจากโปรไฟล์เฉพาะเมื่อเขียนฝั่งแผนสำเร็จและตรวจแล้ว
   function migrateProfileGoalsToPlan(){
@@ -4052,22 +4073,37 @@ function renderGoalsBox(){
         g.push({id:Date.now().toString(36),name:gv.name,target:gv.target,saved:gv.saved||0,deadline:gv.dl||""});jput(GK,g);renderGoalsBox();return;}
       const add=ev.target.closest("[data-gadd]"),del=ev.target.closest("[data-gdel]");
       if(add){const x=g.find(y=>y.id===add.dataset.gadd);if(!x)return;
-        const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:"ใส่ค่าติดลบถ้าจะเอาเงินออก"}]});
-        const v=gv?gv.v:0;
-        if(!v)return;x.saved=Math.max(0,(x.saved||0)+v);jput(GK,g);renderGoalsBox();
-      }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(x&&(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`, true))){jput(GK,g.filter(y=>y.id!==x.id));renderGoalsBox();}}
+        const accDef=lastUsedAccountId&&accounts.some(a=>a.id===lastUsedAccountId)?lastUsedAccountId:(accounts[0]?.id||UNASSIGNED_ACCOUNT_ID);
+        const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:"เงินจะออกจากบัญชีและขึ้นเป็นรายการออม ใส่ค่าติดลบถ้าจะเอาเงินออก"},
+          ...(accounts.length>1?[{key:"acc",label:"บัญชี",type:"select",options:accountOptions(),value:accDef}]:[])]});
+        const v=gv?Math.round(gv.v*100)/100:0;
+        if(!v)return;
+        const accountId=(gv.acc)||accDef, base={id:makeId(),accountId,date:todayISO(),note:"เป้าหมาย: "+x.name,goalId:x.id};
+        if(v>0){ entries.unshift({...base,type:"saving",category:goalSavingCategory(),amount:v}); }
+        else{
+          // เอาเงินออก: ดึงจากเงินที่ผูกกับเป้าหมายก่อน (เป็นรายการถอนเงินออมกลับเข้าบัญชี) ส่วนที่เกินหักจากยอดตั้งต้นที่จดเอง
+          const out=-v, linked=goalLinkedSaved(x.id), back=Math.min(out,linked), fromBase=Math.round((out-back)*100)/100;
+          if(back>0){ const src=entries.find(e=>e.goalId===x.id&&e.type==="saving"); entries.unshift({...base,type:"income",category:WITHDRAW_CAT,amount:back,fromCat:(src&&src.category)||goalSavingCategory(),costBasis:back}); }
+          if(fromBase>0){ x.saved=Math.max(0,(Number(x.saved)||0)-fromBase); jput(GK,g); }
+        }
+        saveEntries(); render(); renderGoalsBox();
+      }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(!x)return;
+        const linked=goalLinkedSaved(x.id);
+        if(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`+(linked>0?` เงินที่เก็บไว้ ฿${num(linked)} ยังอยู่ในหมวดออม ถ้าจะใช้ ให้กด "+ เงิน" ใส่ค่าติดลบก่อนลบ`:""), true)){jput(GK,g.filter(y=>y.id!==x.id));render();renderGoalsBox();}}
     });
   }
   const g=jget(GK),today=new Date();today.setHours(0,0,0,0);
   const items=g.map(x=>{
-    const left=Math.max(0,x.target-(x.saved||0)),pct=Math.min(100,Math.round((x.saved||0)/x.target*100));
+    const sv=goalSaved(x),left=Math.max(0,x.target-sv),pct=Math.min(100,Math.round(sv/x.target*100));
     let info=left===0?"ครบเป้าแล้ว":"ขาดอีก ฿"+num(left);
     if(left>0&&x.deadline){const days=Math.ceil((new Date(x.deadline+"T00:00:00")-today)/86400000);
       info+=days<=0?" · เลยกำหนดแล้ว":` · เหลือ ${days} วัน ต้องเก็บวันละ ฿${num(left/days)}`+(days>=30?` (เดือนละ ฿${num(left/(days/30))})`:"");}
-    return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${esc2(x.name)}</span><span class="v-brow-amt">฿${num(x.saved||0)}<small> / ฿${num(x.target)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${left===0?"var(--v-accent)":"var(--v-save)"}"></i></div><div class="v-brow-meta"><span>${pct}% · ${esc2(info)}</span><span class="v-goal-actions"><button type="button" class="v-link" data-gadd="${x.id}">+ เงิน</button><button type="button" class="v-link v-link-muted" data-gdel="${x.id}" aria-label="ลบเป้าหมาย">ลบ</button></span></div></div>`;}).join("");
-  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">เป้าหมายเก็บเงิน</h2><button type="button" id="goalAdd" class="v-link">+ เพิ่ม</button></div>${items||'<div class="v-card-sub">ยังไม่มีเป้าหมาย กด "+ เพิ่ม" เพื่อตั้งเป้าแรก (เช่น ซื้อโน้ตบุ๊ก)</div>'}<div class="v-hint">ยอดที่เก็บแล้วจดเองด้วยปุ่ม "+ เงิน" ไม่ได้ผูกกับยอดบัญชี · AI เห็นเป้าหมายเหล่านี้ด้วย</div>`;
+    return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${esc2(x.name)}</span><span class="v-brow-amt">฿${num(sv)}<small> / ฿${num(x.target)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${left===0?"var(--v-accent)":"var(--v-save)"}"></i></div><div class="v-brow-meta"><span>${pct}% · ${esc2(info)}</span><span class="v-goal-actions"><button type="button" class="v-link" data-gadd="${x.id}">+ เงิน</button><button type="button" class="v-link v-link-muted" data-gdel="${x.id}" aria-label="ลบเป้าหมาย">ลบ</button></span></div></div>`;}).join("");
+  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">เป้าหมายเก็บเงิน</h2><button type="button" id="goalAdd" class="v-link">+ เพิ่ม</button></div>${items||'<div class="v-card-sub">ยังไม่มีเป้าหมาย กด "+ เพิ่ม" เพื่อตั้งเป้าแรก (เช่น ซื้อโน้ตบุ๊ก)</div>'}<div class="v-hint">กด "+ เงิน" แล้วเงินจะออกจากบัญชีไปอยู่ในเป้าหมาย ขึ้นเป็นรายการออม ยอดใช้ได้จริงลดตาม แต่สินทรัพย์รวมเท่าเดิม · AI เห็นเป้าหมายเหล่านี้ด้วย</div>`;
 }
 const _rt=renderTrendCard;renderTrendCard=function(){_rt();renderGoalsBox();};
+// ยอดเป้าหมายมาจากรายการด้วย: แก้/ลบรายการที่ไหนก็ต้องวาดการ์ดใหม่
+const _rg=render;render=function(){const r=_rg.apply(this,arguments);try{renderGoalsBox();}catch(e){console.error(e);}return r;};
 })();
 
 (function(){
