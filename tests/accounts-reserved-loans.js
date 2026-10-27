@@ -28,6 +28,15 @@ await closeAll();
 await pg.click('#manageReservedBtn'); await pg.waitForTimeout(300);
 await pg.click('.edit-reserved-btn'); await T.dlgOK(pg,{name:'ค่าเน็ต',amt:'800'}); await pg.waitForTimeout(200);
 const r=await get('finance_tracker_reserved_v1'); ok('reserved: edit works', r[0].name==='ค่าเน็ต'&&r[0].amount===800);
+// reserved: จ่ายแล้ว -> สร้างรายจ่ายจริง + เอาเงินกันไว้ออก
+const entBefore=((await get('finance_tracker_entries_v1'))||[]).length;
+await pg.click('.pay-reserved-btn'); await T.dlgOK(pg,{amt:'750',acc:'a1'}); await pg.waitForTimeout(300);
+const entAfter=(await get('finance_tracker_entries_v1'))||[];
+ok('reserved: จ่ายแล้ว creates expense with paid amount', entAfter.length===entBefore+1 && entAfter[0].type==='expense' && entAfter[0].amount===750 && entAfter[0].accountId==='a1');
+ok('reserved: จ่ายแล้ว removes the reserved item', (await get('finance_tracker_reserved_v1')).length===0);
+await pg.evaluate(()=>{const k='finance_tracker_reserved_v1';localStorage.setItem(k,JSON.stringify([{id:'r9',name:'ค่าหอ',amount:3000,dueDate:''}]));});
+await pg.reload(); await pg.waitForTimeout(800);
+await pg.click('#vMoreBtn'); await pg.click('#manageReservedBtn'); await pg.waitForTimeout(300);
 await pg.click('.delete-reserved-btn'); await T.dlgOK(pg); await pg.waitForTimeout(200);
 ok('reserved: delete works', (await get('finance_tracker_reserved_v1')).length===0);
 await closeAll();

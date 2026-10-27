@@ -2322,11 +2322,36 @@ function renderReservedManageList(){
     <div class="account-row">
       <span class="acc-name">${escapeHtml(r.name)} <span class="mono" style="color:var(--faint)">฿${fmt(r.amount)}</span>${r.dueDate ? ` <span style="color:var(--faint)">(${dayLabel(r.dueDate)})</span>` : ""}</span>
       <span class="acc-actions">
+        <button class="small-btn primary pay-reserved-btn" data-id="${r.id}">จ่ายแล้ว</button>
         <button class="icon-btn edit-reserved-btn" data-id="${r.id}" aria-label="แก้ไข">${ICON_EDIT}</button>
         <button class="icon-btn delete-reserved-btn" data-id="${r.id}" aria-label="ลบ">${ICON_TRASH}</button>
       </span>
     </div>
   `).join("");
+  el.querySelectorAll(".pay-reserved-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const r = reservedItems.find(x => x.id === btn.dataset.id);
+      if(!r) return;
+      if(!accounts.length){ showToast("ยังไม่มีบัญชี"); return; }
+      const cats = CATS_BY_TYPE.expense.length ? CATS_BY_TYPE.expense : ["อื่นๆ"];
+      const v = await vaultetForm({ title: `จ่ายแล้ว — ${r.name}`, okText: "บันทึก", fields: [
+        { key: "amt", label: "จำนวนที่จ่ายจริง (บาท)", type: "number", value: r.amount, required: true, positive: true },
+        { key: "cat", label: "หมวดหมู่", type: "select", options: cats.map(c => ({ value: c, label: c })), value: cats[0] },
+        { key: "acc", label: "จ่ายจากบัญชี", type: "select", options: accounts.map(a => ({ value: a.id, label: a.name })), value: accounts[0].id },
+        { key: "date", label: "วันที่จ่าย", type: "date", value: todayISO(), required: true }
+      ] });
+      if(!v) return;
+      if(!isValidISODate(v.date)){ showToast("วันที่ไม่ถูกต้อง"); return; }
+      // บันทึกรายจ่ายจริง แล้วเอาเงินกันไว้ก้อนนี้ออก (กันหักซ้ำสองรอบ) — ส่วนที่เหลือถ้าจ่ายน้อยกว่าจะกลับเป็นเงินที่ใช้ได้
+      entries.unshift({ id: makeId(), type: "expense", amount: v.amt, category: v.cat, accountId: v.acc, date: v.date, note: r.name });
+      saveEntries();
+      reservedItems = reservedItems.filter(x => x.id !== r.id);
+      saveReserved();
+      renderReservedManageList();
+      render();
+      showToast("บันทึกว่าจ่ายแล้ว");
+    });
+  });
   el.querySelectorAll(".edit-reserved-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const r = reservedItems.find(x => x.id === btn.dataset.id);
