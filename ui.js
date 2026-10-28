@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds58";
+  const UI_VERSION = "ds57";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -326,8 +326,6 @@
     chart: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
     dots: '<circle cx="12" cy="5" r="1.300"/><circle cx="12" cy="12" r="1.300"/><circle cx="12" cy="19" r="1.300"/>',
-    newchat: '<path d="M12 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-6"/><path d="M17.500 3.500a2.100 2.100 0 013 3L12 15l-4 1 1-4z"/>',
-    menu: '<path d="M4 8h16M4 16h16"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
     search: '<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
@@ -342,9 +340,9 @@
     const host = document.getElementById("uxChatTopActions");
     if(!host || document.getElementById("uxChatMenuBtn")) return !!host;
     const newBtn = document.createElement("button");
-    newBtn.type = "button"; newBtn.id = "uxChatNewBtn"; newBtn.className = "v-top-btn"; newBtn.setAttribute("aria-label", "แชทใหม่"); newBtn.innerHTML = svg(I.newchat);
+    newBtn.type = "button"; newBtn.id = "uxChatNewBtn"; newBtn.className = "v-top-btn"; newBtn.setAttribute("aria-label", "แชทใหม่"); newBtn.innerHTML = svg(I.edit);
     const menuBtn = document.createElement("button");
-    menuBtn.type = "button"; menuBtn.id = "uxChatMenuBtn"; menuBtn.className = "v-top-btn"; menuBtn.setAttribute("aria-label", "เมนู AI"); menuBtn.innerHTML = svg(I.menu);
+    menuBtn.type = "button"; menuBtn.id = "uxChatMenuBtn"; menuBtn.className = "v-top-btn"; menuBtn.setAttribute("aria-label", "เมนู AI"); menuBtn.innerHTML = svg(I.dots);
     host.append(newBtn, menuBtn);
 
     const back = document.createElement("div"); back.className = "v-aimenu-back"; back.id = "aiMenuBack";
@@ -402,8 +400,6 @@
       );
       back.append(pop); document.body.append(back);
       back.addEventListener("click", closePop);
-      back.addEventListener("contextmenu", e => e.preventDefault());
-      try{ const sel = window.getSelection && window.getSelection(); if(sel) sel.removeAllRanges(); }catch(e){}
       const r = row.getBoundingClientRect(), w = pop.offsetWidth || 220, h = pop.offsetHeight || 110;
       pop.style.left = Math.max(12, Math.min(r.left + 24, window.innerWidth - w - 12)) + "px";
       pop.style.top = Math.max(12, Math.min(r.bottom - 6, window.innerHeight - h - 12)) + "px";
