@@ -95,7 +95,7 @@ function refreshApiKeyStatus(){
   const keys = getApiKeys();
   const has = keys.length > 0;
   const statusEl = document.getElementById("apiKeyStatus");
-  statusEl.textContent = has ? `ตั้งค่าแล้ว ${keys.length} คีย์ ✓` : "ยังไม่ได้ตั้งค่า";
+  statusEl.textContent = has ? `ตั้งค่าแล้ว ${keys.length} คีย์` : "ยังไม่ได้ตั้งค่า";
   statusEl.style.color = has ? "var(--income)" : "var(--faint)";
   renderApiKeyList();
 }
@@ -139,7 +139,7 @@ function hasAIProfileContent(p){
 function refreshAIProfileStatus(){
   const has = !!localStorage.getItem(AI_PROFILE_KEY);
   const statusEl = document.getElementById("aiProfileStatus");
-  statusEl.textContent = has ? "ตั้งค่าแล้ว ✓" : "ยังไม่ได้ตั้งค่า";
+  statusEl.textContent = has ? "ตั้งค่าแล้ว" : "ยังไม่ได้ตั้งค่า";
   statusEl.style.color = has ? "var(--income)" : "var(--faint)";
 }
 
@@ -3457,7 +3457,7 @@ document.getElementById("aiConfirmSubmitBtn").addEventListener("click", () => {
     renderLoansManageList();
   }
   const doneLabel = { expense:"รายจ่าย", income:"รายรับ", saving:"ออม/ลงทุน", transfer:"โอนเงิน", lend:"ให้ยืมเงิน" }[aiConfirmType];
-  showToast(`บันทึก${doneLabel}เรียบร้อย ✓`);
+  showToast(`บันทึก${doneLabel}เรียบร้อย`);
 });
 
 // ===== คำสั่งบูตที่ย้ายมาจาก app.js (ต้องรันหลังประกาศทุกอย่างครบ) =====

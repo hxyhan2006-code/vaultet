@@ -267,7 +267,7 @@ async function runGDriveSync(silent){
   try{
     await gdriveUploadBackup();
     gdriveLastAutoError="";
-    if(!silent) showToast("สำรองขึ้น Google Drive แล้ว ✓ ตรวจแล้วตรงกับต้นฉบับ");
+    if(!silent) showToast("สำรองขึ้น Google Drive แล้ว ตรวจแล้วตรงกับต้นฉบับ");
   }catch(e){
     if(String(e?.message||e).includes("upload_failed_401") || String(e?.message||e).includes("upload_failed_403")){ gdriveAccessToken=null; gdriveAccessTokenExpiry=0; }
     gdriveLastAutoError = (String(e?.message||e).includes("401") || String(e?.message||e).includes("403")) ? "Auto Backup ใช้งานไม่ได้ — ต้องเชื่อมต่อ Google Drive ใหม่" : "Auto Backup ล่าสุดไม่สำเร็จ — ตรวจสอบการเชื่อมต่อ Google Drive";
@@ -1954,7 +1954,7 @@ document.getElementById("exportBtn").addEventListener("click", () => {
   URL.revokeObjectURL(url);
   setLastBackup(todayISO());
   refreshBackupBanner();
-  showToast(`ดาวน์โหลดไฟล์สำรองแล้ว ✓ ${payload.integrity.counts.entries} รายการ · ${payload.integrity.counts.storageKeys} ชุดข้อมูล · รหัสตรวจ ${payload.integrity.hash.slice(0,8)}`);
+  showToast(`ดาวน์โหลดไฟล์สำรองแล้ว ${payload.integrity.counts.entries} รายการ · ${payload.integrity.counts.storageKeys} ชุดข้อมูล · รหัสตรวจ ${payload.integrity.hash.slice(0,8)}`);
 });
 
 document.getElementById("importBtn").addEventListener("click", () => {
@@ -2038,7 +2038,7 @@ function promptRestore(data,label){
   const canReplace=!!stored&&typeof stored==="object"&&ver.status!=="mismatch";
   const c=a=>Array.isArray(a)?a.length:0;
   const rows=[["รายการเงิน",c(source.entries),entries.length],["บัญชี",c(source.accounts),accounts.length],["งบประมาณ",c(source.budgets),budgets.length],["หนี้",c(source.debts),debts.length],["เงินให้ยืม",c(source.loans),loans.length],["รายจ่ายประจำ",c(source.recurringExpenses),recurringExpenses.length],["เงินที่กันไว้",c(source.reservedItems),reservedItems.length]];
-  const vtxt=ver.status==="ok"?`<span style="color:#52b788">✓ ผ่านการตรวจความถูกต้อง (รหัส ${escapeHtml(ver.hash.slice(0,8))})</span>`:ver.status==="mismatch"?`<span style="color:#ef5350">✗ ไฟล์ไม่ตรงกับรหัสตรวจ — อาจเสียหายหรือถูกแก้ไข จึงปิดโหมดแทนที่</span>`:`<span style="color:#e9c46a">ไฟล์รุ่นเก่า ไม่มีรหัสตรวจ (ตรวจความถูกต้องไม่ได้)</span>`;
+  const vtxt=ver.status==="ok"?`<span style="color:#52b788">ผ่านการตรวจความถูกต้อง (รหัส ${escapeHtml(ver.hash.slice(0,8))})</span>`:ver.status==="mismatch"?`<span style="color:#ef5350">✗ ไฟล์ไม่ตรงกับรหัสตรวจ — อาจเสียหายหรือถูกแก้ไข จึงปิดโหมดแทนที่</span>`:`<span style="color:#e9c46a">ไฟล์รุ่นเก่า ไม่มีรหัสตรวจ (ตรวจความถูกต้องไม่ได้)</span>`;
   const when=data.exportedAt?new Date(data.exportedAt).toLocaleString("th-TH"):"ไม่ทราบ";
   const ov=document.createElement("div");
   ov.style.cssText="position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;";
@@ -2067,7 +2067,7 @@ function promptRestore(data,label){
         try{
           drop.forEach(k=>localStorage.removeItem(k));
           keep.forEach(k=>localStorage.setItem(k,stored[k]));
-          sessionStorage.setItem("vaultet_restored",`กู้คืนแบบแทนที่ทั้งหมดสำเร็จ ✓ (${c(source.entries)} รายการ) — ไฟล์ข้อมูลก่อนกู้คืนถูกดาวน์โหลดเก็บไว้แล้ว`);
+          sessionStorage.setItem("vaultet_restored",`กู้คืนแบบแทนที่ทั้งหมดสำเร็จ (${c(source.entries)} รายการ) — ไฟล์ข้อมูลก่อนกู้คืนถูกดาวน์โหลดเก็บไว้แล้ว`);
           location.reload();
         }catch(e){ showToast("กู้คืนไม่สำเร็จ: "+(e&&e.message||e)); }
       },1200);
@@ -2134,7 +2134,7 @@ function refreshGDriveStatus(){
   const fileId = localStorage.getItem(GDRIVE_FILE_ID_KEY);
   const connected = !!clientId && !!fileId; // ถือว่า "เชื่อมต่อแล้ว" หลังเคยสำรองสำเร็จอย่างน้อย 1 ครั้ง (มี fileId)
   const connStatusEl = document.getElementById("gdriveConnStatus");
-  connStatusEl.textContent = connected ? "เชื่อมต่อแล้ว ✓" : (clientId ? "ตั้งค่า Client ID แล้ว ยังไม่เคยสำรอง" : "ยังไม่ได้เชื่อมต่อ");
+  connStatusEl.textContent = connected ? "เชื่อมต่อแล้ว" : (clientId ? "ตั้งค่า Client ID แล้ว ยังไม่เคยสำรอง" : "ยังไม่ได้เชื่อมต่อ");
   connStatusEl.style.color = connected ? "var(--income)" : "var(--faint)";
   document.getElementById("gdriveLastSyncStatus").textContent = gdriveTimeLabel(localStorage.getItem(GDRIVE_LAST_SYNC_KEY));
   document.getElementById("gdriveClientIdInput").value = clientId || "";
@@ -2574,7 +2574,7 @@ function renderLoansManageList(){
       if(!accounts.some(a=>a.id===l.accountId)){ showToast("บัญชีเดิมของรายการนี้หายไปแล้ว"); return; }
       const result = commitLoan({ person:l.person, amount:desired, accountId:l.accountId, dueDate:l.dueDate, note:l.note, editingId:l.id });
       if(!result.ok){ showToast("แก้ไขรายการไม่สำเร็จ"); return; }
-      renderLoansManageList(); render(); showToast("แก้ยอดหนี้แล้ว ✓");
+      renderLoansManageList(); render(); showToast("แก้ยอดหนี้แล้ว");
     });
   });
   el.querySelectorAll(".edit-repayment-btn").forEach(btn => {
@@ -3131,7 +3131,7 @@ document.getElementById("markPaidSubmitBtn").addEventListener("click", () => {
 });
 
 // ===== Round 2: Emergency Fund UI =====
-function emergencyStatusMeta(status){ return {CRITICAL:{label:"ยังไม่ถึงครึ่งเป้าหมาย",cls:"critical"},WATCH:{label:"กำลังสร้างเงินสำรอง",cls:"watch"},HEALTHY:{label:"ถึงเป้าหมายแล้ว ✓",cls:"healthy"}}[status] || {label:"กำลังประเมิน",cls:"watch"}; }
+function emergencyStatusMeta(status){ return {CRITICAL:{label:"ยังไม่ถึงครึ่งเป้าหมาย",cls:"critical"},WATCH:{label:"กำลังสร้างเงินสำรอง",cls:"watch"},HEALTHY:{label:"ถึงเป้าหมายแล้ว",cls:"healthy"}}[status] || {label:"กำลังประเมิน",cls:"watch"}; }
 function renderEmergencyCategories(){
   const el=document.getElementById("emergencyEssentialCategories"); if(!el)return;
   const cats=CATS_BY_TYPE.expense||[]; const chosen=new Set(emergencyFundConfig.essentialCategories||[]);
@@ -3172,7 +3172,7 @@ document.getElementById("saveEmergencyBtn")?.addEventListener("click",()=>{
   const cats=[...document.querySelectorAll("#emergencyEssentialCategories input:checked")].map(x=>x.value);
   if(!cats.length){showToast("เลือกอย่างน้อย 1 หมวดค่าใช้จ่ายจำเป็น");return;}
   emergencyFundConfig=normalizeEmergencyConfig({targetMonths:months,essentialCategories:cats}); saveEmergencyFundConfig();
-  document.getElementById("emergencyOverlay").classList.remove("open"); renderEmergencyDashboard(); render(); refreshProactiveCard(true); showToast("บันทึกเป้าหมายเงินสำรองแล้ว ✓");
+  document.getElementById("emergencyOverlay").classList.remove("open"); renderEmergencyDashboard(); render(); refreshProactiveCard(true); showToast("บันทึกเป้าหมายเงินสำรองแล้ว");
 });
 
 // ===== Round 1: Budget Engine UI =====
@@ -3180,7 +3180,7 @@ let budgetEditingId = null;
 let budgetFormKind = "expense";
 function updateBudgetKindUI(){ document.querySelectorAll("#budgetKindToggle [data-bk]").forEach(b=>b.classList.toggle("on",b.dataset.bk===budgetFormKind)); const a=document.getElementById("budgetAmountInput"); if(a) a.placeholder=budgetFormKind==="saving"?"เป้าออมต่อเดือน เช่น 3000":"เช่น 5000"; const l=document.querySelector("#budgetCategoryInput")?.previousElementSibling; if(l) l.textContent=budgetFormKind==="saving"?"เลือกหมวดออม (เลือกได้หลายอัน)":"เลือกหมวดรายจ่าย (เลือกได้หลายอัน)"; }
 document.getElementById("budgetKindToggle")?.addEventListener("click",e=>{const b=e.target.closest("[data-bk]"); if(!b) return; budgetFormKind=b.dataset.bk; budgetEditingId=null; document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ"; renderBudgetCategorySelect([]); updateBudgetKindUI();});
-function budgetStatusMeta(status){ return {DONE:{label:"ครบเป้า ✓",cls:"safe"},SAVING:{label:"กำลังออม",cls:"watch"},SAFE:{label:"ปกติ",cls:"safe"},WATCH:{label:"เฝ้าดู",cls:"watch"},OVER:{label:"เกินงบ",cls:"over"}}[status] || {label:"ปกติ",cls:"safe"}; }
+function budgetStatusMeta(status){ return {DONE:{label:"ครบเป้า",cls:"safe"},SAVING:{label:"กำลังออม",cls:"watch"},SAFE:{label:"ปกติ",cls:"safe"},WATCH:{label:"เฝ้าดู",cls:"watch"},OVER:{label:"เกินงบ",cls:"over"}}[status] || {label:"ปกติ",cls:"safe"}; }
 function renderBudgetCategorySelect(selected){ const el=document.getElementById("budgetCategoryInput"); if(!el)return; const cats=CATS_BY_TYPE[budgetFormKind]||[]; const sel=new Set(selected||getBudgetSelectedCats()); el.innerHTML=cats.map(c=>`<label class="v-check"><input type="checkbox" value="${escapeHtml(c)}" ${sel.has(c)?"checked":""} /><span>${escapeHtml(c)}</span></label>`).join(""); }
 function getBudgetSelectedCats(){ return Array.from(document.querySelectorAll("#budgetCategoryInput input:checked")).map(x=>x.value); }
 function openBudgetManager(){ budgetEditingId=null; budgetFormKind="expense"; document.getElementById("budgetMonthInput").value=monthKey(todayISO()); document.getElementById("budgetAmountInput").value=""; document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ"; renderBudgetCategorySelect([]); document.getElementById("budgetNameInput").value=""; updateBudgetKindUI(); renderBudgetManager(); document.getElementById("budgetOverlay").classList.add("open"); }
@@ -3263,7 +3263,7 @@ document.addEventListener("click",async e=>{
   if(!(await vaultetAsk("ย้ายเศษ", `ย้ายเศษเงินสำรอง ฿${fmt(amt)} ไปบันทึกเป็นรายการออมใช่ไหม?`, false))) return;
   const r=sweepBufferToSaving(bf.month,amt,"เงินออม");
   if(!r.ok){ showToast(r.msg||"บันทึกไม่สำเร็จ"); return; }
-  render(); showToast("ย้ายไปออมแล้ว ✓ (ลบได้ที่รายการออมถ้ากดผิด)");
+  render(); showToast("ย้ายไปออมแล้ว (ลบได้ที่รายการออมถ้ากดผิด)");
 });
 document.getElementById("budgetDashboardManageBtn")?.addEventListener("click",openBudgetManager);
 document.getElementById("closeBudgetBtn")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
@@ -3279,7 +3279,7 @@ document.getElementById("saveBudgetBtn")?.addEventListener("click",()=>{
   const now=new Date().toISOString(), amt=Math.round(amount*100)/100;
   if(budgetEditingId){const b=budgets.find(x=>x.id===budgetEditingId);if(b){b.month=month;b.kind=kind;b.category=category;b.categories=cats;b.name=name;b.amount=amt;b.updatedAt=now;b.enabled=true;}}
   else{const existing=budgets.find(x=>x.enabled!==false&&budgetKey(x)===bKey(month,cats,kind));if(existing){existing.amount=amt;existing.updatedAt=now;}else budgets.push({id:makeId(),kind,category,categories:cats,name,amount:amt,period:"monthly",month,enabled:true,createdAt:now,updatedAt:now});}
-  saveBudgets();budgetEditingId=null;document.getElementById("budgetAmountInput").value="";document.getElementById("budgetNameInput").value="";renderBudgetCategorySelect([]);document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ";renderBudgetManager();render();showToast("บันทึกแล้ว ✓");
+  saveBudgets();budgetEditingId=null;document.getElementById("budgetAmountInput").value="";document.getElementById("budgetNameInput").value="";renderBudgetCategorySelect([]);document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ";renderBudgetManager();render();showToast("บันทึกแล้ว");
 });
 function getBrainBaseIncome(actualIncome){
   // ฐานรายได้ที่ใช้ประเมิน: 1) รายได้ประมาณการจากโปรไฟล์  2) ค่าเฉลี่ยรายรับ 3 เดือนย้อนหลัง  3) รายรับจริงเดือนนี้
@@ -3314,10 +3314,17 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
 
   const shell=document.createElement('div');
   shell.className='ux-shell';
+  // แถบบน: หน้าหลัก = วงกลมโปรไฟล์ + คำทักทาย + ปุ่มเดือน / แท็บอื่น = ชื่อหน้า / หน้าย่อย = ปุ่มย้อนกลับ
+  const CHEV_DOWN='<svg class="ux-month-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   shell.innerHTML=`<div class="ux-topbar">
     <button class="ux-back" id="uxBackBtn" type="button" aria-label="ย้อนกลับ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <div class="ux-brand"><div class="ux-brand-name">Vaultet</div><div class="ux-brand-page" id="uxPageName">ภาพรวม</div></div>
-    <select class="ux-month" id="uxMonthSelect" aria-label="เลือกเดือน"></select>
+    <button class="ux-avatar" id="uxAvatarBtn" type="button" aria-label="ตั้งค่าและโปรไฟล์"></button>
+    <div class="ux-brand">
+      <div class="ux-brand-name" id="uxGreeting">สวัสดี</div>
+      <div class="ux-brand-page" id="uxPageName">หน้าหลัก</div>
+      <button class="ux-month-btn" id="uxMonthBtn" type="button" aria-label="เลือกเดือน"><span id="uxMonthLabel"></span>${CHEV_DOWN}</button>
+    </div>
+    <button class="ux-month-chip" id="uxMonthChip" type="button" aria-label="เลือกเดือน"><span id="uxMonthChipLabel"></span>${CHEV_DOWN}</button>
     <button class="ux-bell" id="uxBellBtn" aria-label="การแจ้งเตือน" aria-expanded="false">${vaultetIcon("🔔")}<i class="ux-bell-dot" id="uxBellDot" style="display:none"></i></button>
   </div>`;
   page.insertBefore(shell,page.firstChild);
@@ -3331,25 +3338,35 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   }
   const home=makeView('home','ภาพรวม','ทุกสิ่งที่สำคัญสำหรับคุณในตอนนี้');
   const analysisV=makeView('analysis','วิเคราะห์','ดูว่าเงินไปไหน และเทียบแต่ละช่วงเวลา');
-  const plan=makeView('plan','วางแผนการเงิน','กำหนดกรอบการใช้เงินและสร้างความปลอดภัยให้การเงิน');
+  const plan=makeView('plan','เงินของฉัน','บัญชี สินทรัพย์ เงินสำรอง เป้าหมาย และหนี้');
   const more=makeView('more','เพิ่มเติม','ตั้งค่าและเครื่องมือของ Vaultet');
   const chatV=makeView('chat','AI ที่ปรึกษา','คุยแบบอิสระกับ Vaultet ได้เหมือนคุยกับที่ปรึกษาส่วนตัว');
+  const listV=makeView('list','รายการทั้งหมด','ค้นหาและกรองรายการของเดือนที่เลือก');
 
-  home.append(header,hero);
+  // หน้าหลัก: ยอดหลัก → งบเดือนนี้ → ที่ต้องจ่ายเร็วๆ นี้ → สิ่งที่ควรรู้ → รายการล่าสุด
+  home.append(header);
+  if(budget) home.append(budget);
   if(upcoming) home.append(upcoming);
   // สิ่งที่ควรรู้: การ์ดเดียวบนหน้าหลัก (ข้อเสนอจากระบบ + สรุปจาก AI ถ้ามี)
   if(notify){ home.append(notify); if(proactive) notify.append(proactive); }
   else if(proactive) home.append(proactive);
-  if(budget) plan.append(budget);
+  const recent=document.createElement('section');
+  recent.className='v-recent'; recent.id='vRecent';
+  recent.innerHTML='<div class="v-sec-head"><h2 class="v-sec-title">รายการล่าสุด</h2><button type="button" class="v-btn v-btn-text" id="vSeeAllBtn">ดูทั้งหมด</button></div><div id="vRecentList"></div>';
+  home.append(recent);
+  // แท็บ "เงินของฉัน": สินทรัพย์รวม → ทางลัด (พอร์ต/เงินสำรอง/หนี้/บัญชี/...) → เงินสำรองฉุกเฉิน → เป้าหมาย
+  const assetsBox=hero.querySelector('#vAssets'), scBox=hero.querySelector('#vShortcuts');
+  if(assetsBox&&scBox) hero.insertBefore(assetsBox,scBox);
+  plan.append(hero);
   if(emergency) plan.append(emergency);
   if(goalsCard) plan.append(goalsCard);
   if(backup) more.append(backup);
-  // แท็บ "วิเคราะห์": สรุปตามหมวด + วิเคราะห์ตามช่วงเวลา + เปรียบเทียบ
+  // แท็บ "รายงาน": สรุปตามหมวด + วิเคราะห์ตามช่วงเวลา + เปรียบเทียบ
   if(trendCard) analysisV.append(trendCard);
   if(breakdown) analysisV.append(breakdown);
   analyses.forEach(a=>analysisV.append(a));
-  // รายการทั้งหมด (ค้นหา/กรอง) อยู่ท้ายหน้าหลัก
-  home.append(list);
+  // รายการทั้งหมด (ค้นหา/กรอง) อยู่หน้าย่อยของตัวเอง เปิดจาก "ดูทั้งหมด"
+  listV.append(list);
 
   // Dedicated AI page reuses the existing chat DOM/logic.
   const aiOverlay=document.getElementById('aiAnalystOverlay');
@@ -3378,25 +3395,43 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   bottom.setAttribute('aria-label','เมนูหลัก');
   bottom.innerHTML=`
     <button class="ux-bottom-item" data-page="home"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg>หน้าหลัก</button>
-    <button class="ux-bottom-item" data-page="analysis"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1112 3v9z"/><path d="M15 3.500A9 9 0 0120.500 9H15z"/></svg>วิเคราะห์</button>
+    <button class="ux-bottom-item" data-page="analysis"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1112 3v9z"/><path d="M15 3.500A9 9 0 0120.500 9H15z"/></svg>รายงาน</button>
     <button class="ux-bottom-add" id="uxAddBtn" type="button" aria-label="เพิ่มรายการ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-    <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>แผน</button>
+    <button class="ux-bottom-item" data-page="plan"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 012-2h13v4M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><path d="M16 14.500h.01"/></svg>เงินของฉัน</button>
     <button class="ux-bottom-item" data-page="chat"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.700L18.500 9.500l-4.700 1.800L12 16l-1.800-4.700L5.500 9.500l4.700-1.800z"/><path d="M19 15l.7 1.800 1.800.7-1.800.7L19 20l-.7-1.800-1.800-.7 1.800-.7z"/></svg>AI</button>`;
   document.body.append(bottom);
 
-  const names={home:'หน้าหลัก',analysis:'วิเคราะห์',plan:'แผน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า'};
+  const names={home:'หน้าหลัก',analysis:'รายงาน',plan:'เงินของฉัน',chat:'ที่ปรึกษา AI',more:'ตั้งค่า',list:'รายการทั้งหมด'};
+  // หน้าย่อย (มีปุ่มย้อนกลับ ไม่จำเป็นแท็บล่าสุด)
+  const SUB={more:1,list:1};
   window.vaultetLastTab='home';
+  function profileInfo(){
+    let p={}; try{ p=JSON.parse(localStorage.getItem('vaultet_user_profile_v1')||'{}')||{}; }catch(e){}
+    const name=String(p.nickname||p.firstName||'').trim();
+    return {name, letter:name?Array.from(name)[0].toUpperCase():''};
+  }
+  function syncTopbar(){
+    const {name,letter}=profileInfo();
+    const g=document.getElementById('uxGreeting'); if(g) g.textContent=name?'สวัสดี '+name:'สวัสดี';
+    const a=document.getElementById('uxAvatarBtn');
+    if(a) a.innerHTML=letter?'<span class="ux-avatar-letter"></span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.500-4 4.500-6 8-6s6.500 2 8 6"/></svg>';
+    const l=a&&a.querySelector('.ux-avatar-letter'); if(l) l.textContent=letter;
+  }
   function go(id){
     if(!views[id]) id='home';
-    if(id!=='more') window.vaultetLastTab=id;
+    if(!SUB[id]) window.vaultetLastTab=id;
     Object.entries(views).forEach(([k,v])=>v.classList.toggle('active',k===id));
     document.body.classList.toggle('ux-home-active',id==='home');
     document.body.classList.toggle('ux-chat-active',id==='chat');
     document.body.classList.toggle('ux-nonhome',id!=='home');
     document.body.classList.toggle('ux-more-active',id==='more');
+    document.body.classList.toggle('ux-list-active',id==='list');
+    document.body.classList.toggle('ux-sub-active',!!SUB[id]);
     const pageName=document.getElementById('uxPageName');
     if(pageName) pageName.textContent=names[id]||'';
-    document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===id));
+    if(id==='home') syncTopbar();
+    const navId=id==='list'?'home':id;
+    document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===navId));
     window.scrollTo({top:0,behavior:'smooth'});
     history.replaceState(null,'','#'+id);
   }
@@ -3404,6 +3439,8 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
   window.vaultetGo=go;
   document.getElementById('uxAddBtn')?.addEventListener('click',()=>openForm(null));
   document.getElementById('uxBackBtn')?.addEventListener('click',()=>go(window.vaultetLastTab||'home'));
+  document.getElementById('uxAvatarBtn')?.addEventListener('click',()=>{ if(window.vaultetOpenSettings) window.vaultetOpenSettings(); else go('more'); });
+  document.getElementById('vSeeAllBtn')?.addEventListener('click',()=>go('list'));
   document.querySelectorAll('.ux-bottom-item[data-page]').forEach(x=>x.addEventListener('click',()=>{
     const id=x.dataset.page;
     if(id==='chat' && window.bancheeOpenChatPage){ window.bancheeOpenChatPage(); }
@@ -3434,11 +3471,25 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
     go('chat');
   };
 
-  const oldMonth=document.getElementById('monthSelect'), newMonth=document.getElementById('uxMonthSelect');
-  if(oldMonth&&newMonth){
-    newMonth.innerHTML=oldMonth.innerHTML; newMonth.value=oldMonth.value;
-    newMonth.onchange=()=>{oldMonth.value=newMonth.value;oldMonth.dispatchEvent(new Event('change',{bubbles:true}))};
-    oldMonth.addEventListener('change',()=>{newMonth.innerHTML=oldMonth.innerHTML;newMonth.value=oldMonth.value});
+  // ปุ่มเดือน (แทนช่องเลือกของเบราว์เซอร์): กดแล้วเปิดแผ่นเลือกเดือนจากล่าง ค่าจริงยังอยู่ที่ #monthSelect เดิม
+  const oldMonth=document.getElementById('monthSelect');
+  if(oldMonth){
+    const syncMonthLabel=()=>{
+      const t=oldMonth.selectedOptions[0]?.textContent||'';
+      ['uxMonthLabel','uxMonthChipLabel'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=t; });
+    };
+    const pickMonth=async()=>{
+      if(typeof vaultetPick!=='function') return;
+      const v=await vaultetPick({title:'เลือกเดือน',value:oldMonth.value,options:[...oldMonth.options].map(o=>({value:o.value,label:o.textContent}))});
+      if(v==null||v===oldMonth.value) return;
+      oldMonth.value=v; oldMonth.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    document.getElementById('uxMonthBtn')?.addEventListener('click',pickMonth);
+    document.getElementById('uxMonthChip')?.addEventListener('click',pickMonth);
+    oldMonth.addEventListener('change',syncMonthLabel);
+    oldMonth.addEventListener('vaultet-month-sync',syncMonthLabel);
+    new MutationObserver(syncMonthLabel).observe(oldMonth,{childList:true,subtree:true,characterData:true});
+    syncMonthLabel();
   }
 
   const nb=document.getElementById('notificationUnreadBadge'), dot=document.getElementById('uxBellDot');
@@ -3452,6 +3503,76 @@ const __baseVaultetRender=render;render=function(){__baseVaultetRender();renderB
 
   const hash=location.hash.slice(1);
   go(views[hash]?hash:'home');
+})();
+
+/* ===== ds47: หน้าหลัก (รายการล่าสุด, งบพับได้) + หน้ารายการทั้งหมด (ชิปกรอง, ช่องค้นหา) ===== */
+(function(){
+  const RECENT_LIMIT=5;
+  const EMPTY_IC='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg>';
+  const recentBox=document.getElementById('vRecentList');
+  function renderRecent(){
+    if(!recentBox) return;
+    const me=[...getMonthEntries()].sort((a,b)=>b.date.localeCompare(a.date));
+    const all=document.getElementById('vSeeAllBtn'); if(all) all.hidden=!me.length;
+    if(!me.length){
+      recentBox.innerHTML=`<div class="v-empty"><div class="v-empty-ic">${EMPTY_IC}</div><div class="v-empty-t">ยังไม่มีรายการในเดือนนี้</div><div class="v-empty-s">จดรายการแรกได้เลย ใช้เวลาไม่กี่วินาที</div><button type="button" class="v-btn v-btn-go" id="vRecentAddBtn">เพิ่มรายการ</button></div>`;
+      recentBox.querySelector('#vRecentAddBtn').addEventListener('click',()=>openForm(null));
+      return;
+    }
+    recentBox.innerHTML=txListHtml(me.slice(0,RECENT_LIMIT));
+    bindTxRows(recentBox);
+  }
+
+  // หน้ารายการทั้งหมด: ชิปกรองประเภท (แทนช่องเลือกเดิม ซึ่งยังซ่อนอยู่และเป็นตัวเก็บค่าจริง)
+  const sel=document.getElementById('typeFilter');
+  const section=document.querySelector('#ux-list .list-section');
+  const FILTERS=[['all','ทั้งหมด'],['expense','รายจ่าย'],['income','รายรับ'],['saving','ออม/ลงทุน'],['transfer','โอนเงิน']];
+  let chips=null;
+  if(sel&&section){
+    chips=document.createElement('div');
+    chips.className='v-fchips'; chips.id='vTypeChips'; chips.setAttribute('role','group'); chips.setAttribute('aria-label','กรองตามประเภท');
+    chips.innerHTML=FILTERS.map(([k,l])=>`<button type="button" class="v-fchip" data-f="${k}" aria-pressed="false">${l}</button>`).join('');
+    section.insertBefore(chips,section.firstChild);
+    chips.addEventListener('click',e=>{
+      const b=e.target.closest('.v-fchip'); if(!b||b.dataset.f===sel.value) return;
+      sel.value=b.dataset.f; sel.dispatchEvent(new Event('change',{bubbles:true}));
+    });
+    // ช่องค้นหา: ใส่ไอคอนแว่นขยาย และให้ขอบเขียวตอนพิมพ์
+    const row=section.querySelector('.search-row');
+    if(row){ row.classList.add('v-search'); row.insertAdjacentHTML('afterbegin','<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/></svg>'); }
+    const input=document.getElementById('searchInput'); if(input) input.setAttribute('aria-label','ค้นหาหมวดหรือโน้ต');
+    // ลำดับใหม่: ชิป → ค้นหา → จำนวนรายการ → รายการ
+    const head=section.querySelector('.list-header-row');
+    if(head&&row){ section.insertBefore(head,row.nextSibling); head.insertAdjacentHTML('beforeend','<span class="v-list-hint">แตะรายการเพื่อแก้ไข</span>'); }
+  }
+  function syncChips(){
+    if(!chips||!sel) return;
+    chips.querySelectorAll('.v-fchip').forEach(b=>{ const on=b.dataset.f===sel.value; b.classList.toggle('is-on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
+  }
+
+  // งบเดือนนี้บนหน้าหลัก: ซ่อนรายหมวดไว้ก่อน กด "ดูรายหมวด" ถึงจะกาง (จำค่าไว้)
+  const K_BUDGET='vaultet_ui_budget_open_v1';
+  const bCard=document.getElementById('budgetDashboardCard'), bRows=document.getElementById('budgetDashboardRows');
+  let bBtn=null;
+  if(bCard&&bRows){
+    bBtn=document.createElement('button');
+    bBtn.type='button'; bBtn.className='v-btn v-btn-text v-budget-more'; bBtn.id='vBudgetMoreBtn';
+    bBtn.innerHTML='<span>ดูรายหมวด</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    bCard.append(bBtn);
+    const apply=open=>{ bCard.classList.toggle('is-collapsed',!open); bBtn.setAttribute('aria-expanded',open?'true':'false'); bBtn.querySelector('span').textContent=open?'ซ่อนรายหมวด':'ดูรายหมวด'; };
+    let open=false; try{ open=localStorage.getItem(K_BUDGET)==='1'; }catch(e){}
+    apply(open);
+    bBtn.addEventListener('click',()=>{ open=!open; apply(open); try{ localStorage.setItem(K_BUDGET,open?'1':'0'); }catch(e){} });
+  }
+  function syncBudgetBtn(){ if(bBtn&&bRows) bBtn.hidden=!bRows.innerHTML.trim(); }
+
+  const __prevRender=render;
+  render=function(){
+    __prevRender();
+    try{ renderRecent(); syncChips(); syncBudgetBtn(); }catch(e){ console.error(e); }
+    const m=document.getElementById('monthSelect'); if(m) m.dispatchEvent(new Event('vaultet-month-sync'));
+  };
+  renderRecent(); syncChips(); syncBudgetBtn();
 })();
 
 /* ===== Round 6: AI chat page bridge ===== */
@@ -4276,10 +4397,10 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     const ov=document.createElement('div'); ov.id='advDetailOverlay';
     const rowsHtml=h.rows.length?`<div class="adv-h">ตัวเลขที่เกี่ยวข้อง</div>`+h.rows.map(r=>`<div class="adv-row"><span>${escapeHtml(r[0])}</span><span>${escapeHtml(r[1])}</span></div>`).join(''):'';
     const acked=isAcked(it);
-    ov.innerHTML=`<div class="adv-sheet" role="dialog" aria-modal="true"><span class="adv-chip ${h.sev}">${h.sev==='critical'?'สำคัญมาก':'ควรดู'}</span><h3 class="adv-title">${escapeHtml(h.title)}</h3><p class="adv-summary">${escapeHtml(h.summary)}</p>${rowsHtml}${h.todo?`<div class="adv-h">ควรทำอะไร</div><div class="adv-todo">${escapeHtml(h.todo)}</div>`:''}<div class="adv-actions"><button type="button" class="adv-ack">${acked?'รับทราบแล้ว ✓':'รับทราบ'}</button><button type="button" class="adv-close">ปิด</button></div><div class="adv-note">กดรับทราบแล้วการ์ดจะเป็นสีเทา และจะกลับมาเตือนอีกถ้าเรื่องนี้ยังอยู่หลังผ่านไป ${ACK_DAYS} วัน</div></div>`;
+    ov.innerHTML=`<div class="adv-sheet" role="dialog" aria-modal="true"><span class="adv-chip ${h.sev}">${h.sev==='critical'?'สำคัญมาก':'ควรดู'}</span><h3 class="adv-title">${escapeHtml(h.title)}</h3><p class="adv-summary">${escapeHtml(h.summary)}</p>${rowsHtml}${h.todo?`<div class="adv-h">ควรทำอะไร</div><div class="adv-todo">${escapeHtml(h.todo)}</div>`:''}<div class="adv-actions"><button type="button" class="adv-ack">${acked?'รับทราบแล้ว':'รับทราบ'}</button><button type="button" class="adv-close">ปิด</button></div><div class="adv-note">กดรับทราบแล้วการ์ดจะเป็นสีเทา และจะกลับมาเตือนอีกถ้าเรื่องนี้ยังอยู่หลังผ่านไป ${ACK_DAYS} วัน</div></div>`;
     ov.addEventListener('click',e=>{if(e.target===ov)closeSheet();});
     ov.querySelector('.adv-close').addEventListener('click',closeSheet);
-    ov.querySelector('.adv-ack').addEventListener('click',()=>{ack(it);closeSheet();window.vaultetRenderAdvisorPreview(items);try{showToast('รับทราบแล้ว ✓');}catch(_){}});
+    ov.querySelector('.adv-ack').addEventListener('click',()=>{ack(it);closeSheet();window.vaultetRenderAdvisorPreview(items);try{showToast('รับทราบแล้ว');}catch(_){}});
     document.body.appendChild(ov);
   }
   document.addEventListener('click',e=>{
@@ -4494,7 +4615,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   overlay.addEventListener('click',async e=>{
     const t=e.target;
     if(t.closest('#pfClose')) return closePf();
-    if(t.closest('#pfRefresh')){ refreshPrices().then(r=>{ if(r&&r.reason==='no_key') showToast('ใส่ API key ด้านล่างก่อน'); else if(r&&r.reason==='no_holdings') showToast('ยังไม่มีหุ้นในพอร์ต'); else if(r&&r.ok) showToast('อัปเดตราคาแล้ว ✓'); }); return; }
+    if(t.closest('#pfRefresh')){ refreshPrices().then(r=>{ if(r&&r.reason==='no_key') showToast('ใส่ API key ด้านล่างก่อน'); else if(r&&r.reason==='no_holdings') showToast('ยังไม่มีหุ้นในพอร์ต'); else if(r&&r.ok) showToast('อัปเดตราคาแล้ว'); }); return; }
     if(t.closest('#pfAddBuy')) return startBuy('');
     if(t.closest('#pfAddOpen')){ document.getElementById('pfOpenSheet').classList.add('open'); return; }
     if(t.closest('#pfOpCancel')){ document.getElementById('pfOpenSheet').classList.remove('open'); return; }
@@ -4559,7 +4680,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     if(!res||!res.ok){ showToast('บันทึกไม่สำเร็จ: '+((res&&res.error)||'')); return; }
     res.entry.fromCat=INVEST_CAT; res.entry.costBasis=red; res.entry.sellTicker=sellT; saveEntries();
     const a=getSells(); a.push({id:makeId(),ticker:sellT,date:todayISO(),shares:n,proceeds:amt,cost:red,entryId:res.entry.id}); setSells(a);
-    sell.classList.remove('open'); render(); try{ renderAccountsSummary(); }catch(_){} showToast('บันทึกการขายแล้ว ✓');
+    sell.classList.remove('open'); render(); try{ renderAccountsSummary(); }catch(_){} showToast('บันทึกการขายแล้ว');
   });
   function startBuy(ticker){
     openForm(null);

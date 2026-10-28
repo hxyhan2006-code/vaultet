@@ -12,7 +12,8 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
  localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'กสิกร',initialBalance:1000},{id:'a2',name:'เงินสด',initialBalance:0}]));
  localStorage.setItem('finance_tracker_reserved_v1',JSON.stringify([{id:'r1',name:'ค่าหอ',amount:3000,dueDate:'',createdAt:now}]));
  localStorage.setItem('finance_tracker_loans_v1',JSON.stringify([{id:'l1',person:'เพื่อน A',amount:500,date:d,repayments:[],accountId:'a1'}]));});
-await pg.goto('http://localhost:8140/index.html');await pg.waitForTimeout(1000);
+await pg.goto('http://localhost:8140/index.html#plan');  // ทางลัดอยู่แท็บ "เงินของฉัน" ตั้งแต่ ds47
+await pg.waitForTimeout(1000);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 const get=k=>pg.evaluate(k=>JSON.parse(localStorage.getItem(k)),k);
 const closeAll=()=>pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));

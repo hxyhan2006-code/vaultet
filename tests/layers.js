@@ -65,8 +65,8 @@ ok('"AI ตอบแล้ว" card is horizontally centred ('+JSON.stringify(tb
 await pg.screenshot({path:shots+'layers-toast.png'});
 await pg.click('#aiCompletionDismissBtn'); await pg.waitForTimeout(300);
 
-// ---- ทางลัด: อยู่กึ่งกลาง + จัดเรียงเอง ----
-await pg.evaluate(()=>window.scrollTo(0,0)); await pg.waitForTimeout(200);
+// ---- ทางลัด: อยู่กึ่งกลาง + จัดเรียงเอง (แท็บ "เงินของฉัน") ----
+await pg.evaluate(()=>vaultetGo('plan')); await pg.evaluate(()=>window.scrollTo(0,0)); await pg.waitForTimeout(300);
 await pg.click('#vMoreBtn'); await pg.waitForTimeout(250);
 const rowC=await pg.evaluate(()=>{const row=document.getElementById('vMoreRow').getBoundingClientRect();const kids=[...document.querySelectorAll('#vMoreRow .v-sc')].map(k=>k.getBoundingClientRect());const l=Math.min(...kids.map(k=>k.left)),r=Math.max(...kids.map(k=>k.right));return {n:kids.length,off:Math.round((l+r)/2-(row.left+row.width/2))}});
 ok('second row has 4 items (3 + จัดเรียง) and is centred (offset '+rowC.off+'px)', rowC.n===4 && Math.abs(rowC.off)<=2);

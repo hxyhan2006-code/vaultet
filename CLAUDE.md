@@ -27,7 +27,7 @@
 - `ai.js` — ระบบ AI ทั้งหมด: เรียก Gemini, สตรีมคำตอบ, สร้าง prompt/snapshot, การ์ดข้อเสนอ (`renderAiActionCard`, `executeAiAction`, `undoAiAction`), ความจำ, แจ้งเตือน, สถานะคีย์
 - `openrouter.js` — ตัวสำรอง OpenRouter (`window.vaultetOR`): แปลงรูปแบบคำขอ, เพดานค่าใช้จ่าย, เลือกโมเดล
 - `ui.js` — หน้าตั้งค่า, เมนู AI, ศูนย์การแจ้งเตือน, ล็อกการเลื่อนหน้า (`UI_VERSION`)
-- `dialog.js` — กล่องโต้ตอบในแอป (`vaultetConfirm/Ask/Alert/Form/Prompt/Choice`) **อย่าใช้ alert/confirm/prompt ของเบราว์เซอร์**
+- `dialog.js` — กล่องโต้ตอบในแอป (`vaultetConfirm/Ask/Alert/Form/Prompt/Choice`) และแผ่นเลือกจากล่าง `vaultetPick` (ใช้แทน `<select>`) **อย่าใช้ alert/confirm/prompt ของเบราว์เซอร์**
 - `style.css` (เก่า, ใหญ่) และ `ds.css` (ชั้นดีไซน์ใหม่ โหลดทีหลัง ใช้ทับ `style.css`) — แก้ใหม่ให้เพิ่มท้าย `ds.css`; โทเค็น `--v-*`; ใช้ selector แบบ `html body #id ...` กับ `!important` เมื่อต้องทับกฎเก่า
 - `sw.js` — service worker แบบ network-first (`CACHE='vaultet-shell-v7'`)
 - ลำดับ script: dialog.js, app.js, openrouter.js, ai.js, ui.js
@@ -54,5 +54,6 @@
 - อย่าเขียนทับไฟล์ด้วยรูปแบบ `open(f,'w').write(open(f).read()...)` (เคยทำ index.html ว่างเปล่า)
 
 ## สิ่งที่ยังค้าง/ควรรู้
+- กำลังปรับโฉมใหม่ทีละรอบ (ตัวอย่างที่ Han เลือก: Artifact "Vaultet โฉมใหม่") รอบ 1 เสร็จ ds47: แถบบน (โปรไฟล์→ตั้งค่า, ปุ่มเดือน), แท็บ รายงาน(`analysis`)/เงินของฉัน(`plan`), หน้าหลัก=ยอด+งบ+รายการล่าสุด, หน้า `list` = รายการทั้งหมด, ชุดปุ่ม `.v-btn .v-btn-go/-quiet/-warn/-text` ท้าย ds.css. ที่เหลือ: 2 หน้าเพิ่มรายการ (ถาม Han ก่อน: แป้นตัวเลขในแอป หรือคีย์บอร์ดมือถือ), 3 รายงาน, 4 เงินของฉัน, 5 AI+ตั้งค่า
 - งานเก็บกวาดโค้ดเก่า/CSS ที่ไม่ใช้ (style.css ~7k บรรทัด) ทำเมื่อ Han สั่งเท่านั้น
 - AI ตอบช้าได้ (เคย ~70–120 วินาที): แอปแสดงเวลา "เริ่มตอบหลัง/พิมพ์/รวม" ใต้คำตอบ ยังไม่ได้ลดระดับการคิดของโมเดล (Han ไม่ต้องการให้ฉลาดน้อยลง) ทางเลือกที่เสนอไว้: ให้ตอบกระชับขึ้น, ทดลองเทียบ OpenRouter

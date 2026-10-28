@@ -14,7 +14,8 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
  localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'กสิกร',initialBalance:12000}]));
  localStorage.setItem('finance_tracker_entries_v1',JSON.stringify([{id:'e1',type:'expense',category:'กิน',amount:60,note:'ข้าว',date:d(0),accountId:'a1'}]));
  localStorage.setItem('finance_tracker_debts_v1',JSON.stringify([{id:'d1',name:'กยศ.',outstandingBalance:58000,gracePeriod:true,history:[{id:'h1',date:d(-3),type:'increase',amount:3000,note:'ค่าครองชีพ'}],createdAt:now},{id:'d2',name:'ผ่อนมือถือ',outstandingBalance:8000,gracePeriod:false,history:[],createdAt:now}]));});
-await pg.goto('http://localhost:8139/index.html');await pg.waitForTimeout(1200);
+await pg.goto('http://localhost:8139/index.html#plan');  // ทางลัดหนี้อยู่แท็บ "เงินของฉัน" ตั้งแต่ ds47
+await pg.waitForTimeout(1200);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 const debts=()=>pg.evaluate(()=>JSON.parse(localStorage.getItem('finance_tracker_debts_v1')));
 await pg.click('#manageDebtsBtn'); await pg.waitForTimeout(400);

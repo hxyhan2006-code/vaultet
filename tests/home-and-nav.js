@@ -24,13 +24,14 @@ const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 await pg.click('#vEyeBtn'); ok('eye hides numbers', await pg.evaluate(()=>document.body.classList.contains('v-hide-numbers')));
 await pg.reload(); await pg.waitForTimeout(800); ok('eye state persists', await pg.evaluate(()=>document.body.classList.contains('v-hide-numbers')));
 await pg.click('#vEyeBtn'); ok('eye shows again', await pg.evaluate(()=>!document.body.classList.contains('v-hide-numbers')));
-// more
+// more (ทางลัด/สินทรัพย์รวมย้ายไปแท็บ "เงินของฉัน" ตั้งแต่ ds47)
+await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(300);
 await pg.click('#vMoreBtn'); ok('more row opens', await pg.isVisible('#manageAccountsBtn'));
 await pg.click('#vMoreBtn'); ok('more row closes', !(await pg.isVisible('#manageAccountsBtn')));
 // assets
 await pg.click('#vAssets summary'); ok('assets opens', await pg.evaluate(()=>document.getElementById('vAssets').open));
 await pg.screenshot({path:shots+'assets-open.png'});
-await pg.reload(); await pg.waitForTimeout(800); ok('assets state persists', await pg.evaluate(()=>document.getElementById('vAssets').open));
+await pg.reload(); await pg.waitForTimeout(800); await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(300); ok('assets state persists', await pg.evaluate(()=>document.getElementById('vAssets').open));
 await pg.click('#vAssets summary');
 // shortcuts open overlays
 for (const [id,name] of [['openPortfolioBtn','portfolio'],['manageDebtsBtn','debts']]) {
@@ -47,19 +48,21 @@ for (const [id,name] of [['manageAccountsBtn','accounts'],['manageReservedBtn','
   await pg.evaluate(()=>{document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'));});
 }
 // tx row tap -> edit form
-await pg.click('.v-tx >> nth=0'); await pg.waitForTimeout(300);
+await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(300);
+await pg.click('#vRecentList .v-tx >> nth=0'); await pg.waitForTimeout(300);
 ok('row tap opens edit form', await pg.evaluate(()=>document.getElementById('overlay').classList.contains('open')));
 await pg.screenshot({path:shots+'edit.png'});
 await pg.click('#closeBtn');
-// delete
+// delete (รายการเต็มอยู่หน้า "รายการทั้งหมด" เปิดจาก "ดูทั้งหมด")
 await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(300);
+await pg.click('#vSeeAllBtn'); await pg.waitForTimeout(300);
 const before=await pg.locator('#listContainer .v-tx').count();
 await pg.click('#listContainer .v-tx >> nth=0'); await pg.waitForTimeout(300);
 ok('delete link visible when editing', await pg.isVisible('#vDeleteEntryBtn'));
 await pg.click('#vDeleteEntryBtn'); await T.dlgOK(pg); await pg.waitForTimeout(400);
 ok('delete removes row', (await pg.locator('#listContainer .v-tx').count())===before-1);
 await pg.evaluate(()=>openForm(null)); ok('delete link hidden for new entry', !(await pg.isVisible('#vDeleteEntryBtn'))); await pg.evaluate(()=>closeForm());
-ok('full list lives on home (search box visible after scroll)', (await pg.locator('#ux-home #searchInput').count())===1);
+ok('full list lives on its own page (search box in #ux-list)', (await pg.locator('#ux-list #searchInput').count())===1 && (await pg.locator('#ux-home #searchInput').count())===0);
 await pg.click('.ux-bottom-item[data-page="analysis"]'); await pg.waitForTimeout(300);
 ok('analysis tab shows analysis sections', (await pg.isVisible('#periodAnalysisSection'))&&(await pg.isVisible('#compareSection')));
 ok('analysis tab has no transaction list', (await pg.locator('#ux-analysis #listContainer').count())===0);

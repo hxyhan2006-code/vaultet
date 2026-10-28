@@ -31,12 +31,13 @@ await pg.screenshot({path:shots+'single-form.png'});
 await pg.fill('#amount','99'); await pg.click('.v-chip[data-cat="คาเฟ่"]'); await pg.click('#submitBtn'); await pg.waitForTimeout(300);
 let es=await get(pg,'finance_tracker_entries_v1'); ok('entry saved to the only account', es.some(e=>e.amount===99&&e.accountId==='a1'));
 await pg.evaluate(()=>closeForm());
+await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150);
 await pg.click('#vAssets summary'); await pg.waitForTimeout(150);
 ok('assets detail: per-account list hidden', !(await pg.isVisible('#accountsList')));
 await pg.evaluate(()=>vaultetGo('analysis')); await pg.waitForTimeout(250);
 ok('analysis: account filters hidden', !(await pg.isVisible('#analysisAccountFilter')) && !(await pg.isVisible('#compareAccountFilter')));
 // add a 2nd account -> everything comes back
-await pg.evaluate(()=>vaultetGo('home')); await pg.waitForTimeout(150); await pg.click('#vMoreBtn'); await pg.click('#manageAccountsBtn'); await pg.waitForTimeout(250);
+await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150); await pg.click('#vMoreBtn'); await pg.click('#manageAccountsBtn'); await pg.waitForTimeout(250);
 await pg.click('#addAccountBtn'); await T.dlgOK(pg,{name:'ออมทรัพย์',bal:'1000'}); await pg.waitForTimeout(300);
 ok('2 accounts: class removed', !(await pg.evaluate(()=>document.body.classList.contains('v-single-account'))));
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
@@ -46,7 +47,7 @@ await pg.evaluate(()=>closeForm());
 await pg.evaluate(()=>vaultetGo('analysis')); await pg.waitForTimeout(250);
 ok('2 accounts: analysis account filter is back', await pg.isVisible('#analysisAccountFilter'));
 // remove the 2nd account again
-await pg.evaluate(()=>vaultetGo('home')); await pg.waitForTimeout(150); await pg.click('#manageAccountsBtn').catch(async()=>{await pg.click('#vMoreBtn');await pg.click('#manageAccountsBtn');}); await pg.waitForTimeout(250);
+await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150); await pg.click('#manageAccountsBtn').catch(async()=>{await pg.click('#vMoreBtn');await pg.click('#manageAccountsBtn');}); await pg.waitForTimeout(250);
 await pg.click('.delete-acc-btn >> nth=1'); await T.dlgOK(pg); await pg.waitForTimeout(300);
 ok('back to one account -> single mode again', await pg.evaluate(()=>document.body.classList.contains('v-single-account')));
 
@@ -54,8 +55,8 @@ ok('back to one account -> single mode again', await pg.evaluate(()=>document.bo
 ok('Brain card is gone', (await pg.locator('#financialBrainCard').count())===0 && (await pg.locator('#brainScore').count())===0);
 ok('forecast sheet and button are gone', (await pg.locator('#forecastOverlay').count())===0 && (await pg.locator('#openForecastBtn').count())===0);
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
-await pg.evaluate(()=>vaultetGo('home')); await pg.waitForTimeout(200);
-ok('home shortcuts: stocks, emergency, debts, more', (await pg.locator('#vShortcuts > .v-sc').allTextContents()).map(s=>s.trim()).join('|')==='พอร์ตหุ้น|เงินสำรอง|หนี้|เพิ่มเติม');
+await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(200);
+ok('shortcuts (เงินของฉัน): stocks, emergency, debts, more', (await pg.locator('#vShortcuts > .v-sc').allTextContents()).map(s=>s.trim()).join('|')==='พอร์ตหุ้น|เงินสำรอง|หนี้|เพิ่มเติม');
 await pg.click('#vEmergencyBtn'); await pg.waitForTimeout(900);
 ok('emergency shortcut opens the Plan tab', await pg.isVisible('#ux-plan'));
 ok('...and scrolls the emergency card into view', await pg.evaluate(()=>{const r=document.getElementById('emergencyDashboardCard').getBoundingClientRect();return r.top>=0&&r.top<window.innerHeight*0.6}));

@@ -226,6 +226,37 @@ window.vaultetChoice = function(opts){
   })();
 };
 
+// ---------- เลือก 1 ข้อแบบแผ่นเลื่อนขึ้นจากล่าง (แทนช่องตัวเลือก <select> ของเบราว์เซอร์) ----------
+// const v = await vaultetPick({ title:"เลือกเดือน", value:"2026-10", options:[{ value:"2026-10", label:"ตุลาคม 2569", sub:"7 รายการ", color:"#ff6b60" }] })  // null = ปิดไปเฉยๆ
+window.vaultetPick = function(opts){
+  const o = opts || {};
+  return window.__vaultetShow(ctx => {
+    ctx.cancelValue = null;
+    const box = ctx.box;
+    box.classList.add("v-dlg-sheet");
+    if(box.parentElement) box.parentElement.classList.add("v-dlg-back-sheet");
+    const grip = document.createElement("div"); grip.className = "v-pick-grip"; grip.setAttribute("aria-hidden", "true"); box.append(grip);
+    const id = "vdlgp" + Date.now();
+    if(o.title){ const h = document.createElement("h2"); h.className = "v-dlg-title"; h.id = id; h.textContent = o.title; box.append(h); box.setAttribute("aria-labelledby", id); }
+    const list = document.createElement("div"); list.className = "v-pick-list"; list.setAttribute("role", "listbox");
+    (o.options || []).forEach(op => {
+      const on = String(op.value) === String(o.value);
+      const b = document.createElement("button"); b.type = "button"; b.className = "v-pick-row" + (on ? " is-on" : "");
+      b.setAttribute("role", "option"); b.setAttribute("aria-selected", on ? "true" : "false"); b.dataset.value = op.value;
+      if(op.color){ const d = document.createElement("i"); d.className = "v-pick-dot"; d.style.background = op.color; b.append(d); }
+      const main = document.createElement("span"); main.className = "v-pick-main";
+      const t = document.createElement("span"); t.className = "v-pick-label"; t.textContent = op.label; main.append(t);
+      if(op.sub){ const s = document.createElement("span"); s.className = "v-pick-sub"; s.textContent = op.sub; main.append(s); }
+      const radio = document.createElement("span"); radio.className = "v-pick-radio"; radio.setAttribute("aria-hidden", "true");
+      b.append(main, radio);
+      if(on) b.setAttribute("data-autofocus", "");
+      b.addEventListener("click", () => ctx.close(op.value));
+      list.append(b);
+    });
+    box.append(list);
+  });
+};
+
 // ---------- ไอคอนแทนอีโมจิ (เส้นเดียวกับไอคอนอื่นในแอป) ----------
 (function(){
   const P = {

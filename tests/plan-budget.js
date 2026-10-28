@@ -23,8 +23,9 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
 });
 await pg.goto('http://localhost:8131/index.html');await pg.waitForTimeout(1000);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
-await pg.click('.ux-bottom-item[data-page="plan"]');await pg.waitForTimeout(500);
-ok('budget card visible', await pg.isVisible('#budgetDashboardCard'));
+// งบเดือนนี้อยู่หน้าหลักตั้งแต่ ds47 (รายหมวดพับไว้ กด "ดูรายหมวด" ก่อน)
+ok('budget card visible on home', await pg.isVisible('#ux-home #budgetDashboardCard'));
+await pg.click('#vBudgetMoreBtn');await pg.waitForTimeout(200);
 ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent('#budgetDashboardRemaining')));
 ok('over-budget pill shows for คาเฟ่ (เกินงบ)', (await pg.textContent('#budgetDashboardRows')).includes('เกินงบ'));
 ok('safe rows have no pill (กิน is WATCH so check count>=1 and <rows)', (await pg.locator('#budgetDashboardRows .v-brow .v-pill').count())>=1);
@@ -32,9 +33,11 @@ ok('safe rows have no pill (กิน is WATCH so check count>=1 and <rows)', (a
   ok('budget rows compact ('+n+' rows, first '+Math.round(h)+'px)', n>=1 && h<70);
   await c.first().locator('summary').click(); await pg.waitForTimeout(150);
   ok('tapping a budget row shows details', await pg.isVisible('#budgetDashboardRows .v-brow-more >> nth=0')); }
-ok('emergency card visible', await pg.isVisible('#emergencyDashboardCard'));
+await pg.click('.ux-bottom-item[data-page="plan"]');await pg.waitForTimeout(500);
+ok('emergency card visible (เงินของฉัน)', await pg.isVisible('#emergencyDashboardCard'));
 ok('duplicate spend card is gone from Plan', !(await pg.locator('#spendSummaryCard').count()));
-// manage budgets
+// manage budgets (ปุ่มจัดการอยู่บนการ์ดงบที่หน้าหลัก)
+await pg.click('.ux-bottom-item[data-page="home"]');await pg.waitForTimeout(300);
 await pg.click('#budgetDashboardManageBtn'); await pg.waitForTimeout(400);
 const rows=await pg.locator('#budgetManageList .v-brow').count();
 ok('manager lists budget rows ('+rows+')', rows===3);
@@ -45,6 +48,7 @@ await pg.click('#budgetManageList .budget-delete-btn >> nth=0'); await T.dlgOK(p
 ok('delete removes a budget', (await pg.locator('#budgetManageList .v-brow').count())===2);
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
 // emergency settings
+await pg.click('.ux-bottom-item[data-page="plan"]');await pg.waitForTimeout(300);
 await pg.click('#emergencyDashboardManageBtn'); await pg.waitForTimeout(300);
 ok('emergency settings opens', await pg.evaluate(()=>!!document.querySelector('.overlay.open')));
 ok('no native browser dialogs ('+native.msgs.join(' | ')+')', native.n===0);
