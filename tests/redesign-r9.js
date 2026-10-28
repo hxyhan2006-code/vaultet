@@ -1,4 +1,4 @@
-// หน้าหลักแบบ A + แถบบน AI แบบ B (ds58): ต้องจ่ายเป็นแถวมีวงกลมตัวอักษร ดูทั้งหมดอยู่หัวการ์ด สิ่งที่ควรรู้ไม่มีกล่องซ้อน ปุ่มบนหน้า AI ไม่มีวงกลม
+// แถบบน AI แบบ B (ds59): ปุ่มบนหน้า AI ไม่มีวงกลม + เมนูเล็กตอนกดค้างเลือกข้อความไม่ได้ (หน้าหลักคงของเดิม)
 const { chromium } = require('playwright');
 const http=require('http'),fs=require('fs'),path=require('path');const root=require('path').resolve(__dirname,'..');
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png'};
@@ -18,20 +18,6 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
   {id:'r3',name:'netflix',amount:169,category:'กิน',accountId:'a1',frequency:'monthly',nextDueDate:day(10),status:'active'}]));});
 await pg.goto('http://localhost:8209/index.html');await pg.waitForTimeout(1500);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
-await pg.evaluate(()=>{window.scrollTo(0,0)});
-ok('upcoming card: 3 rows with letter circles, total in the head', (await pg.locator('#upcomingPreviewList .v-up-row').count())===3 && (await pg.textContent('#upcomingPreviewList .v-up-av >> nth=0')).trim()==='E' && (await pg.textContent('#upcomingTotalNum')).includes('591'));
-ok('"ดูทั้งหมด" sits in the card head, not a big outlined button', await pg.evaluate(()=>{const b=document.getElementById('viewUpcomingBtn');return !!b.closest('.v-up-head') && getComputedStyle(b).borderTopWidth==='0px';}));
-ok('due within 3 days is highlighted', await pg.evaluate(()=>document.querySelector('#upcomingPreviewList .v-up-row').classList.contains('is-soon')));
-await pg.click('#viewUpcomingBtn'); await pg.waitForTimeout(400);
-ok('"ดูทั้งหมด" still opens the full list', await pg.evaluate(()=>document.getElementById('upcomingOverlay').classList.contains('open')));
-await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
-await pg.evaluate(()=>{document.getElementById('upcomingCard').scrollIntoView({block:'start'});window.scrollBy(0,-90)}); await pg.waitForTimeout(300);
-await pg.screenshot({path:shots+'r9-home.png'});
-// สิ่งที่ควรรู้: ใส่ข้อเสนอจำลอง
-await pg.evaluate(()=>{window.vaultetRenderAdvisorPreview([{type:'MIN_BUFFER',severity:'critical',action:'เติมเงิน',data:{available:16705,target:30000}}]); document.getElementById('notificationDashboardCard').style.display='block';});
-await pg.evaluate(()=>{document.getElementById('notificationDashboardCard').scrollIntoView({block:'center'})}); await pg.waitForTimeout(300);
-ok('insight row: no nested box, round icon, chevron', await pg.evaluate(()=>{const i=document.querySelector('#notificationDashboardCard .notification-item');const cs=getComputedStyle(i);const ic=getComputedStyle(i.querySelector('.notification-icon'));return cs.backgroundColor==='rgba(0, 0, 0, 0)' && ic.borderRadius.includes('50%') && !!i.querySelector('.adv-chevron');}));
-await pg.screenshot({path:shots+'r9-insight.png'});
 // หน้า AI
 await pg.click('.ux-bottom-item[data-page="chat"]'); await pg.waitForTimeout(600);
 ok('AI top bar: icon buttons have no circle/border', await pg.evaluate(()=>['uxChatNewBtn','uxChatMenuBtn'].every(id=>{const cs=getComputedStyle(document.getElementById(id));return cs.borderTopWidth==='0px'&&cs.backgroundColor==='rgba(0, 0, 0, 0)';})));
