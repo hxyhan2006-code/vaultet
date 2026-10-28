@@ -175,3 +175,83 @@ html body .v-date-day:focus-visible { outline: 2px solid var(--v-accent); outlin
 .v-snack-msg { flex: 1; min-width: 0; }
 html body .v-snack-act { flex: none; min-height: 40px; padding: 0 14px; background: none !important; border: 0 !important; color: #128a3e; font: inherit; font-weight: 600; cursor: pointer; }
 .v-snack-act[hidden] { display: none; }
+
+/* =====================================================================
+   ds51 รอบ 3: หน้ารายงานโฉมใหม่ (app/14-report.js)
+   ===================================================================== */
+html body #ux-analysis.active { gap: 12px; }
+.v-report { display: flex; flex-direction: column; gap: 12px; }
+.v-report .v-card { margin: 0 !important; }
+/* ช่วงเวลา: แถบแบ่ง 4 ช่อง */
+.v-rseg { display: flex; gap: 4px; padding: 4px; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 14px; }
+html body .v-rseg button { flex: 1; height: 38px; padding: 0; background: none !important; border: 0 !important; border-radius: 10px !important; color: var(--v-muted); font: inherit; font-size: 14px; cursor: pointer; transition: background .2s, color .2s; }
+html body .v-rseg button.is-on { background: var(--v-surface-2) !important; color: var(--v-fg); font-weight: 600; }
+.v-rnav { display: flex; align-items: center; gap: 8px; }
+html body .v-rnav-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: 12px !important; color: var(--v-fg); cursor: pointer; }
+html body .v-rnav-btn:disabled { color: #3a3f46; cursor: default; }
+html body .v-rnav-btn[hidden] { display: none; }
+.v-rnav-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html body .v-rnav-label { flex: 1; min-width: 0; padding: 0; background: none !important; border: 0 !important; color: var(--v-fg); font: inherit; font-size: 16px; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html body .v-racc { display: inline-flex; }
+html body.v-single-account .v-racc { display: none !important; }
+/* แถบประเภท 3 ช่อง (กดเลือก) */
+.v-rtabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+html body .v-rtab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 10px 12px; background: var(--v-surface-2) !important; border: 1px solid transparent !important; border-radius: 14px !important; color: var(--v-muted); font: inherit; text-align: left; cursor: pointer; transition: border-color .2s, background .2s; }
+html body .v-rtab.is-on { border-color: var(--v-fg) !important; background: var(--v-surface) !important; color: var(--v-fg); }
+.v-rtab-k { font-size: 12px; }
+.v-rtab-v { font-family: var(--v-mono); font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-variant-numeric: tabular-nums; }
+.v-rtab[data-type="expense"] .v-rtab-v { color: var(--v-fg); }
+.v-rtab[data-type="income"] .v-rtab-v { color: var(--v-in); }
+.v-rtab[data-type="saving"] .v-rtab-v { color: var(--v-save); }
+/* วงกลม */
+.v-rdonut { position: relative; width: 176px; height: 176px; margin: 16px auto 6px; }
+.v-rdonut svg { width: 100%; height: 100%; display: block; }
+.v-rdonut-c { position: absolute; inset: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1px; }
+.v-rdonut-k { font-size: 12px; color: var(--v-muted); }
+.v-rdonut-v { font-size: 16px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-rcmp { display: table; margin: 6px auto 0; padding: 4px 12px; border-radius: 999px; font-size: 13px; color: var(--v-muted); background: var(--v-surface-2); }
+.v-rcmp:empty { display: none; }
+.v-rcmp.is-good { color: var(--v-in); background: color-mix(in srgb, var(--v-in) 12%, transparent); }
+.v-rcmp.is-bad { color: var(--v-out); background: color-mix(in srgb, var(--v-out) 12%, transparent); }
+.v-rhero .v-hint { text-align: center; }
+.v-rhero .v-hint:empty { display: none; }
+/* รายหมวด */
+.v-rcat { border-top: 1px solid var(--v-line); }
+.v-rcats .v-card-head + div > .v-rcat:first-child { border-top: 0; margin-top: 6px; }
+.v-rcat summary { list-style: none; cursor: pointer; padding: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.v-rcat summary::-webkit-details-marker { display: none; }
+.v-rcat summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; border-radius: 8px; }
+.v-rcat-top { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.v-rcat-dot { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.v-rcat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-rcat-amt { font-family: var(--v-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.v-rcat-pct { width: 40px; text-align: right; font-family: var(--v-mono); font-size: 12px; color: var(--v-muted); }
+.v-rcat-bar { display: block; height: 6px; border-radius: 3px; background: var(--v-surface-2); overflow: hidden; }
+.v-rcat-bar i { display: block; height: 100%; border-radius: 3px; }
+.v-rcat-list { padding: 0 0 12px; }
+.v-rcat-item { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0 7px 12px; margin-bottom: 2px; border-left: 2px solid var(--v-line); font-size: 13px; color: var(--v-muted); }
+.v-rcat-item span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.v-rcat-item span:last-child { font-family: var(--v-mono); color: var(--v-fg); white-space: nowrap; }
+.v-rempty { padding: 18px 0 6px; text-align: center; font-size: 13px; color: var(--v-muted); }
+/* กราฟ 6 ช่วง */
+.v-rtrend-avg { font-size: 12px; color: var(--v-muted); }
+.v-rbars { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; height: 140px; margin-top: 12px; }
+html body .v-rbar { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; padding: 0; background: none !important; border: 0 !important; color: var(--v-muted); font: inherit; cursor: pointer; }
+html body .v-rbar:disabled { cursor: default; }
+.v-rbar-col { flex: 1; width: 100%; max-width: 32px; display: flex; align-items: flex-end; }
+.v-rbar-col i { display: block; width: 100%; min-height: 2px; border-radius: 6px 6px 3px 3px; background: #2a2e34; }
+.v-rbar.is-on .v-rbar-col i { background: var(--v-accent); }
+.v-rbar.is-on { color: var(--v-fg); }
+.v-rbar-lab { font-size: 11px; white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) { .v-rbar-col i { transition: height .3s ease; } }
+/* ตัวเลขสรุป */
+.v-rfacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.v-rfact { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: var(--v-r-lg); min-width: 0; }
+.v-rfact-k { font-size: 12px; color: var(--v-muted); }
+.v-rfact-v { font-family: var(--v-mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* เทียบแบบกำหนดเอง (พับไว้) */
+.v-rmore summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 14px; font-weight: 500; }
+.v-rmore summary::-webkit-details-marker { display: none; }
+.v-rmore[open] .v-chev { transform: rotate(180deg); }
+.v-rmore summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+html body .v-rmore .analysis-section { margin: 12px 0 0 !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }

@@ -64,7 +64,7 @@ ok('delete removes row', (await pg.locator('#listContainer .v-tx').count())===be
 await pg.evaluate(()=>openForm(null)); ok('delete link hidden for new entry', !(await pg.isVisible('#vDeleteEntryBtn'))); await pg.evaluate(()=>closeForm());
 ok('full list lives on its own page (search box in #ux-list)', (await pg.locator('#ux-list #searchInput').count())===1 && (await pg.locator('#ux-home #searchInput').count())===0);
 await pg.click('.ux-bottom-item[data-page="analysis"]'); await pg.waitForTimeout(300);
-ok('analysis tab shows analysis sections', (await pg.isVisible('#periodAnalysisSection'))&&(await pg.isVisible('#compareSection')));
+ok('analysis tab shows the new report (custom compare folded at the bottom)', (await pg.isVisible('#vReport'))&&(await pg.isVisible('#vRepMore'))&&!(await pg.isVisible('#compareSection')));
 ok('analysis tab has no transaction list', (await pg.locator('#ux-analysis #listContainer').count())===0);
 const top=await pg.evaluate(()=>{const tb=document.querySelector('.ux-topbar').getBoundingClientRect().bottom;const first=document.querySelector('#ux-analysis > :not(.ux-view-title):not(.ux-view-sub)').getBoundingClientRect().top;return first-tb});
 ok('analysis content starts >=12px below the top bar (gap='+Math.round(top)+')', top>=12);
