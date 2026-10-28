@@ -296,9 +296,10 @@ function budgetRowHtml(r,manage){
   const proj = !sv && (r.status==="OVER"||r.status==="WATCH") ? `คาดทั้งเดือน ฿${fmt(r.projected)}` : "";
   const meta1 = [rem, pace].filter(Boolean).join(" · ");
   if(!manage){
-    const hot = r.status==="OVER" || r.status==="WATCH" || r.status==="DONE";
-    const detail = [rem, pace, proj].filter(Boolean).join(" · ");
-    return `<details class="v-brow v-brow-c"><summary><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}${hot?` <span class="v-pill v-pill-${pillCls}">${m.label}</span>`:""}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${w}%;background:${col}"></i></div></summary><div class="v-brow-more">${escapeHtml(detail)}</div></details>`;
+    const detail = [pace, proj].filter(Boolean).join(" · ");
+    const stTxt = sv ? rem : (r.status==="OVER" ? `เกินงบ ฿${fmt(Math.abs(r.remaining))}` : r.status==="WATCH" ? `${rem} · เฝ้าดู` : rem);
+    const stCls = !sv && r.status==="OVER" ? "over" : !sv && r.status==="WATCH" ? "watch" : "";
+    return `<details class="v-brow v-brow-c"><summary><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-st ${stCls}">${escapeHtml(stTxt)}</div></summary>${detail?`<div class="v-brow-more">${escapeHtml(detail)}</div>`:""}</details>`;
   }
   return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${escapeHtml(meta1)}${proj?` · ${proj}`:""}</span>${showPill?`<span class="v-pill v-pill-${pillCls}">${m.label}</span>`:""}</div>${manage?`<div class="v-brow-actions"><button type="button" class="v-icon-btn budget-edit-btn" data-id="${escapeHtml(r.id)}" aria-label="แก้ไขงบ">แก้ไข</button><button type="button" class="v-icon-btn v-icon-danger budget-delete-btn" data-id="${escapeHtml(r.id)}" aria-label="ลบงบ">ลบ</button></div>`:""}</div>`;
 }
@@ -322,10 +323,13 @@ function renderBudgetDashboard(){
   if(!s.budgetCount&&!sv.budgetCount&&!bf){card.style.display="none";return;}card.style.display="block";
   const rem=document.getElementById("budgetDashboardRemaining"), sub=document.getElementById("budgetDashboardSub"), fill=document.getElementById("budgetDashboardFill");
   if(s.budgetCount){
-    const bigLbl=rem.nextElementSibling; if(bigLbl) bigLbl.textContent=s.totalRemaining<0?"เกินงบรวม":"คงเหลือ";
-    rem.textContent=(s.totalRemaining<0?"-":"")+"฿"+fmt(Math.abs(s.totalRemaining));rem.style.color=s.totalRemaining<0?"var(--v-out)":"";
-    sub.textContent=`ใช้ ฿${fmt(s.totalSpent)} จาก ฿${fmt(s.totalBudget)} · ${s.overCount?`เกินงบ ${s.overCount} หมวด`:s.watchCount?`ควรเฝ้าดู ${s.watchCount} หมวด`:"อยู่ในกรอบงบ"} · เหลือ ${s.remainingDays} วัน`;
-    fill.style.width=Math.min(100,Math.max(0,s.totalPct))+"%";fill.style.background=s.totalRemaining<0?"var(--v-out)":s.totalPct>=80?"var(--v-xfer)":"var(--v-accent)";
+    // เกินงบรวมแต่มีเงินสำรองรองรับอยู่ = สีเหลือง; สำรองก็ไม่พอ = สีแดง
+    const over=s.totalRemaining<0, over$=Math.abs(s.totalRemaining), covered=over&&bf&&bf.remaining>=over$;
+    const bigLbl=rem.nextElementSibling; if(bigLbl) bigLbl.textContent=over?"งบรวมทุกหมวด":"คงเหลือ";
+    rem.textContent=over?"เกิน ฿"+fmt(over$):"฿"+fmt(s.totalRemaining);rem.style.color=over?(covered?"var(--v-xfer)":"var(--v-out)"):"";
+    const resv=over&&bf?(covered?`<br>มีเงินสำรอง ฿${fmt(bf.remaining)} รองรับอยู่`:`<br>เงินสำรองเหลือ ฿${fmt(Math.max(0,bf.remaining))} ไม่พอรองรับ`):"";
+    sub.innerHTML=`ใช้ ฿${fmt(s.totalSpent)} จาก ฿${fmt(s.totalBudget)} · เหลือ ${s.remainingDays} วัน${resv}`;
+    fill.style.width=Math.min(100,Math.max(0,s.totalPct))+"%";fill.style.background=over?(covered?"var(--v-xfer)":"var(--v-out)"):s.totalPct>=80?"var(--v-xfer)":"var(--v-accent)";
   } else {
     const bigLbl2=rem.nextElementSibling; if(bigLbl2) bigLbl2.textContent="ออมแล้ว";
     rem.textContent="฿"+fmt(sv.totalSpent);rem.style.color="var(--v-save)";
@@ -335,10 +339,9 @@ function renderBudgetDashboard(){
   const order={OVER:0,WATCH:1,SAFE:2};
   const sorted=s.rows.slice().sort((a,b)=>order[a.status]-order[b.status]);
   const hotRows=sorted.filter(r=>r.status==="OVER"||r.status==="WATCH"), calmRows=sorted.filter(r=>r.status!=="OVER"&&r.status!=="WATCH");
-  // หมวดที่ต้องสนใจขึ้นก่อน หมวดปกติพับรวมไว้ (ไม่ลบ แค่ไม่ให้แย่งสายตา)
-  let html=hotRows.map(r=>budgetRowHtml(r,false)).join("");
-  if(hotRows.length&&calmRows.length) html+=`<details class="v-calm"><summary>ปกติ ${calmRows.length} หมวด</summary>${calmRows.map(r=>budgetRowHtml(r,false)).join("")}</details>`;
-  else html+=calmRows.map(r=>budgetRowHtml(r,false)).join("");
+  // หมวดที่ต้องดูขึ้นก่อน ตามด้วยหมวดปกติ (โชว์ครบทุกหมวด มีหัวข้อกลุ่มเมื่อมีทั้งสองกลุ่ม)
+  const grp=(t,rows)=>`<div class="v-subhead v-subhead-g"><span>${t}</span><span class="v-subhead-r">${rows.length} หมวด</span></div>`+rows.map(r=>budgetRowHtml(r,false)).join("");
+  let html=(hotRows.length&&calmRows.length)?grp("ต้องดู",hotRows)+grp("ปกติ",calmRows):hotRows.concat(calmRows).map(r=>budgetRowHtml(r,false)).join("");
   if(sv.budgetCount){
     html+=`<div class="v-subhead"><span>เป้าออมเดือนนี้</span>${sv.rows.length>1?`<span class="v-subhead-r">฿${fmt(sv.totalSpent)} / ฿${fmt(sv.totalBudget)} · ${fmt(sv.totalPct)}%</span>`:""}</div>`+sv.rows.map(r=>budgetRowHtml(r,false)).join("");
   }

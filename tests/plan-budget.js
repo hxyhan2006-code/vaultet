@@ -23,16 +23,19 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
 });
 await pg.goto('http://localhost:8131/index.html');await pg.waitForTimeout(1000);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
-// งบเดือนนี้อยู่หน้าหลักตั้งแต่ ds47 (รายหมวดพับไว้ กด "ดูรายหมวด" ก่อน)
+// งบเดือนนี้อยู่หน้าหลักตั้งแต่ ds47 (รายหมวดพับไว้ กด "ดูรายหมวด" ก่อน); ds61 แถวโชว์ข้อความสถานะ ไม่มีป้าย/ปุ่มย้ายเศษ
 ok('budget card visible on home', await pg.isVisible('#ux-home #budgetDashboardCard'));
 await pg.click('#vBudgetMoreBtn');await pg.waitForTimeout(200);
 ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent('#budgetDashboardRemaining')));
-ok('over-budget pill shows for คาเฟ่ (เกินงบ)', (await pg.textContent('#budgetDashboardRows')).includes('เกินงบ'));
-ok('safe rows have no pill (กิน is WATCH so check count>=1 and <rows)', (await pg.locator('#budgetDashboardRows .v-brow .v-pill').count())>=1);
+ok('over-budget row says เกินงบ ฿… under its bar', (await pg.textContent('#budgetDashboardRows .v-brow-st.over >> nth=0')).includes('เกินงบ ฿'));
+ok('every row shows a status line (none hidden)', (await pg.locator('#budgetDashboardRows details.v-brow-c').count())===(await pg.locator('#budgetDashboardRows .v-brow-st').count()));
+ok('no sweep-to-saving button or month-end box in the card', !(await pg.locator('#bufferSweepBtn, #budgetDashboardCard .v-note').count()));
+ok('big number reads เกิน ฿… when over total budget, never a minus sign', await pg.evaluate(()=>{const t=document.getElementById('budgetDashboardRemaining').textContent;return !t.includes('-')&&(t.startsWith('เกิน ฿')||t.startsWith('฿'));}));
 { const c=pg.locator('#budgetDashboardRows details.v-brow-c'); const n=await c.count(); const h=await pg.evaluate(()=>document.querySelector('#budgetDashboardRows details.v-brow-c').getBoundingClientRect().height);
-  ok('budget rows compact ('+n+' rows, first '+Math.round(h)+'px)', n>=1 && h<70);
-  await c.first().locator('summary').click(); await pg.waitForTimeout(150);
-  ok('tapping a budget row shows details', await pg.isVisible('#budgetDashboardRows .v-brow-more >> nth=0')); }
+  ok('budget rows compact ('+n+' rows, first '+Math.round(h)+'px)', n>=1 && h<90);
+  const withMore=pg.locator('#budgetDashboardRows details.v-brow-c:has(.v-brow-more)');
+  if(await withMore.count()){ await withMore.first().locator('summary').click(); await pg.waitForTimeout(150);
+    ok('tapping a budget row shows details', await withMore.first().locator('.v-brow-more').isVisible()); } }
 await pg.click('.ux-bottom-item[data-page="plan"]');await pg.waitForTimeout(500);
 ok('emergency card visible (เงินของฉัน)', await pg.isVisible('#emergencyDashboardCard'));
 ok('duplicate spend card is gone from Plan', !(await pg.locator('#spendSummaryCard').count()));
