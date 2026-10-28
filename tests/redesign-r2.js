@@ -78,7 +78,7 @@ await pg.click('#vDateBtn'); await pg.waitForTimeout(250); await pg.keyboard.pre
 ok('Escape closes the date sheet without change', !(await vis('.v-date-sheet')) && (await pg.inputValue('#date'))===d15);
 
 // โน้ต: คีย์บอร์ดมือถือขึ้นแทน → ซ่อนแป้น
-await pg.click('#note'); await pg.waitForTimeout(150);
+await pg.click('#note'); await pg.waitForTimeout(450);
 ok('typing a note hides the keypad', !(await vis('#vKeypad')));
 await pg.fill('#note','ข้าวเที่ยง'); await pg.click('#vDateBtn'); await pg.keyboard.press('Escape'); await pg.waitForTimeout(200);
 ok('keypad returns after leaving the note', await vis('#vKeypad'));

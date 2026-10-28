@@ -22,7 +22,8 @@ await pg.mouse.click(190,400); await pg.waitForTimeout(100); // แตะคร�
 // 1) ฟอร์ม: ย้อนครั้งแรกปิดแป้น ครั้งที่สองปิดฟอร์ม
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(300);
 ok('form open, keypad visible', await q(()=>document.getElementById('overlay').classList.contains('open')) && await pg.isVisible('#vKeypad'));
-await back();
+await pg.evaluate(()=>history.back()); const hs=[]; for(let i=0;i<5;i++){ await pg.waitForTimeout(50); hs.push(await q(()=>Math.round(document.getElementById('vKeypad').getBoundingClientRect().height)));} await pg.waitForTimeout(350);
+ok('keypad slides down smoothly (heights '+hs.join(',')+')', hs[0]>0 && hs[hs.length-1]<hs[0] && new Set(hs).size>=3);
 ok('back #1: keypad closes, form stays', await q(()=>document.getElementById('overlay').classList.contains('open')) && !(await pg.isVisible('#vKeypad')));
 ok('still inside the app', pg.url().includes('localhost:8161'));
 await pg.click('#overlay .v-amount'); await pg.waitForTimeout(150);
