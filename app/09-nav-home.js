@@ -111,6 +111,21 @@
   // หน้าย่อย (มีปุ่มย้อนกลับ ไม่จำเป็นแท็บล่าสุด)
   const SUB={more:1,list:1};
   window.vaultetLastTab='home';
+  // รูปโปรไฟล์: เก็บแยกจากข้อมูลโปรไฟล์ (ไม่ส่งให้ AI) ย่อเป็นสี่เหลี่ยมจัตุรัส 256px ก่อนเก็บ
+  const PHOTO_KEY='vaultet_profile_photo_v1';
+  function photoChanged(){ document.dispatchEvent(new Event('vaultet-avatar-changed')); }
+  window.vaultetProfilePhoto={
+    get(){ try{ return localStorage.getItem(PHOTO_KEY)||''; }catch(e){ return ''; } },
+    set(url){ try{ localStorage.setItem(PHOTO_KEY,url); }catch(e){ return false; } photoChanged(); return true; },
+    clear(){ try{ localStorage.removeItem(PHOTO_KEY); }catch(e){} photoChanged(); },
+    fromFile(file){ return new Promise((res,rej)=>{
+      const fr=new FileReader(); fr.onerror=()=>rej(new Error('read'));
+      fr.onload=()=>{ const im=new Image(); im.onerror=()=>rej(new Error('img'));
+        im.onload=()=>{ const S=256,c=document.createElement('canvas'); c.width=c.height=S; const m=Math.min(im.width,im.height);
+          c.getContext('2d').drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,S,S); res(c.toDataURL('image/jpeg',0.85)); };
+        im.src=fr.result; };
+      fr.readAsDataURL(file); }); }
+  };
   function profileInfo(){
     let p={}; try{ p=JSON.parse(localStorage.getItem('vaultet_user_profile_v1')||'{}')||{}; }catch(e){}
     const name=String(p.nickname||p.firstName||'').trim();
@@ -120,9 +135,12 @@
     const {name,letter}=profileInfo();
     const g=document.getElementById('uxGreeting'); if(g) g.textContent=name?'สวัสดี '+name:'สวัสดี';
     const a=document.getElementById('uxAvatarBtn');
-    if(a) a.innerHTML=letter?'<span class="ux-avatar-letter"></span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.500-4 4.500-6 8-6s6.500 2 8 6"/></svg>';
+    const photo=window.vaultetProfilePhoto.get();
+    if(a && photo){ a.innerHTML='<img class="ux-avatar-img" alt="">'; a.firstChild.src=photo; }
+    else if(a) a.innerHTML=letter?'<span class="ux-avatar-letter"></span>':'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.500-4 4.500-6 8-6s6.500 2 8 6"/></svg>';
     const l=a&&a.querySelector('.ux-avatar-letter'); if(l) l.textContent=letter;
   }
+  document.addEventListener('vaultet-avatar-changed',syncTopbar);
   function go(id){
     if(!views[id]) id='home';
     if(!SUB[id]) window.vaultetLastTab=id;
@@ -491,7 +509,16 @@
   });
   function summary(p){const name=p.nickname||[p.firstName,p.lastName].filter(Boolean).join(' ')||'โปรไฟล์ของฉัน';const life=p.statuses?.length?p.statuses.join(' · '):(p.occupation||'ตั้งค่าโปรไฟล์');return {name,life};}
   function refreshTrigger(){const b=document.getElementById('uxProfileTrigger');if(!b)return;const p=profile(),s=summary(p);b.querySelector('strong').textContent=s.name;b.querySelector('span').textContent=s.life;}
-  function open(){const p=profile();
+  function paintPhoto(){
+    const big=document.querySelector('#vaultetProfileOverlay .profile-big-avatar'),photo=window.vaultetProfilePhoto.get();
+    const pick=document.getElementById('vpPhotoPick'),clr=document.getElementById('vpPhotoClear');
+    if(pick) pick.textContent=photo?'เปลี่ยนรูป':'เลือกรูป'; if(clr) clr.hidden=!photo;
+    if(!big) return;
+    if(photo){ if(!big.querySelector('img')) big.innerHTML='<img alt="">'; const im=big.firstChild; if(im.src!==photo) im.src=photo; }
+    else if(big.querySelector('img')) big.innerHTML='<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
+  }
+  document.addEventListener('vaultet-avatar-changed',paintPhoto);
+  function open(){const p=profile();paintPhoto();
     const ov=document.getElementById('vaultetProfileOverlay'); if(!ov)return;
     const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};
     set('vpFirst',p.firstName);set('vpLast',p.lastName);set('vpNick',p.nickname);set('vpAge',p.age);set('vpOccupation',p.occupation);set('vpWorkType',p.workType);set('vpEducation',p.education);set('vpLocation',p.location);set('vpIncome',p.monthlyIncomeEstimate);set('vpReserve',p.minReserveTarget);set('vpNotes',p.notes);set('vpContext',p.personalContext);set('vpHabits',p.habits);set('vpHelp',p.aiHelp);
@@ -509,7 +536,7 @@
     refreshTrigger(); if(typeof refreshAIProfileStatus==='function')refreshAIProfileStatus(); if(typeof refreshProactiveCard==='function')refreshProactiveCard(true); document.getElementById('vaultetProfileOverlay')?.classList.remove('open'); if(typeof showToast==='function')showToast('บันทึกโปรไฟล์แล้ว');
   }
   function build(){
-    const ov=document.createElement('div');ov.id='vaultetProfileOverlay';ov.className='profile-overlay';ov.innerHTML=`<div class="profile-sheet" role="dialog" aria-modal="true" aria-label="โปรไฟล์ของฉัน"><div class="profile-head"><div class="profile-big-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div><h2>โปรไฟล์ของฉัน</h2><p>ข้อมูลนี้ช่วยให้ Vaultet และ AI เข้าใจคุณมากขึ้น</p></div><button class="icon-btn profile-close" id="vpClose" aria-label="ปิด">✕</button></div><div class="profile-grid">
+    const ov=document.createElement('div');ov.id='vaultetProfileOverlay';ov.className='profile-overlay';ov.innerHTML=`<div class="profile-sheet" role="dialog" aria-modal="true" aria-label="โปรไฟล์ของฉัน"><div class="profile-head"><div class="profile-big-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div><h2>โปรไฟล์ของฉัน</h2><p>ข้อมูลนี้ช่วยให้ Vaultet และ AI เข้าใจคุณมากขึ้น</p></div><button class="icon-btn profile-close" id="vpClose" aria-label="ปิด">✕</button></div><div class="profile-photo-row"><button type="button" class="v-btn v-btn-quiet" id="vpPhotoPick">เลือกรูป</button><button type="button" class="v-btn v-btn-text" id="vpPhotoClear">ลบรูป</button><input type="file" id="vpPhotoFile" accept="image/*" hidden></div><div class="profile-grid">
       <section class="profile-card"><h3>ตัวตน</h3><div class="profile-fields two"><label><span class="profile-label">ชื่อ</span><input class="profile-input" id="vpFirst" placeholder="ชื่อจริง"></label><label><span class="profile-label">นามสกุล</span><input class="profile-input" id="vpLast" placeholder="นามสกุล"></label><label><span class="profile-label">ชื่อที่อยากให้เรียก</span><input class="profile-input" id="vpNick" placeholder="เช่น กอล์ฟ"></label><label><span class="profile-label">อายุ</span><input class="profile-input" id="vpAge" type="number" min="0" max="120" inputmode="numeric" placeholder="ปี"></label></div></section>
       <section class="profile-card"><h3>ชีวิตตอนนี้</h3><div class="profile-checks"><label class="profile-check"><input type="checkbox" data-vp-status value="นักเรียน">นักเรียน</label><label class="profile-check"><input type="checkbox" data-vp-status value="นักศึกษา">นักศึกษา</label><label class="profile-check"><input type="checkbox" data-vp-status value="ทำงาน">ทำงาน</label><label class="profile-check"><input type="checkbox" data-vp-status value="Freelance">Freelance</label><label class="profile-check"><input type="checkbox" data-vp-status value="ธุรกิจส่วนตัว">ธุรกิจส่วนตัว</label></div><div class="profile-fields two" style="margin-top:9px"><label><span class="profile-label">อาชีพ / งาน</span><input class="profile-input" id="vpOccupation" placeholder="เช่น Developer"></label><label><span class="profile-label">รูปแบบงาน</span><input class="profile-input" id="vpWorkType" placeholder="Full-time / Part-time"></label><label><span class="profile-label">การศึกษา</span><input class="profile-input" id="vpEducation" placeholder="มหาวิทยาลัย / คณะ"></label><label><span class="profile-label">พื้นที่ที่อยู่ (ไม่บังคับ)</span><input class="profile-input" id="vpLocation" placeholder="จังหวัด / ประเทศ"></label></div></section>
       <section class="profile-card"><h3>การเงิน</h3><div class="profile-fields two"><label><span class="profile-label">รายได้ประมาณต่อเดือน</span><input class="profile-input" id="vpIncome" type="number" min="0" inputmode="decimal" placeholder="บาท"></label><label><span class="profile-label">เงินสำรองขั้นต่ำ</span><input class="profile-input" id="vpReserve" type="number" min="0" inputmode="decimal" placeholder="บาท"></label></div><p class="hint" style="margin-top:12px">เป้าหมายเก็บเงินอยู่ที่แท็บ "แผน" (มียอดที่เก็บแล้วและวันที่ต้องการ) AI เห็นเป้าหมายเหล่านั้นด้วย</p><button type="button" class="profile-save" id="vpGoalsLink" style="margin-top:9px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">ไปที่เป้าหมายเก็บเงิน</button><p class="hint" style="margin-top:9px">ข้อมูลบัญชีและธุรกรรมจริงยังอยู่ในระบบการเงินเดิม และ AI ใช้ประกอบคำแนะนำได้ตามสิทธิ์ที่ตั้งไว้</p></section>
@@ -517,7 +544,13 @@
       <section class="profile-card full"><h3>ให้ AI รู้จักฉัน</h3><p class="hint">ใส่บริบทที่ช่วยให้คำแนะนำเข้ากับชีวิตจริงของคุณ เช่น นิสัย เป้าหมายระยะยาว หรือสิ่งที่อยากให้ AI ช่วย</p><div class="profile-fields"><label><span class="profile-label">เกี่ยวกับฉัน</span><textarea class="profile-textarea" id="vpContext" placeholder="เช่น กำลังเรียนและทำงานพาร์ตไทม์ ปีนี้อยากเก็บเงินไปเที่ยว..."></textarea></label><label><span class="profile-label">นิสัยการใช้เงิน</span><textarea class="profile-textarea" id="vpHabits" placeholder="เช่น เวลาเครียดมักซื้อของออนไลน์..."></textarea></label><label><span class="profile-label">สิ่งที่อยากให้ AI ช่วย</span><textarea class="profile-textarea" id="vpHelp" placeholder="เช่น ช่วยเตือนเมื่อใช้เงินเกิน และช่วยวางแผนก่อนสิ้นเดือน..."></textarea></label><label><span class="profile-label">ข้อจำกัด / หมายเหตุทางการเงิน</span><textarea class="profile-textarea" id="vpNotes" placeholder="เช่น ห้ามแตะเงินออม..."></textarea></label></div></section>
       <section class="profile-card full"><h3>ข้อมูลที่ AI เข้าถึงได้</h3><p class="hint">คุณควบคุมได้ว่า AI จะนำข้อมูลประเภทไหนไปปรับคำตอบ ข้อมูลที่ปิดจะไม่ถูกใส่เป็นบริบทโปรไฟล์ของ AI</p><label class="profile-permission"><span>ตัวตน<small>ชื่อ อายุ และชื่อที่อยากให้เรียก</small></span><input class="profile-switch" type="checkbox" data-vp-perm="identity"></label><label class="profile-permission"><span>ชีวิต / การเรียน / งาน<small>สถานะ อาชีพ การศึกษา และรูปแบบงาน</small></span><input class="profile-switch" type="checkbox" data-vp-perm="life"></label><label class="profile-permission"><span>การเงินและเป้าหมาย<small>รายได้ เงินสำรอง และเป้าหมายจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="financial"></label><label class="profile-permission"><span>บริบทส่วนตัว<small>ความสนใจ นิสัย ลำดับความสำคัญ และสิ่งที่อยากให้ช่วย</small></span><input class="profile-switch" type="checkbox" data-vp-perm="personal"></label><label class="profile-permission"><span>Memory จากบทสนทนา<small>ความจำที่ AI บันทึกไว้แยกจากโปรไฟล์</small></span><input class="profile-switch" type="checkbox" data-vp-perm="memory"></label></section>
       </div><button class="profile-save" id="vpSave">บันทึกโปรไฟล์</button><button class="profile-danger" id="vpClear">ล้างข้อมูลโปรไฟล์ของฉัน</button></div>`;document.body.append(ov);
-    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpGoalsLink').onclick=()=>{ov.classList.remove('open');if(window.vaultetGo)window.vaultetGo('plan');setTimeout(()=>document.getElementById('goalsCard')?.scrollIntoView({block:'start'}),80);};
+    ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});document.getElementById('vpClose').onclick=()=>ov.classList.remove('open');document.getElementById('vpSave').onclick=save;
+    const file=document.getElementById('vpPhotoFile');
+    document.getElementById('vpPhotoPick').onclick=()=>file.click();
+    document.getElementById('vpPhotoClear').onclick=()=>{window.vaultetProfilePhoto.clear();if(typeof showToast==='function')showToast('ลบรูปแล้ว');};
+    file.onchange=async()=>{const f=file.files&&file.files[0];file.value='';if(!f)return;
+      try{ if(!window.vaultetProfilePhoto.set(await window.vaultetProfilePhoto.fromFile(f))){ if(typeof showToast==='function')showToast('เก็บรูปไม่สำเร็จ — พื้นที่จัดเก็บอาจเต็ม'); return; } if(typeof showToast==='function')showToast('เปลี่ยนรูปโปรไฟล์แล้ว'); }
+      catch(e){ if(typeof showToast==='function')showToast('ใช้รูปนี้ไม่ได้ ลองรูปอื่น'); } };document.getElementById('vpClear').onclick=async ()=>{if((await vaultetAsk("ล้างข้อมูล", 'ล้างข้อมูลโปรไฟล์ทั้งหมดใช่ไหม?', true))){localStorage.removeItem(KEY);window.vaultetProfilePhoto.clear();if(typeof localStorage!=='undefined')localStorage.removeItem(AI_PROFILE_KEY);refreshTrigger();ov.classList.remove('open');if(typeof showToast==='function')showToast('ล้างโปรไฟล์แล้ว')}};document.getElementById('vpGoalsLink').onclick=()=>{ov.classList.remove('open');if(window.vaultetGo)window.vaultetGo('plan');setTimeout(()=>document.getElementById('goalsCard')?.scrollIntoView({block:'start'}),80);};
   }
   window.vaultetOpenProfile=open;
   function init(){build();const top=document.querySelector('.ux-topbar');if(top){const b=document.createElement('button');b.className='ux-profile-trigger';b.id='uxProfileTrigger';b.innerHTML='<div class="ux-profile-avatar"><svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div><div class="ux-profile-mini"><strong>โปรไฟล์ของฉัน</strong><span>ตั้งค่าข้อมูลส่วนตัว</span></div>';b.onclick=open;top.insertBefore(b,top.querySelector('.ux-month')||null);refreshTrigger();}}

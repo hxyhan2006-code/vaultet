@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds54";
+  const UI_VERSION = "ds55";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -294,8 +294,18 @@
     // วงกลมโปรไฟล์: ตัวอักษรแรกของชื่อเล่น (เหมือนแถบบนหน้าหลัก)
     let nm = ""; try{ const pf = JSON.parse(localStorage.getItem("vaultet_user_profile_v1") || "{}") || {}; nm = String(pf.nickname || pf.firstName || "").trim(); }catch(e){}
     const av = document.querySelector("#ux-more .ux-user-context-avatar");
-    if(av && nm){ av.textContent = Array.from(nm)[0].toUpperCase(); av.classList.add("has-letter"); }
+    const photo = window.vaultetProfilePhoto && window.vaultetProfilePhoto.get();
+    if(av && photo){
+      av.classList.remove("has-letter"); av.classList.add("has-photo");
+      if(!av.querySelector("img")) av.innerHTML = '<img alt="">';
+      if(av.firstChild.src !== photo) av.firstChild.src = photo;
+    }else if(av){
+      av.classList.remove("has-photo");
+      if(nm){ av.textContent = Array.from(nm)[0].toUpperCase(); av.classList.add("has-letter"); }
+      else if(av.querySelector("img")){ av.classList.remove("has-letter"); av.innerHTML = '<svg class="v-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; }
+    }
   }
+  document.addEventListener("vaultet-avatar-changed", refreshSettings);
   // กล่องข้อความปิด (เช่น ตั้ง/ปิดล็อกเสร็จ) ขณะอยู่หน้าตั้งค่า → อัปเดตสถานะแถวทันที
   new MutationObserver(ms => {
     if(!document.body.classList.contains("ux-more-active")) return;
