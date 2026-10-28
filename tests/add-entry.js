@@ -49,8 +49,10 @@ await pg.click('#vManageBtn'); ok('manage toggles off', !(await pg.isVisible('#a
 await pg.evaluate(()=>closeForm());
 // 5 transfer
 await open(); await pg.click('.type-btn[data-type="transfer"]'); await pg.fill('#amount','200');
-ok('account select hidden in transfer', !(await pg.isVisible('#entryAccount')));
-await pg.selectOption('#fromAccount','a1'); await pg.selectOption('#toAccount','a2'); await pg.click('#submitBtn'); await pg.waitForTimeout(300);
+ok('account picker hidden in transfer', !(await pg.isVisible('#vAccBtn')) && await pg.isVisible('#vFromBtn') && await pg.isVisible('#vToBtn'));
+// เลือกบัญชีผ่านแผ่นเลือกจากล่าง (ds50) แทนช่องเลือกของเบราว์เซอร์
+await pg.click('#vFromBtn'); await pg.click('.v-dlg-sheet .v-pick-row[data-value="a1"]'); await pg.waitForTimeout(150);
+await pg.click('#vToBtn'); await pg.click('.v-dlg-sheet .v-pick-row[data-value="a2"]'); await pg.waitForTimeout(150); await pg.click('#submitBtn'); await pg.waitForTimeout(300);
 es=await entries(); ok('transfer saved', es.some(e=>e.type==='transfer'&&e.amount===200&&e.fromAccountId==='a1'&&e.toAccountId==='a2'));
 // 6 income + saving invest fields
 await open(); await pg.click('.type-btn[data-type="income"]'); await pg.fill('#amount','999'); await pg.click('.v-chip[data-cat="ยูทูป"]'); await pg.click('#submitBtn'); await pg.waitForTimeout(300);

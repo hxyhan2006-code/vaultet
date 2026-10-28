@@ -257,6 +257,93 @@ window.vaultetPick = function(opts){
   });
 };
 
+// ---------- เลือกวันที่แบบปฏิทินไทย (แผ่นจากล่าง) ----------
+// const iso = await vaultetPickDate({ value:"2026-10-28", title:"เลือกวันที่" })  // null = ปิดไปเฉยๆ
+(function(){
+  const TH_MONTH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  const TH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const WK = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+  const pad = n => String(n).padStart(2, "0");
+  const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const parse = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : null; };
+  const today = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d; };
+  const shift = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  // ป้ายสั้นสำหรับปุ่ม: วันนี้ / เมื่อวาน / 26 ต.ค. 69
+  window.vaultetDateLabel = function(s){
+    const d = parse(s); if(!d) return "";
+    const t = iso(today());
+    if(s === t) return "วันนี้";
+    if(s === iso(shift(today(), -1))) return "เมื่อวาน";
+    if(s === iso(shift(today(), 1))) return "พรุ่งนี้";
+    return d.getDate() + " " + TH_SHORT[d.getMonth()] + " " + String(d.getFullYear() + 543).slice(-2);
+  };
+  window.vaultetPickDate = function(opts){
+    const o = opts || {};
+    const sel = parse(o.value) || today();
+    let view = new Date(sel.getFullYear(), sel.getMonth(), 1, 12);
+    return window.__vaultetShow(ctx => {
+      ctx.cancelValue = null;
+      const box = ctx.box;
+      box.classList.add("v-dlg-sheet", "v-date-sheet");
+      if(box.parentElement) box.parentElement.classList.add("v-dlg-back-sheet");
+      box.insertAdjacentHTML("beforeend", '<div class="v-pick-grip" aria-hidden="true"></div>');
+      const h = document.createElement("h2"); h.className = "v-dlg-title"; h.id = "vdlgd" + Date.now(); h.textContent = o.title || "เลือกวันที่"; box.append(h); box.setAttribute("aria-labelledby", h.id);
+      const quick = document.createElement("div"); quick.className = "v-date-quick";
+      [["วันนี้", 0], ["เมื่อวาน", -1], ["2 วันก่อน", -2]].forEach(([label, n]) => {
+        const v = iso(shift(today(), n));
+        const b = document.createElement("button"); b.type = "button"; b.className = "v-fchip" + (v === iso(sel) ? " is-on" : ""); b.textContent = label; b.dataset.date = v;
+        b.addEventListener("click", () => ctx.close(v)); quick.append(b);
+      });
+      box.append(quick);
+      const head = document.createElement("div"); head.className = "v-date-head";
+      const prev = document.createElement("button"); prev.type = "button"; prev.className = "v-date-nav"; prev.setAttribute("aria-label", "เดือนก่อน"); prev.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
+      const next = document.createElement("button"); next.type = "button"; next.className = "v-date-nav"; next.setAttribute("aria-label", "เดือนถัดไป"); next.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+      const title = document.createElement("span"); title.className = "v-date-title"; title.setAttribute("aria-live", "polite");
+      head.append(prev, title, next); box.append(head);
+      const grid = document.createElement("div"); grid.className = "v-date-grid"; grid.setAttribute("role", "grid"); box.append(grid);
+      const draw = () => {
+        title.textContent = TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543);
+        grid.innerHTML = WK.map(w => '<span class="v-date-wk">' + w + "</span>").join("");
+        for(let i = 0; i < view.getDay(); i++) grid.insertAdjacentHTML("beforeend", "<span></span>");
+        const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+        const t = iso(today()), s = iso(sel);
+        for(let d = 1; d <= days; d++){
+          const v = view.getFullYear() + "-" + pad(view.getMonth() + 1) + "-" + pad(d);
+          const b = document.createElement("button"); b.type = "button"; b.className = "v-date-day" + (v === s ? " is-on" : "") + (v === t ? " is-today" : "");
+          b.textContent = d; b.dataset.date = v; b.setAttribute("aria-label", d + " " + TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543));
+          if(v === s) b.setAttribute("data-autofocus", "");
+          b.addEventListener("click", () => ctx.close(v));
+          grid.append(b);
+        }
+      };
+      prev.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1, 12); draw(); });
+      next.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1, 12); draw(); });
+      draw();
+    });
+  };
+})();
+
+// ---------- แจ้งผลลอยล่างจอ พร้อมปุ่มทำต่อ (เช่น "ย้อน") ----------
+// vaultetSnack("บันทึกแล้ว · กิน ฿60", { action:"ย้อน", onAction(){ ... } })
+window.vaultetSnack = function(message, opts){
+  const o = opts || {};
+  let el = document.getElementById("vSnack");
+  if(!el){
+    el = document.createElement("div"); el.id = "vSnack"; el.className = "v-snack"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite");
+    el.innerHTML = '<span class="v-snack-msg"></span><button type="button" class="v-snack-act"></button>';
+    document.body.append(el);
+  }
+  const msg = el.querySelector(".v-snack-msg"), act = el.querySelector(".v-snack-act");
+  msg.textContent = message;
+  act.hidden = !o.action; act.textContent = o.action || "";
+  act.onclick = () => { hide(); if(o.onAction) o.onAction(); };
+  function hide(){ el.classList.remove("is-on"); }
+  clearTimeout(window.vaultetSnack._t);
+  el.classList.remove("is-on"); void el.offsetWidth; el.classList.add("is-on");
+  window.vaultetSnack._t = setTimeout(hide, o.duration || 5000);
+  return hide;
+};
+
 // ---------- ไอคอนแทนอีโมจิ (เส้นเดียวกับไอคอนอื่นในแอป) ----------
 (function(){
   const P = {

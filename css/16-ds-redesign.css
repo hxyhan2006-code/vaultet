@@ -93,3 +93,85 @@ html body .v-search:focus-within { border-color: var(--v-accent); box-shadow: 0 
 .v-search > svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 html body .v-search input { flex: 1; min-width: 0; height: 100%; padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; outline: none; color: var(--v-fg) !important; font: inherit; font-size: 15px; }
 html body .v-search input::placeholder { color: var(--v-muted); }
+
+/* =====================================================================
+   ds50 รอบ 2: หน้าเพิ่ม/แก้รายการโฉมใหม่ (แป้นตัวเลขของแอป, ปุ่มเลือกบัญชี/วันที่, ไอคอนหมวด)
+   ===================================================================== */
+:root { --v-t-expense: var(--v-out); --v-t-income: var(--v-in); --v-t-saving: var(--v-save); --v-t-transfer: var(--v-xfer); }
+.v-native-hidden { display: none !important; }
+
+/* แถว "พิมพ์เป็นประโยคด้วย AI" */
+html body #overlay .v-ai-entry { background: color-mix(in srgb, var(--v-accent) 9%, transparent); border: 0; border-radius: 14px; min-height: 44px; color: var(--v-muted); }
+
+/* แท็บประเภท: แถบสีเลื่อนตามประเภทที่เลือก */
+html body #overlay #typeToggle { position: relative !important; padding: 4px !important; background: var(--v-bg) !important; border: 1px solid var(--v-line) !important; border-radius: 999px !important; }
+html body #overlay #typeToggle .type-btn::before { background: transparent !important; }
+html body #overlay #typeToggle .type-btn { height: 40px !important; min-height: 40px !important; color: var(--v-muted) !important; transition: color .2s; z-index: 1 !important; }
+html body #overlay #typeToggle .type-btn[class*="active-"] { color: #0b0c0e !important; font-weight: 600; }
+.v-seg-ind { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px; background: var(--v-t-expense); pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .v-seg-ind { transition: transform .25s cubic-bezier(.3,.7,.2,1), width .25s cubic-bezier(.3,.7,.2,1), background .25s; } }
+
+/* จำนวนเงิน */
+html body #overlay .v-sheet input#amount { caret-color: var(--v-accent); }
+html body #overlay .v-sheet input#amount:read-only { cursor: default; }
+
+/* ปุ่มลัดจำนวน: กล่องเท่ากัน */
+html body #overlay #quickAmountRow { flex-wrap: nowrap; gap: 6px; }
+html body #overlay #quickAmountRow .v-chip, html body #overlay #quickAmountRow .v-chip-wrap { flex: 1 1 0; min-width: 0; }
+html body #overlay #quickAmountRow .v-chip { height: 38px; padding: 0 6px; border-radius: 12px; background: var(--v-surface-2); border: 0; font-family: var(--v-mono); font-size: 14px; text-align: center; }
+html body #overlay #quickAmountRow .v-chip-wrap { border-radius: 12px; border: 0; }
+html body #overlay #quickAmountRow .v-chip-wrap > .v-chip { width: 100%; }
+html body #overlay #quickAmountRow #quickAmountClear { flex: 0 0 auto; padding: 0 12px; font-family: inherit; color: var(--v-muted); background: none; border: 1px dashed var(--v-line); }
+
+/* หมวด: ไอคอนในชิป */
+html body #overlay #catGrid .v-chip-wrap { border-radius: 999px; }
+html body #overlay #catGrid .cat-chip-label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px 0 8px; }
+.v-cat-ic { width: 24px; height: 24px; border-radius: 8px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--v-fg) 8%, transparent); color: var(--v-muted); }
+.v-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.v-chip-wrap.is-selected .v-cat-ic { background: rgba(0,0,0,.16); color: #0b0c0e; }
+@media (prefers-reduced-motion: no-preference) { html body #overlay #catGrid .v-chip-wrap { transition: transform .12s ease, background .2s; } html body #overlay #catGrid .v-chip-wrap:active { transform: scale(.95); } }
+
+/* ปุ่มเลือกบัญชี / วันที่ / โอนจาก-ไป */
+html body .v-fbtn { display: flex; flex-direction: column; justify-content: center; gap: 1px; width: 100%; min-height: 50px; padding: 6px 12px; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; border-radius: 14px !important; color: var(--v-fg); font: inherit; text-align: left; cursor: pointer; transition: transform .12s ease, border-color .2s; }
+html body .v-fbtn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { html body .v-fbtn:active { transform: scale(.97); } }
+.v-fbtn-k { font-size: 11px; color: var(--v-muted); }
+.v-fbtn-v { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 15px; }
+.v-fbtn-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-fbtn-chev { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--v-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html body #overlay #transferFieldGroup[style*="block"] { display: grid !important; grid-template-columns: minmax(0,1fr) 20px minmax(0,1fr); align-items: center; gap: 6px; }
+html body #overlay #transferFieldGroup .transfer-arrow { display: grid; place-items: center; color: var(--v-muted); }
+html body #overlay #transferFieldGroup .transfer-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* แป้นตัวเลข (ติดล่างของแผ่น เหนือปุ่มบันทึก) */
+.v-keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+html body .v-key { height: 44px; padding: 0; background: var(--v-surface-2) !important; border: 0 !important; border-radius: 12px !important; color: var(--v-fg); font-family: var(--v-mono); font-size: 22px; font-weight: 500; cursor: pointer; display: grid; place-items: center; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; transition: transform .1s ease, background .15s; }
+html body .v-key:active { background: #23272c !important; }
+@media (prefers-reduced-motion: no-preference) { html body .v-key:active { transform: scale(.95); } }
+html body .v-key:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-key-del svg { width: 24px; height: 24px; fill: none; stroke: var(--v-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+html body #overlay .v-sheet.v-kp-off .v-keypad { display: none; }
+html body #overlay .v-sheet .v-sheet-foot { padding-top: 10px; }
+
+/* ปุ่มบันทึก: ยังกดไม่ได้ = เทาเรียบ (ไม่ใช่สีจางๆ) */
+html body #overlay .v-sheet #submitBtn:disabled { opacity: 1; background: var(--v-surface-2) !important; color: #6b7078 !important; }
+
+/* ปฏิทินเลือกวันที่ */
+.v-date-quick { display: flex; gap: 8px; padding: 0 8px 12px; }
+.v-date-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 6px; }
+.v-date-title { font-size: 15px; font-weight: 600; }
+html body .v-date-nav { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2) !important; border: 0 !important; border-radius: 12px !important; color: var(--v-fg); cursor: pointer; }
+.v-date-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.v-date-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; padding: 0 4px 4px; text-align: center; }
+.v-date-wk { font-size: 12px; color: var(--v-muted); padding: 6px 0; }
+html body .v-date-day { height: 42px; padding: 0; background: none !important; border: 0 !important; border-radius: 12px !important; color: var(--v-fg); font-family: var(--v-mono); font-size: 14px; cursor: pointer; }
+html body .v-date-day.is-today { box-shadow: inset 0 0 0 1px var(--v-accent); }
+html body .v-date-day.is-on { background: var(--v-accent) !important; color: var(--v-accent-ink); font-weight: 600; box-shadow: none; }
+html body .v-date-day:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 1px; }
+
+/* แจ้งผลลอยล่างจอ + ปุ่มย้อน */
+.v-snack { position: fixed; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 100001; max-width: 448px; margin: 0 auto; min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; background: var(--v-fg); color: var(--v-bg); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.45); font-family: var(--v-font); font-size: 14px; opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+.v-snack.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.v-snack-msg { flex: 1; min-width: 0; }
+html body .v-snack-act { flex: none; min-height: 40px; padding: 0 14px; background: none !important; border: 0 !important; color: #128a3e; font: inherit; font-weight: 600; cursor: pointer; }
+.v-snack-act[hidden] { display: none; }

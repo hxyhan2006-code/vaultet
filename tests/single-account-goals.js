@@ -26,7 +26,7 @@ ok('single-account class is on', await pg.evaluate(()=>document.body.classList.c
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);
 ok('add sheet: account picker hidden', !(await pg.isVisible('#entryAccountWrap')));
 ok('add sheet: transfer type hidden, other 3 visible', !(await pg.isVisible('.type-btn[data-type="transfer"]')) && (await pg.locator('.type-btn:visible').count())===3);
-ok('add sheet: date still visible', await pg.isVisible('#date'));
+ok('add sheet: date still visible', await pg.isVisible('#vDateBtn'));
 await pg.screenshot({path:shots+'single-form.png'});
 await pg.fill('#amount','99'); await pg.click('.v-chip[data-cat="คาเฟ่"]'); await pg.click('#submitBtn'); await pg.waitForTimeout(300);
 let es=await get(pg,'finance_tracker_entries_v1'); ok('entry saved to the only account', es.some(e=>e.amount===99&&e.accountId==='a1'));
