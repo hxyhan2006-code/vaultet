@@ -683,15 +683,16 @@ function renderUpcomingWidget(){
   const listEl = document.getElementById("upcomingPreviewList");
   let html = "";
   if(summary.overdue > 0){
-    html += `<div class="networth-sub" style="color:var(--expense)"><span>ค้างจ่าย (Overdue)</span><span class="mono">฿${fmt(summary.overdue)}</span></div>`;
+    html += `<div class="v-up-row is-overdue"><span class="v-up-av">!</span><div class="v-up-main"><div class="v-up-name">ค้างจ่าย</div></div><span class="mono v-up-amt">฿${fmt(summary.overdue)}</span></div>`;
   }
   if(!items.length){
-    html += `<div class="networth-sub"><span>ไม่มีรายการใน 30 วันข้างหน้า</span><span></span></div>`;
+    html += `<div class="v-up-empty">ไม่มีรายการใน 30 วันข้างหน้า</div>`;
   }else{
     html += items.map(({r, status, days}) => {
       const dayText = status==="overdue" ? `เลยกำหนด ${Math.abs(days)} วัน` : status==="dueToday" ? "วันนี้" : `อีก ${days} วัน`;
-      const color = status==="overdue" ? "var(--expense)" : "var(--faint)";
-      return `<div class="networth-sub"><span style="color:var(--ink)">${escapeHtml(r.name)} <span style="color:${color}">· ${dayText}</span></span><span class="mono">฿${fmt(r.amount)}</span></div>`;
+      const cls = status==="overdue" ? " is-overdue" : (status==="dueToday" || days<=3) ? " is-soon" : "";
+      const letter = escapeHtml(Array.from(String(r.name||"?").trim())[0] || "?").toUpperCase();
+      return `<div class="v-up-row${cls}"><span class="v-up-av">${letter}</span><div class="v-up-main"><div class="v-up-name">${escapeHtml(r.name)}</div><div class="v-up-when">${dayText}</div></div><span class="mono v-up-amt">฿${fmt(r.amount)}</span></div>`;
     }).join("");
   }
   listEl.innerHTML = html;
