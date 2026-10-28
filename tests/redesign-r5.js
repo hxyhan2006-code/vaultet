@@ -23,7 +23,7 @@ const vis=s=>pg.isVisible(s);
 
 // ---- แชท ----
 await pg.click('.ux-bottom-item[data-page="chat"]'); await pg.waitForTimeout(500);
-ok('empty chat: icon + message + 4 suggested questions', await vis('.v-chat-empty .v-chat-empty-ic') && (await pg.locator('.v-chat-sug').count())===4);
+ok('empty chat (ds56): greeting + 4 suggested rows, left-aligned near the bottom', await vis('.v-chat-empty .v-chat-hello') && (await pg.evaluate(()=>{const e=document.querySelector('.v-chat-empty').getBoundingClientRect(),i=document.querySelector('.ai-chat-input-row').getBoundingClientRect();return i.top-e.bottom<80;})) && (await pg.locator('.v-chat-sug').count())===4);
 await pg.screenshot({path:shots+'r5-chat-empty.png'});
 const callsBefore=aiCalls;
 await pg.click('.v-chat-sug >> nth=0'); await pg.waitForTimeout(400);
@@ -33,7 +33,7 @@ await pg.fill('#aiChatInput',''); await pg.waitForTimeout(100);
 await pg.evaluate(()=>{ saveAIChatHistory([{role:'user',text:'เดือนนี้ใช้เงินเยอะไปไหม'},{role:'model',text:'ยังไม่เยอะ **฿1,095**'}]); renderAiChatBubbles(); });
 await pg.waitForTimeout(300);
 ok('my message is a green bubble', await pg.evaluate(()=>getComputedStyle(document.querySelector('.ai-chat-msg.role-user .ai-chat-bubble')).backgroundColor.replace(/\s/g,'')==='rgb(29,185,84)'));
-ok('AI message has the small sparkle mark', await pg.evaluate(()=>{const m=document.querySelector('.ai-chat-msg.role-model');const a=getComputedStyle(m,'::after');return a.content!=='none'&&parseFloat(a.width)>10;}));
+ok('AI message is plain full-width text (no leading icon, ds56)', await pg.evaluate(()=>{const m=document.querySelector('.ai-chat-msg.role-model');return getComputedStyle(m,'::after').content==='none'&&parseFloat(getComputedStyle(m).paddingLeft)===0;}));
 ok('suggestions gone once there is a conversation', (await pg.locator('.v-chat-sug').count())===0);
 await pg.screenshot({path:shots+'r5-chat.png'});
 await pg.evaluate(()=>{ saveAIChatHistory([]); renderAiChatBubbles(); }); await pg.waitForTimeout(200);
