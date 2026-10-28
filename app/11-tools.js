@@ -290,10 +290,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     const el=e.target.closest&&e.target.closest('#notificationPreviewList [data-adv-idx]');
     if(el){e.preventDefault();openSheet(Number(el.dataset.advIdx));}
   });
-  // คำแนะนำจาก AI: ย่อ 2 บรรทัด แตะเพื่ออ่านทั้งหมด
-  document.addEventListener('click',e=>{
-    const b=e.target.closest&&e.target.closest('#aiProactiveBody'); if(b)b.classList.toggle('is-open');
-  });
+
   try{ if(typeof renderVaultetNotifications==='function') renderVaultetNotifications(); }catch(_){}
 })();
 
