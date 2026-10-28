@@ -23,6 +23,8 @@ let pg=await newPage(()=>{if(localStorage.getItem('__s'))return;localStorage.set
  localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'บัญชีหลัก',initialBalance:5000}]));
  localStorage.setItem('finance_tracker_entries_v1',JSON.stringify([{id:'e1',type:'expense',category:'กิน',amount:60,note:'ข้าว',date:d,accountId:'a1'}]));});
 ok('single-account class is on', await pg.evaluate(()=>document.body.classList.contains('v-single-account')));
+ok('single account: recent rows do not show the account name', await pg.evaluate(()=>{const t=document.getElementById('vRecentList').innerText;return t.includes('ข้าว') && !t.includes('บัญชีหลัก');}));
+ok('"ไม่ระบุบัญชี" is never shown as a row label', await pg.evaluate(()=>accountNameForRow('unassigned')==='' && accountNameForRow(undefined)===''));
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);
 ok('add sheet: account picker hidden', !(await pg.isVisible('#entryAccountWrap')));
 ok('add sheet: transfer type hidden, other 3 visible', !(await pg.isVisible('.type-btn[data-type="transfer"]')) && (await pg.locator('.type-btn:visible').count())===3);
@@ -39,6 +41,7 @@ ok('analysis: account filters hidden', !(await pg.isVisible('#analysisAccountFil
 // add a 2nd account -> everything comes back
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150); await pg.click('#vMoneyAccounts [data-act="accounts"]'); await pg.waitForTimeout(250);
 await pg.click('#addAccountBtn'); await T.dlgOK(pg,{name:'ออมทรัพย์',bal:'1000'}); await pg.waitForTimeout(300);
+ok('2 accounts: recent rows show the account name again', await pg.evaluate(()=>document.getElementById('vRecentList').innerText.includes('บัญชีหลัก')));
 ok('2 accounts: class removed', !(await pg.evaluate(()=>document.body.classList.contains('v-single-account'))));
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);

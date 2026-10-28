@@ -379,10 +379,15 @@ function renderAccountsSummary(){
 }
 
 // แถวรายการ (ใช้ทั้งหน้าหลักและแท็บ "รายการ") — แตะแถวเพื่อแก้ไข/ลบ
+// ชื่อบัญชีที่ควรโชว์ในแถว: ไม่โชว์เมื่อมีบัญชีเดียว หรือเป็น "ไม่ระบุบัญชี" (ไม่ได้ให้ข้อมูลอะไร)
+function accountNameForRow(accountId){
+  if(accounts.length <= 1 || !accountId || accountId === UNASSIGNED_ACCOUNT_ID) return "";
+  return accounts.find(a=>a.id===accountId)?.name || "";
+}
 function txListHtml(list){
   const txRow = (e, glyph, tone, title, sub, amount) => `<li class="v-tx" data-id="${e.id}">
       <span class="v-tx-ic v-tone-${tone}">${glyph}</span>
-      <div class="v-tx-main"><div class="v-tx-t">${title}</div><div class="v-tx-s">${sub}</div></div>
+      <div class="v-tx-main"><div class="v-tx-t">${title}</div>${sub?`<div class="v-tx-s">${sub}</div>`:""}</div>
       <span class="v-tx-a v-sens v-tone-${tone}">${amount}</span>
     </li>`;
   const rows = [];
@@ -398,8 +403,8 @@ function txListHtml(list){
       const tone = e.type==="income" ? "in" : e.type==="saving" ? "save" : "out";
       const sign = e.type==="income" ? "+" : e.type==="saving" ? "" : "−";
       const glyph = e.recurringId ? "↻" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
-      const accName = accounts.find(a=>a.id===e.accountId)?.name || "";
-      const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ") || "&nbsp;";
+      const accName = accountNameForRow(e.accountId);
+      const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ");
       rows.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
     }
   });

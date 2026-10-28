@@ -34,7 +34,7 @@ function renderUpcomingOverlay(){
     return `<div class="upcoming-item">
       <div>
         <div class="list-cat" style="color:${color}">${escapeHtml(r.name)} · ${dayText}</div>
-        <div class="list-note">${frequencyLabel(r.frequency)} · ${escapeHtml(accName)} · ฿${fmt(r.amount)}</div>
+        <div class="list-note">${[frequencyLabel(r.frequency), accounts.length>1?escapeHtml(accName):"", "฿"+fmt(r.amount)].filter(Boolean).join(" · ")}</div>
         ${reservedLine}
       </div>
       <div class="upcoming-actions">
@@ -88,7 +88,7 @@ function renderRecurringManageList(){
     return `<div class="account-row" style="align-items:flex-start;">
       <span class="acc-name" style="flex-direction:column; align-items:flex-start; display:flex;">
         <span>${escapeHtml(r.name)} <span style="color:${badgeColor}">— ${statusLabel(displayStatus)}</span></span>
-        <span class="mono" style="font-size:12px;color:var(--faint)">฿${fmt(r.amount)} · ${frequencyLabel(r.frequency)} · ${escapeHtml(accName)} · ครบกำหนด ${r.nextDueDate}</span>
+        <span class="mono" style="font-size:12px;color:var(--faint)">฿${fmt(r.amount)} · ${frequencyLabel(r.frequency)} · ${accounts.length>1?escapeHtml(accName)+" · ":""}ครบกำหนด ${r.nextDueDate}</span>
       </span>
       <span class="acc-actions">
         <button class="icon-btn edit-recurring-btn" data-id="${r.id}" aria-label="แก้ไข">${ICON_EDIT}</button>
