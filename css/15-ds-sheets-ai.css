@@ -1,0 +1,324 @@
+/* Vaultet — css/15-ds-sheets-ai.css : หน้าต่างงบ/พอร์ต, เมนู AI, แจ้งเตือน, ทางลัด, OpenRouter (แยกจาก ds.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ===== ds13: management sheets — budget manager + portfolio ===== */
+#budgetOverlay .sheet-modal { display: flex; flex-direction: column; gap: 14px; max-height: 92vh; overflow-y: auto; }
+#budgetOverlay .v-bm-card { display: flex; flex-direction: column; gap: 10px; }
+#budgetOverlay .field-label { margin: 6px 0 0 !important; font-size: 13px; color: var(--v-muted); }
+html body #budgetOverlay .text-input { width: 100%; height: 46px; padding: 0 14px !important; margin: 0 !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md) !important; color: var(--v-fg) !important; font: inherit; font-size: 15px; box-sizing: border-box; }
+html body #budgetOverlay .text-input:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+#budgetOverlay .budget-form-grid { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.v-seg { display: flex; padding: 3px; gap: 3px; background: var(--v-surface-2); border-radius: 999px; }
+.v-seg button { flex: 1; height: 38px; border: 0; border-radius: 999px; background: none; color: var(--v-muted); font: inherit; font-size: 14px; cursor: pointer; }
+.v-seg button.on { background: var(--v-accent); color: var(--v-accent-ink); font-weight: 600; }
+.v-check { position: relative; display: inline-flex; }
+.v-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.v-check span { padding: 8px 14px; font-size: 14px; border-radius: 999px; background: var(--v-surface-2); border: 1px solid var(--v-line); color: var(--v-fg); }
+.v-check input:checked + span { background: var(--v-accent); border-color: transparent; color: var(--v-accent-ink); font-weight: 600; }
+.v-check input:focus-visible + span { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-btn-primary { width: 100%; height: 48px; margin-top: 8px; border: 0; border-radius: var(--v-r-md); background: var(--v-accent); color: var(--v-accent-ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+#budgetManageSummary .networth-sub { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border: 0; }
+#budgetManageSummary .networth-sub span:first-child { color: var(--v-muted); }
+#budgetManageList .v-brow:first-child { border-top: 1px solid var(--v-line); margin-top: 8px; }
+
+/* portfolio: same surface / divider / button language as the rest */
+#pfOverlay { background: var(--v-bg) !important; }
+#pfOverlay .pf-sum { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-lg) !important; }
+#pfOverlay .pf-sum-big { font-family: var(--v-mono); font-size: 30px; letter-spacing: -.02em; }
+#pfOverlay .pf-sum-line { border-top: 1px solid var(--v-line) !important; border-style: solid none none none !important; }
+#pfOverlay .pf-bottom button { border-radius: var(--v-r-md) !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; color: var(--v-fg) !important; }
+#pfOverlay .pf-bottom button.primary { background: var(--v-accent) !important; border-color: transparent !important; color: var(--v-accent-ink) !important; font-weight: 600; }
+#pfOpenSheet .btns button.ok { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+#pfOverlay .pos { color: var(--v-in); } #pfOverlay .neg { color: var(--v-out); }
+
+/* emergency settings: category picker as chips */
+#emergencyEssentialCategories { display: flex !important; flex-wrap: wrap; gap: 8px; }
+html body #saveEmergencyBtn { height: 48px; background: var(--v-accent) !important; color: var(--v-accent-ink) !important; border: 0 !important; border-radius: var(--v-r-md) !important; font-weight: 600; }
+/* profile editor: checkbox options as chips */
+html body .profile-check { position: relative; display: inline-flex; padding: 8px 14px !important; border-radius: 999px !important; background: var(--v-surface-2) !important; border: 1px solid var(--v-line) !important; color: var(--v-fg) !important; font-size: 14px !important; cursor: pointer; }
+html body .profile-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+html body .profile-check:has(input:checked) { background: var(--v-accent) !important; border-color: transparent !important; color: var(--v-accent-ink) !important; font-weight: 600; }
+html body .profile-check:has(input:focus-visible) { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.notification-icon .v-ic { width: 22px; height: 22px; }
+.notification-icon, #aiProactiveIcon { color: var(--v-muted); }
+.notification-item.unread .notification-icon { color: var(--v-out); }
+.ai-icon-btn .v-ic, .icon-btn .v-ic { width: 18px; height: 18px; }
+.ux-profile-avatar .v-ic, .ux-user-context-avatar .v-ic, .profile-big-avatar .v-ic { width: 60%; height: 60%; }
+#uxBellBtn .v-ic { width: 20px; height: 20px; }
+
+/* ===== ds19: AI menu (Claude-style side menu) + chat top bar + circular avatars ===== */
+html body #aiAdvisorSettingsBtn, html body #aiChatHistoryBtn, html body #clearAiChatBtn, html body #weeklyAuditHeaderBtn, html body.ux-chat-active #uxChatTopActions .ai-icon-btn { display: none !important; }
+html body .ux-avatar { display: none !important; }
+.v-top-btn { flex: none; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 50%; color: var(--v-fg); cursor: pointer; }
+.v-top-btn .v-ic { width: 20px; height: 20px; }
+.v-top-btn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+#uxChatTopActions { display: flex; align-items: center; gap: 8px; }
+.v-aimenu-back { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.5); opacity: 0; visibility: hidden; transition: opacity .22s ease, visibility 0s .22s; }
+.v-aimenu-back.is-open { opacity: 1; visibility: visible; transition: opacity .22s ease; }
+.v-aimenu { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9001; width: min(88vw, 360px); display: flex; flex-direction: column; background: var(--v-bg); border-left: 1px solid var(--v-line); padding: calc(14px + env(safe-area-inset-top, 0px)) 0 0; transform: translateX(104%); visibility: hidden; transition: transform .24s cubic-bezier(.2,.8,.2,1), visibility 0s .24s; }
+.v-aimenu.is-open { transform: none; visibility: visible; transition: transform .24s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .v-aimenu, .v-aimenu-back { transition: none !important; } }
+.v-aimenu-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 10px 20px; }
+.v-aimenu-title { font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.v-aimenu-search-btn { width: 40px; height: 40px; display: grid; place-items: center; background: none; border: 0; border-radius: 50%; color: var(--v-fg); cursor: pointer; }
+.v-aimenu-search-btn .v-ic { width: 22px; height: 22px; }
+.v-aimenu-search { display: flex; align-items: center; gap: 10px; margin: 0 16px 8px; padding: 0 14px; height: 44px; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 999px; color: var(--v-muted); }
+.v-aimenu-search[hidden] { display: none; }
+.v-aimenu-search .v-ic { width: 18px; height: 18px; flex: none; }
+.v-aimenu-search input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; color: var(--v-fg); font: inherit; font-size: 15px; }
+.v-aimenu-list { display: flex; flex-direction: column; padding: 0 8px; }
+.v-aimenu-row { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 50px; padding: 0 12px; background: none; border: 0; border-radius: 14px; color: var(--v-fg); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.v-aimenu-row:active { background: var(--v-surface-2); }
+.v-aimenu-row .v-ic { width: 22px; height: 22px; color: var(--v-muted); flex: none; }
+.v-aimenu-row.is-danger, .v-aimenu-row.is-danger .v-ic { color: var(--v-out); }
+.v-aimenu-label { margin: 14px 20px 6px; padding-top: 14px; border-top: 1px solid var(--v-line); font-size: 13px; color: var(--v-muted); }
+.v-aimenu-hist { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 8px 8px; }
+.v-aimenu-chat { display: flex; align-items: center; border-radius: 14px; }
+.v-aimenu-chat.is-active { background: var(--v-surface-2); }
+.v-aimenu-chat-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; min-height: 46px; padding: 0 8px 0 12px; background: none; border: 0; color: var(--v-fg); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.v-aimenu-chat-main .v-ic { width: 18px; height: 18px; color: var(--v-muted); flex: none; }
+.v-aimenu-chat-main span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-aimenu-chat-del { flex: none; width: 40px; height: 40px; display: grid; place-items: center; background: none; border: 0; border-radius: 50%; color: var(--v-muted); cursor: pointer; opacity: .7; }
+.v-aimenu-chat-del .v-ic { width: 16px; height: 16px; }
+.v-aimenu-empty { padding: 14px 12px; font-size: 14px; color: var(--v-muted); }
+.v-aimenu-profile { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px)); background: var(--v-bg); border: 0; border-top: 1px solid var(--v-line); border-radius: 0; color: var(--v-fg); font: inherit; text-align: left; cursor: pointer; }
+.v-aimenu-profile:active { background: var(--v-surface); }
+.v-aimenu-avatar { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--v-accent); color: var(--v-accent-ink); font-size: 18px; font-weight: 600; }
+.v-aimenu-avatar .v-ic { width: 22px; height: 22px; }
+.v-aimenu-pinfo { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.v-aimenu-name { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-aimenu-sub { font-size: 13px; color: var(--v-muted); }
+
+/* settings page: quick backup row + softer profile card/avatars */
+.v-set-primary { }
+html body .v-set-row.v-set-primary { background: transparent !important; }
+html body .v-set-row.v-set-primary .v-set-title { color: var(--v-in) !important; font-weight: 600; }
+html body .v-set-row.v-set-primary .v-set-sub { color: var(--v-muted) !important; }
+.v-set-primary.is-busy { opacity: .6; pointer-events: none; }
+html body .profile-big-avatar, html body .ux-user-context-avatar, html body .ux-profile-avatar { border-radius: 50% !important; }
+html body #ux-more .ux-user-context { border-radius: 20px !important; }
+
+/* smooth tab/page change */
+@media (prefers-reduced-motion: no-preference) { html body .ux-view.active { animation: v-viewin .22s ease-out; } }
+@keyframes v-viewin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ===== ds20: advisor-instruction sheet, Drive/Key buttons, checkbox ===== */
+.v-sheet-back { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.55); opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s .2s; }
+.v-sheet-back.is-open { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+html body .ai-advisor-settings-panel { display: block !important; position: fixed; left: 0; right: 0; bottom: 0; z-index: 9101; margin: 0; max-height: 88vh; overflow-y: auto; padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--v-surface); border: 1px solid var(--v-line); border-bottom: 0; border-radius: 24px 24px 0 0; transform: translateY(105%); visibility: hidden; transition: transform .26s cubic-bezier(.2,.8,.2,1), visibility 0s .26s; }
+html body .ai-advisor-settings-panel.is-open { transform: none; visibility: visible; transition: transform .26s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { html body .ai-advisor-settings-panel, .v-sheet-back { transition: none !important; } }
+.v-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 6px; }
+.ai-advisor-settings-title { margin: 0 !important; font-size: 17px !important; font-weight: 600 !important; }
+.v-sheet-x { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-muted); cursor: pointer; }
+.v-sheet-x .v-ic { width: 18px; height: 18px; }
+html body .ai-advisor-settings-help { font-size: 13px; color: var(--v-muted); margin: 4px 0 12px; }
+html body #aiAdvisorInstruction { min-height: 120px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); }
+html body #aiAdvisorInstruction:focus { outline: 2px solid var(--v-accent); outline-offset: 0; }
+html body .ai-advisor-settings-actions { gap: 10px; margin-top: 12px; }
+html body .ai-advisor-settings-actions button { height: 46px; padding: 0; border: 0; border-radius: var(--v-r-md); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; background: var(--v-surface-2); color: var(--v-fg); }
+html body .ai-advisor-settings-actions button#saveAiAdvisorInstructionBtn { background: var(--v-accent); color: var(--v-accent-ink); }
+html body .ai-advisor-settings-status { font-size: 12px; color: var(--v-muted); }
+
+/* buttons inside the old settings sheets (Drive / keys / stocks) */
+html body #settingsOverlay .ai-key-actions { gap: 10px; }
+html body #settingsOverlay .ai-key-actions button { height: 46px; padding: 0 8px !important; white-space: nowrap; border: 0 !important; border-radius: var(--v-r-md) !important; font: inherit; font-size: 14px !important; font-weight: 600 !important; cursor: pointer; background: var(--v-surface-2) !important; color: var(--v-fg) !important; }
+html body #settingsOverlay .ai-key-actions button[style*="accent1"] { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+html body #settingsOverlay .ai-key-actions button.danger-btn { background: color-mix(in srgb, var(--v-out) 14%, transparent) !important; color: var(--v-out) !important; }
+html body #settingsOverlay .ai-key-actions button:disabled { opacity: .45; }
+html body #settingsOverlay input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; width: 22px !important; height: 22px !important; margin: 0; border: 1.5px solid var(--v-muted); border-radius: 7px; background: transparent; display: inline-grid; place-items: center; cursor: pointer; }
+html body #settingsOverlay input[type="checkbox"]:checked { background: var(--v-accent) !important; border-color: var(--v-accent) !important; }
+html body #settingsOverlay input[type="checkbox"]:checked::after { content: ""; width: 5px; height: 10px; border: solid var(--v-accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
+html body #settingsOverlay .gdrive-auto-status { border-radius: var(--v-r-md); }
+
+/* streaming AI reply */
+.ai-stream-caret { display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--v-accent); animation: v-caret 1s steps(2, start) infinite; }
+@keyframes v-caret { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .ai-stream-caret { animation: none; } }
+
+/* ===== ds22: notification centre (list first, settings on its own page) + flat scoped sheets ===== */
+html body #notificationOverlay .notification-sheet { background: var(--v-bg) !important; border: 1px solid var(--v-line) !important; border-bottom: 0 !important; border-radius: 24px 24px 0 0 !important; padding: 0 !important; display: flex; flex-direction: column; max-height: 88vh; }
+html body #notificationOverlay .notification-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 8px 20px; border: 0; }
+html body #notificationOverlay .notification-modal-head strong { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.notification-head-actions { display: flex; gap: 8px; }
+html body #notificationOverlay .notification-head-actions .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 50%; color: var(--v-fg); }
+.notification-head-actions .v-ic { width: 20px; height: 20px; }
+.notification-history-tools { display: flex; justify-content: flex-end; gap: 18px; padding: 0 20px 6px; }
+.notification-link { background: none; border: 0; padding: 6px 0; color: var(--v-in); font: inherit; font-size: 14px; cursor: pointer; }
+.notification-link.is-danger { color: var(--v-muted); }
+html body #notificationOverlay .notification-history-section { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; overflow: hidden; }
+html body #notificationOverlay .notification-list { flex: 1 1 auto; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px)); display: block; }
+.notification-day { padding: 14px 8px 6px; font-size: 13px; font-weight: 500; color: var(--v-muted); }
+html body #notificationOverlay .notification-item { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 12px 8px 12px 18px; margin: 0; background: none !important; border: 0 !important; border-radius: 14px; box-shadow: none !important; cursor: pointer; }
+html body #notificationOverlay .notification-item:active { background: var(--v-surface) !important; }
+html body #notificationOverlay .notification-item.unread::before { content: ""; position: absolute; left: 4px; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: var(--v-accent); }
+html body #notificationOverlay .notification-icon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--v-surface); color: var(--v-muted); }
+html body #notificationOverlay .notification-item.unread .notification-icon { color: var(--v-out); }
+html body #notificationOverlay .notification-content { flex: 1; min-width: 0; }
+html body #notificationOverlay .notification-item-title { font-size: 15px; font-weight: 600; line-height: 1.35; }
+html body #notificationOverlay .notification-item:not(.unread) .notification-item-title { font-weight: 500; }
+html body #notificationOverlay .notification-item-body { margin-top: 2px; font-size: 14px; color: var(--v-muted); line-height: 1.45; }
+html body #notificationOverlay .notification-time { flex: none; font-size: 12px; color: var(--v-muted); padding-top: 3px; }
+html body #notificationOverlay .notification-empty { padding: 56px 20px; text-align: center; font-size: 15px; color: var(--v-muted); }
+/* the old settings accordion row is replaced by the gear; the panel becomes its own page */
+html body #notificationOverlay .notification-settings-toggle { display: none !important; }
+html body #notificationOverlay .notification-settings-section { display: none; padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; border: 0; }
+html body #notificationOverlay .notification-sheet.is-settings .notification-settings-section { display: block; }
+html body #notificationOverlay .notification-sheet.is-settings .notification-history-section { display: none; }
+html body #notificationOverlay .notification-settings-panel { display: block; }
+html body #notificationOverlay .notification-settings-panel[hidden] { display: none; }
+html body #notificationOverlay .notification-permission { background: none; border: 0; padding: 0 0 8px; font-size: 13px; color: var(--v-muted); }
+html body #notificationOverlay .notification-actions { display: flex; margin: 4px 0 8px; }
+html body #notificationOverlay .notification-actions button { flex: 1; height: 46px; border: 0; border-radius: var(--v-r-md); background: var(--v-surface-2); color: var(--v-fg); font: inherit; font-size: 14px; font-weight: 600; }
+html body #notificationOverlay .notification-settings-grid { display: block; border-top: 1px solid var(--v-line); margin-top: 8px; }
+html body #notificationOverlay .notification-setting { padding: 14px 0; background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; border-radius: 0 !important; box-shadow: none !important; }
+html body #notificationOverlay .notification-setting label { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 16px; }
+html body #notificationOverlay .notification-setting label span { font-weight: 500; }
+html body #notificationOverlay .notification-setting small { display: block; margin-top: 4px; padding-right: 60px; font-size: 13px; color: var(--v-muted); line-height: 1.4; }
+html body #notificationOverlay .notification-setting .notification-state, html body #notificationOverlay .notification-setting [class*="badge"] { display: none !important; }
+html body #notificationOverlay .notification-setting input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 48px; height: 28px; margin: 0; border-radius: 999px; background: var(--v-surface-2) !important; border: 1px solid var(--v-line); cursor: pointer; transition: background .18s ease; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--v-muted); transition: transform .18s ease, background .18s ease; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked { background: var(--v-accent) !important; border-color: transparent; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked::after { transform: translateX(20px); background: var(--v-accent-ink); }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* scoped settings sheets (Memory / API key / Drive / stocks): no duplicate inner title, no box inside the sheet */
+html body #settingsOverlay[data-topic] .settings-card { background: none !important; border: 0 !important; padding: 0 !important; margin: 0 0 8px !important; box-shadow: none !important; }
+html body #settingsOverlay[data-topic] .settings-card-title { display: none !important; }
+html body #settingsOverlay[data-topic] .ai-status-row { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; border-radius: 0 !important; padding: 12px 0 !important; margin: 0 !important; }
+
+html body #notificationOverlay .notification-setting[data-state] { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; box-shadow: none !important; }
+html body #notificationOverlay .notification-setting[data-state] label > span::after { content: none !important; display: none !important; }
+html body #notificationOverlay .notification-modal-head { padding: 18px 16px 8px 20px !important; border: 0 !important; background: none !important; }
+html body #notificationOverlay .notification-sheet { overflow: hidden; }
+html body #notificationOverlay .notification-sheet .notification-settings-section { padding: 0 20px calc(18px + env(safe-area-inset-bottom, 0px)) !important; }
+html body #notificationOverlay .notification-setting input[type="checkbox"]:checked::after { background: var(--v-accent-ink) !important; }
+
+html body #notificationOverlay .notification-sheet .notification-item.unread { background: none !important; box-shadow: none !important; border: 0 !important; }
+html body #notificationOverlay .notification-count[hidden] { display: none !important; }
+html body #notificationOverlay .notification-sheet .notification-settings-section { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+html body #notificationOverlay .notification-settings-panel, html body #notificationOverlay .notification-sheet .notification-settings-grid { background: none !important; border-left: 0 !important; border-right: 0 !important; box-shadow: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+html body #notificationOverlay .notification-sheet .notification-permission { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-md); padding: 12px 14px !important; }
+html body #notificationOverlay .notification-setting[data-state]:has(input[type="checkbox"]) { background: none !important; border: 0 !important; border-bottom: 1px solid var(--v-line) !important; }
+html body #notificationOverlay .notification-setting:has(input[type="checkbox"]:checked) { background: none !important; border-color: var(--v-line) !important; }
+html body #notificationOverlay .notification-settings-panel { max-height: none !important; overflow: visible !important; }
+html body #notificationOverlay .notification-actions button { border-radius: var(--v-r-md) !important; }
+
+/* ===== ds23: shortcuts (centred, user-ordered), toast, scroll lock ===== */
+.v-sc-more { display: flex !important; justify-content: center; gap: 8px; }
+.v-sc-more[hidden] { display: none !important; }
+.v-sc-more .v-sc { flex: 0 0 calc((100% - 24px) / 4); max-width: calc((100% - 24px) / 4); }
+.v-sc-sort { display: flex; flex-direction: column; margin: 4px 0 14px; }
+.v-sc-sort-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--v-line); }
+.v-sc-sort-row:first-child { border-top: 0; }
+.v-sc-sort-row.is-split { border-top: 2px solid var(--v-muted); margin-top: 6px; padding-top: 14px; }
+.v-sc-sort-ic { flex: none; width: 36px; height: 36px; border-radius: 12px; background: var(--v-surface-2); display: grid; place-items: center; color: var(--v-fg); }
+.v-sc-sort-ic svg, .v-sc-sort-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.v-sc-sort-name { flex: 1; min-width: 0; font-size: 15px; }
+.v-sc-sort-where { font-size: 12px; color: var(--v-muted); }
+.v-sc-sort-btn { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-fg); cursor: pointer; }
+.v-sc-sort-btn:disabled { opacity: .3; cursor: default; }
+
+html body .ai-completion-notice { top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; right: auto; width: min(420px, calc(100vw - 32px)); padding: 10px 10px 10px 12px; gap: 6px; background: var(--v-surface) !important; border: 1px solid var(--v-line); border-radius: 20px; box-shadow: 0 12px 32px rgba(0,0,0,.45); transform: translate(-50%, -12px); align-items: center; z-index: 9200; }
+html body .ai-completion-notice.show { transform: translate(-50%, 0); }
+html body .ai-completion-main { background: none; border: 0; padding: 0; gap: 12px; align-items: center; text-align: left; color: var(--v-fg); }
+html body .ai-completion-icon { flex: none; width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--v-accent) 16%, transparent); color: var(--v-in); display: grid; place-items: center; }
+html body .ai-completion-main strong { font-size: 15px; font-weight: 600; color: var(--v-fg); display: block; }
+html body .ai-completion-main small { font-size: 13px; color: var(--v-muted); display: block; margin-top: 2px; }
+html body .ai-completion-dismiss { flex: none; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; background: var(--v-surface-2); border: 0; border-radius: 50%; color: var(--v-muted); font-size: 18px; line-height: 1; }
+
+body.v-scroll-locked { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+html body .sheet-modal, html body .v-dlg, html body .v-aimenu-hist, html body .notification-list, html body .wa-sheet, html body .profile-sheet, html body .pf-body, html body .ai-advisor-settings-panel, html body #aiAnalystBody { overscroll-behavior: contain; }
+
+/* bottom bar: same 5-column grid on the AI tab too (style.css forces display:flex there, which made the other tabs shift) */
+html body.ux-chat-active:not(.ux-keyboard-open) .ux-bottom-nav { display: grid !important; }
+
+/* loans: repayment history rows + paid-off section */
+.v-loan-hist { width: 100%; margin-top: 8px; }
+.v-loan-hist summary { list-style: none; cursor: pointer; font-size: 12px; color: var(--v-muted); padding: 2px 0; }
+.v-loan-hist summary::-webkit-details-marker { display: none; }
+.v-loan-hist summary::after { content: " ›"; }
+.v-loan-hist[open] summary::after { content: " ⌄"; }
+.v-loan-rep { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0 2px 10px; margin-top: 2px; border-left: 2px solid var(--v-line); font-size: 13px; color: var(--v-fg); }
+.v-loan-rep-acts { display: flex; flex: none; }
+html body .overlay .v-loan-rep .icon-btn { width: 32px; height: 32px; }
+.v-loan-done { margin-top: 12px; border-top: 1px solid var(--v-line); }
+.v-loan-done > summary { list-style: none; cursor: pointer; padding: 14px 0 4px; font-size: 14px; color: var(--v-muted); }
+.v-loan-done > summary::-webkit-details-marker { display: none; }
+.v-loan-done > summary::after { content: " ›"; }
+.v-loan-done[open] > summary::after { content: " ⌄"; }
+.v-loan-row.is-paid .acc-name > span:first-child { color: var(--v-muted); }
+.v-loan-hist { align-self: stretch; }
+.v-loan-rep .mono { white-space: nowrap; }
+.v-loan-rep > span:first-child { flex: 1; min-width: 0; }
+
+/* ===== ds30: OpenRouter card + model picker ===== */
+.v-or-usage { margin: 14px 0 6px; }
+.v-or-urow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--v-line); font-size: 15px; }
+.v-or-pill { padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--v-accent) 14%, transparent); color: var(--v-in); font-family: var(--v-mono); font-size: 14px; }
+.v-or-pill.is-over { background: color-mix(in srgb, var(--v-out) 16%, transparent); color: var(--v-out); }
+.v-or-usub { padding: 0 0 8px; font-size: 13px; color: var(--v-muted); }
+.v-or-usub.is-over { color: var(--v-out); }
+.v-or-pick .v-field { width: 100%; margin: 6px 0; height: 44px; padding: 0 14px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: var(--v-r-md); color: var(--v-fg); font: inherit; font-size: 15px; box-sizing: border-box; }
+.v-or-list { max-height: 42vh; overflow-y: auto; overscroll-behavior: contain; margin: 6px 0; font-size: 14px; color: var(--v-muted); }
+.v-or-row { display: block; width: 100%; text-align: left; padding: 10px 8px; background: none; border: 0; border-top: 1px solid var(--v-line); color: var(--v-fg); font: inherit; cursor: pointer; }
+.v-or-row.is-current { background: var(--v-surface-2); border-radius: 10px; }
+.v-or-name { display: block; font-size: 15px; font-weight: 500; }
+.v-or-id { display: block; font-size: 12px; color: var(--v-muted); overflow-wrap: anywhere; }
+.v-or-price { display: block; font-size: 12px; color: var(--v-in); margin-top: 2px; }
+
+/* AI cost shown on the Settings page */
+.v-set-cost { background: none; }
+.v-set-cost .v-or-urow { padding: 14px 16px; border-top: 0; border-bottom: 1px solid var(--v-line); }
+.v-set-cost .v-or-urow small { color: var(--v-muted); font-size: 12px; margin-left: 4px; }
+.v-set-cost-note { color: var(--v-muted); font-size: 13px; }
+.v-set-cost[hidden] { display: none; }
+
+.v-or-toggle { display: block; width: 100%; margin: 4px 0; padding: 8px 0; background: none; border: 0; color: var(--v-muted); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.v-set-cost-foot { padding: 8px 16px 12px; font-size: 12px; }
+
+/* ds34: AI action card */
+.v-act-list{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
+.v-act-card{padding:12px;border:1px solid var(--v-line);border-radius:14px;background:var(--v-surface-2);display:flex;flex-direction:column;gap:10px}
+.v-act-head{display:flex;gap:10px;align-items:flex-start}
+.v-act-ic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:rgba(255,255,255,.06);color:var(--v-fg)}
+.v-act-ic.del{color:#ff6b6b;background:rgba(255,107,107,.12)}
+.v-act-ic.add,.v-act-ic.edit{color:var(--v-accent);background:rgba(29,185,84,.12)}
+.v-act-ic svg{width:16px;height:16px}
+.v-act-txt{min-width:0;flex:1}
+.v-act-title{font-weight:700;font-size:14px;color:var(--v-fg)}
+.v-act-detail{font-size:13px;color:var(--v-muted);margin-top:2px;overflow-wrap:anywhere}
+.v-act-msg{font-size:12.5px;color:#ff6b6b}
+.v-act-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.v-act-btn{min-height:38px;padding:0 16px;border-radius:999px;border:1px solid var(--v-line);background:transparent;color:var(--v-fg);font-size:13.5px;font-family:inherit;cursor:pointer;position:relative;z-index:3;touch-action:manipulation}
+.v-act-btn.primary{background:var(--v-accent);border-color:var(--v-accent);color:var(--v-accent-ink,#000);font-weight:700}
+.v-act-btn.danger{background:#e5484d;border-color:#e5484d;color:#fff;font-weight:700}
+.v-act-btn.link{border:0;background:none;color:var(--v-muted);padding:0 8px;text-decoration:underline}
+.v-act-status{font-size:13px;color:var(--v-muted)}
+.v-act-card.is-cancelled,.v-act-card.is-undone{opacity:.6}
+html body .v-act-btn.danger,html body .v-act-btn.danger:hover{color:#fff !important;background:#e5484d !important;-webkit-text-fill-color:#fff}
+html body .v-act-btn.primary{color:#000 !important;background:var(--v-accent) !important}
+html body .v-act-btn.link{color:var(--v-muted) !important;background:none !important}
+
+/* ds35: live AI status */
+html body .ai-chat-typing{flex-wrap:wrap;max-width:92%}
+html body .ai-run-status{flex-basis:100%;margin-top:6px;font-size:12.5px;line-height:1.5;color:var(--v-muted)}
+html body .ai-chat-latency{color:var(--v-muted);font-size:11.5px;line-height:1.5;text-align:left}
+
+/* ds38: AI instructions as a list (Gemini-style) */
+html body .v-ins-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:0 0 12px;background:var(--v-surface-2);border:1px solid var(--v-line);border-radius:var(--v-r-md);font-size:15px;color:var(--v-fg);cursor:pointer}
+html body .v-ins-switch input{position:absolute;opacity:0;width:0;height:0}
+html body .v-ins-switch i{position:relative;flex:none;width:46px;height:28px;border-radius:999px;background:var(--v-line);transition:background .18s}
+html body .v-ins-switch i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--v-muted);transition:transform .18s,background .18s}
+html body .v-ins-switch input:checked + i{background:rgba(29,185,84,.35)}
+html body .v-ins-switch input:checked + i::after{transform:translateX(18px);background:var(--v-accent)}
+html body .v-ins-bar{display:flex;gap:10px;margin:0 0 12px}
+html body .v-ins-bar button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:999px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;border:1px solid var(--v-line);background:transparent;color:var(--v-fg)}
+html body .v-ins-bar button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html body .v-ins-bar .v-ins-add{background:var(--v-accent);border-color:var(--v-accent);color:var(--v-accent-ink)}
+html body .v-ins-bar button[disabled]{opacity:.4;cursor:default}
+html body .v-ins-list{display:flex;flex-direction:column;gap:8px}
+html body .v-ins-item{display:flex;align-items:center;gap:8px;padding:14px;background:var(--v-surface-2);border-radius:var(--v-r-md);cursor:pointer}
+html body .v-ins-text{flex:1;min-width:0;font-size:14.5px;line-height:1.5;color:var(--v-fg);overflow-wrap:anywhere;white-space:pre-wrap}
+html body .v-ins-more{flex:none;width:34px;height:34px;display:grid;place-items:center;padding:0;border:0;background:none;color:var(--v-muted);cursor:pointer}
+html body .v-ins-more svg{width:20px;height:20px;fill:currentColor}
+html body .v-ins-empty{padding:18px 8px;text-align:center;font-size:13px;color:var(--v-muted)}
+html body .ai-advisor-settings-panel.v-ins-off .v-ins-list,html body .ai-advisor-settings-panel.v-ins-off .v-ins-bar{opacity:.45}

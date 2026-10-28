@@ -1,0 +1,682 @@
+/* Vaultet — css/03-old-foundation-3.css : ชั้นพื้นฐาน ตอน 3 (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+.goal-row-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-row-meta {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.goal-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.goal-add-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.goal-add-inputs input {
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+#aiGoalNameInput {
+  flex: 1.4;
+  min-width: 0;
+}
+
+#aiGoalAmountInput {
+  flex: 1;
+  min-width: 0;
+}
+
+#aiGoalDeadlineInput {
+  flex: 1;
+  min-width: 0;
+  color-scheme: dark;
+}
+
+#addAiGoalBtn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent1);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.ai-chat-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 2px;
+  border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.ai-chat-list-row:first-child {
+  border-top: none;
+}
+
+.ai-chat-list-row.active {
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.ai-chat-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ai-chat-list-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-chat-list-meta {
+  font-size: 11.5px;
+  color: var(--faint);
+}
+
+.new-chat-btn {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent1);
+  border: none;
+  border-radius: 12px;
+  padding: 11px 0;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.memory-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.memory-row:first-child {
+  border-top: none;
+}
+
+.memory-row-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.memory-row-meta {
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+.memory-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.memory-add-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+#addAiMemoryBtn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent1);
+  border: none;
+  border-radius: 10px;
+  padding: 0 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+textarea.ai-textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  color: var(--ink);
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ai-input-error {
+  font-size: 12.5px;
+  color: #FF87A0;
+  background: rgba(251,69,112,0.14);
+  border: 1px solid rgba(251,69,112,0.3);
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin-top: 10px;
+  display: none;
+}
+
+.ai-hint {
+  font-size: 12px;
+  color: var(--faint);
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+#aiProcessBtn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 15px 0;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--accent-grad);
+  box-shadow: 0 8px 20px rgba(102,60,220,0.4);
+}
+
+#aiProcessBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ai-confirm-quote {
+  font-size: 12.5px;
+  color: var(--faint);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.ai-confirm-badge-row {
+  margin-bottom: 4px;
+}
+
+.ai-confirm-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 13px;
+  border-radius: 20px;
+  color: #fff;
+}
+
+.ai-confirm-badge.badge-expense {
+  background: var(--expense);
+}
+
+.ai-confirm-badge.badge-income {
+  background: var(--income);
+}
+
+.ai-confirm-badge.badge-saving {
+  background: var(--saving);
+}
+
+.ai-confirm-badge.badge-transfer {
+  background: var(--transfer);
+}
+
+.ai-confirm-badge.badge-lend {
+  background: var(--accent1);
+}
+
+#aiConfirmAmount {
+  width: 100%;
+  font-size: 32px;
+  font-weight: 800;
+  border: none;
+  border-bottom: 2px solid var(--line);
+  background: transparent;
+  padding: 4px 0;
+  outline: none;
+  color: var(--ink);
+  font-family: 'SFMono-Regular', Consolas, 'Roboto Mono', monospace;
+}
+
+#aiConfirmAmount:focus {
+  border-bottom-color: var(--accent1);
+}
+
+.field-ambiguous {
+  border-color: var(--transfer) !important;
+  box-shadow: 0 0 0 1px var(--transfer);
+}
+
+input.field-ambiguous,
+select.field-ambiguous {
+  border-radius: 10px;
+}
+
+#aiConfirmAmount.field-ambiguous {
+  border-bottom-width: 2px;
+  box-shadow: none;
+}
+
+.ambiguous-hint {
+  font-size: 11px;
+  color: var(--transfer);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.ai-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.ai-confirm-actions button {
+  flex: 1;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 15px 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+#aiConfirmCancelBtn {
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+#aiConfirmSubmitBtn {
+  box-shadow: 0 8px 20px rgba(102,60,220,0.4);
+}
+
+.ai-analyst-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink);
+  margin-top: 2px;
+  max-height: 52vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-right: 2px;
+}
+
+.ai-analyst-body strong {
+  font-weight: 700;
+}
+
+.ai-chat-msg {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 11px;
+  max-width: 100%;
+}
+
+.ai-chat-msg.role-user {
+  align-items: flex-end;
+}
+
+.ai-chat-msg.role-model {
+  align-items: flex-start;
+}
+
+.ai-chat-bubble {
+  max-width: 84%;
+  padding: 9px 13px;
+  border-radius: 15px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.ai-chat-bubble.ai-chat-user {
+  background: var(--accent1);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-chat-bubble.ai-chat-model {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+
+.ai-chat-empty {
+  text-align: center;
+  color: var(--faint);
+  font-size: 13px;
+  padding: 24px 10px;
+}
+
+.ai-chat-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.ai-chat-actions button {
+  background: none;
+  border: none;
+  color: var(--faint);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ai-chat-actions button:active {
+  color: var(--accent1);
+}
+
+.ai-chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 15px;
+  background: var(--surface-2);
+  border-radius: 15px;
+  border-bottom-left-radius: 4px;
+  width: fit-content;
+  margin-bottom: 11px;
+}
+
+.ai-chat-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  display: inline-block;
+  animation: aiTypingBounce 1.2s infinite ease-in-out;
+}
+
+.ai-chat-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ai-chat-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes aiTypingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.ai-chat-input-row {
+  gap: 8px;
+}
+
+.ai-chat-input-row input {
+  font-family: inherit;
+  border-radius: 12px;
+}
+
+.ai-chat-input-row input:disabled {
+  opacity: 0.6;
+}
+
+.ai-chat-input-row button {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.ai-chat-input-row button.stop-btn {
+  font-size: 16px;
+}
+
+.ai-chat-input-row button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ai-chat-link-btn {
+  background: none;
+  border: none;
+  color: var(--accent1);
+  font-family: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px 0 0;
+  text-align: left;
+}
+
+.debt-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+
+.debt-card:first-child {
+  margin-top: 0;
+}
+
+.debt-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.debt-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.debt-grace-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--transfer);
+  background: var(--transfer-soft);
+  border-radius: 8px;
+  padding: 2px 7px;
+  margin-left: 4px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.debt-balance {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--expense);
+  margin-top: 2px;
+}
+
+.debt-quick-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.debt-quick-btn {
+  flex: 1;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent1);
+  background: rgba(124,92,255,0.12);
+  border: 1px solid rgba(124,92,255,0.3);
+  border-radius: 10px;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+
+.debt-history {
+  margin-top: 10px;
+  border-top: 1px dashed var(--line);
+  padding-top: 8px;
+}
+
+.debt-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--faint);
+  padding: 4px 0;
+}
+
+.debt-action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.debt-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.debt-bump-banner {
+  margin: 14px 20px 0;
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.debt-bump-banner.show {
+  display: flex;
+}
+
+.debt-bump-banner-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.debt-bump-banner button {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent1);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.debt-bump-banner .dismiss {
+  background: none;
+  border: none;
+  color: var(--faint);
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.budget-dashboard-card {
+  margin: 14px 20px 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.budget-dashboard-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.budget-title {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.budget-summary-number {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.budget-sub {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.5;
+}
+
+.budget-total-track,
+.budget-mini-track {
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}

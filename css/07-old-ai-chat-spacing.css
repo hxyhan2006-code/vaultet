@@ -1,0 +1,518 @@
+/* Vaultet — css/07-old-ai-chat-spacing.css : แชท AI, ระยะห่าง, แก้ UI (หมวด 08-14) (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ======================================================================
+   08. UI fixes  (source: unnamed block)
+   ====================================================================== */
+
+input,
+textarea,
+select,
+#aiChatInput,
+.ai-textarea {
+  font-size: 16px !important;
+}
+
+#aiAnalystOverlay .modal-header {
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  padding: 10px 4px 14px !important;
+}
+
+#aiAnalystOverlay .ai-analyst-body::before,
+#aiAnalystOverlay .ux-chat-mode-note {
+  display: none !important;
+}
+
+#aiAnalystOverlay .ai-chat-msg.role-model .ai-chat-bubble {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #F5F5F7 !important;
+  padding: 10px 2px !important;
+  max-width: 100% !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+}
+
+#aiAnalystOverlay .ai-chat-msg.role-user .ai-chat-bubble {
+  background: #212124 !important;
+  color: #FFFFFF !important;
+  border-radius: 20px 20px 4px 20px !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 10px 16px !important;
+  font-size: 15px !important;
+}
+
+#aiAnalystOverlay .ai-chat-actions {
+  display: flex !important;
+  gap: 12px !important;
+  margin-top: 4px !important;
+  padding: 0 4px !important;
+}
+
+#aiAnalystOverlay .ai-chat-actions button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #8E8E93 !important;
+  opacity: 0.7 !important;
+  padding: 2px !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+}
+
+#aiAnalystOverlay .ai-chat-input-row {
+  background: #18181B !important;
+  border: 1px solid #27272A !important;
+  border-radius: 9999px !important;
+  padding: 4px 6px 4px 14px !important;
+  align-items: center !important;
+  margin-top: 10px !important;
+}
+
+#aiAnalystOverlay #aiChatInput {
+  background: transparent !important;
+  border: none !important;
+  color: #F5F5F7 !important;
+  outline: none !important;
+  font-size: 16px !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  background: #F5F5F7 !important;
+  color: #0A0A0C !important;
+  font-size: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn::after {
+  content: "↑" !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn.stop-btn {
+  background: #FF453A !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn.stop-btn::after {
+  content: "■" !important;
+  color: #FFF !important;
+}
+
+/* ======================================================================
+   09. AI Chat  (source: chatgpt-gemini-pure-chat)
+   ====================================================================== */
+
+.ux-chat-panel,
+#aiAnalystOverlay .sheet-modal {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom)) !important;
+  height: calc(100vh - 130px) !important;
+  max-width: 100% !important;
+  border-radius: 0 !important;
+}
+
+.sheet-modal::before,
+.ux-chat-panel::before {
+  display: none !important;
+}
+
+.ux-chat-mode-note,
+.ai-analyst-body::before {
+  display: none !important;
+}
+
+.ai-analyst-body,
+#aiAnalystBody {
+  background: transparent !important;
+  border: none !important;
+  padding: 8px 0 !important;
+  flex: 1 !important;
+}
+
+.ai-chat-msg.role-model .ai-chat-bubble {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 8px 0 !important;
+  color: #F5F5F7 !important;
+  font-size: 15.5px !important;
+  line-height: 1.7 !important;
+  max-width: 100% !important;
+}
+
+.ai-chat-msg.role-user .ai-chat-bubble {
+  background: #212124 !important;
+  color: #FFFFFF !important;
+  border-radius: 20px !important;
+  border-bottom-right-radius: 4px !important;
+  padding: 10px 16px !important;
+  font-size: 15px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ai-chat-input-row,
+.ux-chat-panel .ai-chat-input-row {
+  display: flex !important;
+  align-items: center !important;
+  background: #18181B !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 9999px !important;
+  padding: 4px 6px 4px 16px !important;
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.ai-chat-input-row input,
+#aiChatInput {
+  flex: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #F5F5F7 !important;
+  font-size: 16px !important;
+  padding: 8px 4px !important;
+}
+
+.ai-chat-input-row button,
+#aiChatSendBtn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  background: #F5F5F7 !important;
+  color: #0A0A0C !important;
+  border: none !important;
+  font-size: 0 !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+}
+
+.ai-chat-input-row button::after,
+#aiChatSendBtn::after {
+  content: "↑" !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+.ai-chat-input-row button.stop-btn,
+#aiChatSendBtn.stop-btn {
+  background: #FF453A !important;
+}
+
+.ai-chat-input-row button.stop-btn::after,
+#aiChatSendBtn.stop-btn::after {
+  content: "■" !important;
+  font-size: 13px !important;
+  color: #FFF !important;
+}
+
+/* ======================================================================
+   10. AI  (source: thai-year-and-fast-nl-fix)
+   ====================================================================== */
+
+.ux-month {
+  width: 152px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+@media(max-width:600px) {
+  .ux-topbar {
+    grid-template-columns: 48px minmax(0,1fr) 152px 48px !important;
+  }
+  .ux-brand {
+    min-width: 0 !important;
+  }
+  .ux-brand-name,
+  .ux-brand-page {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* ======================================================================
+   11. AI  (source: finance-tools-ai-customization)
+   ====================================================================== */
+
+.management-tools-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0 8px;
+  padding: 0 2px;
+}
+
+.management-tools-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+.management-tools-sub {
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+.management-tools-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #061108;
+  background: #1DB954;
+  border-radius: 999px;
+  padding: 5px 9px;
+}
+
+.management-grid .manage-accounts-btn {
+  background: rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(255,255,255,.11) !important;
+  color: #F5F5F7 !important;
+}
+
+.management-grid .manage-accounts-btn:active {
+  transform: scale(.985);
+  background: rgba(29,185,84,.13) !important;
+  border-color: rgba(29,185,84,.45) !important;
+}
+
+.ai-advisor-settings-panel {
+  display: none;
+  margin: 8px 0 10px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px;
+  background: #111114;
+}
+
+.ai-advisor-settings-panel.is-open {
+  display: block;
+}
+
+.ai-advisor-settings-title {
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #F5F5F7;
+}
+
+.ai-advisor-settings-help {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8E8E93;
+  margin-bottom: 10px;
+}
+
+#aiAdvisorInstruction {
+  width: 100%;
+  min-height: 82px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #18181B;
+  border: 1px solid #2B2B30;
+  border-radius: 12px;
+  color: #F5F5F7;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px !important;
+  line-height: 1.5;
+  outline: none;
+}
+
+.ai-advisor-settings-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.ai-advisor-settings-actions button {
+  flex: 1;
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-weight: 700;
+}
+
+.ai-advisor-settings-status {
+  font-size: 11px;
+  color: #8E8E93;
+  margin-top: 8px;
+  min-height: 14px;
+}
+
+.ai-chat-latency {
+  font-size: 11px;
+  color: #777;
+  margin: 4px 2px 0;
+  text-align: right;
+}
+
+/* ======================================================================
+   12. Spacing  (source: vaultet-round10-spacing)
+   ====================================================================== */
+
+#ux-home > .hero-cards {
+  margin-bottom: 14px !important;
+}
+
+#ux-home > #upcomingCard,
+#ux-home > #aiProactiveCard {
+  margin-top: 14px !important;
+}
+
+#ux-home > #upcomingCard + #aiProactiveCard {
+  margin-top: 12px !important;
+}
+
+#ux-home > .hero-cards > .networth-card:first-child {
+  margin-bottom: 0 !important;
+}
+
+#ux-home > #upcomingCard {
+  margin-left: 16px !important;
+  margin-right: 16px !important;
+  border-radius: 20px !important;
+}
+
+@media (max-width:600px) {
+  #ux-home > .hero-cards {
+    margin-bottom: 18px !important;
+  }
+  #ux-home > #upcomingCard,
+  #ux-home > #aiProactiveCard {
+    margin-top: 18px !important;
+  }
+}
+
+/* ======================================================================
+   13. UI fixes  (source: vaultet-final-ui-fixes)
+   ====================================================================== */
+
+.ux-user-context {
+  display: none !important;
+}
+
+body.ux-more-active .ux-user-context {
+  display: flex !important;
+}
+
+.ux-profile-trigger {
+  display: none !important;
+}
+
+.ux-profile-manage-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 13px 14px;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ux-profile-manage-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--accent1);
+  color: #fff;
+  flex: 0 0 34px;
+}
+
+.ux-profile-manage-entry span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.ux-profile-manage-entry strong {
+  display: block;
+  font-size: 12px;
+}
+
+.ux-profile-manage-entry small {
+  display: block;
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 9px;
+}
+
+.ux-profile-manage-arrow {
+  font-size: 22px;
+  color: var(--faint);
+}
+
+.ux-bottom-nav {
+  background: var(--surface) !important;
+}
+
+.ux-bottom-item.active {
+  color: var(--accent1) !important;
+  background: rgba(29,185,84,.13) !important;
+}
+
+body.ux-nonhome:not(.ux-chat-active) .page {
+  padding-bottom: calc(var(--ux-bottom-nav-space) + env(safe-area-inset-bottom)) !important;
+}
+
+body.ux-nonhome:not(.ux-chat-active) .ux-view.active {
+  padding-bottom: 18px !important;
+}
+
+body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel {
+  padding-bottom: calc(var(--ux-bottom-nav-space) - 6px + env(safe-area-inset-bottom)) !important;
+}
+
+body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row {
+  margin-bottom: -4px !important;
+}
+
+/* ======================================================================
+   14. UI fixes  (source: unnamed block)
+   ====================================================================== */
+
+.ai-chat-msg [data-aiact] {
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  position: relative;
+  z-index: 3;
+}
+
+#aiAnalystBody {
+  padding-bottom: 28px !important;
+}
+
+#budgetDashboardRows {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#budgetManageList {
+  padding-bottom: 24px;
+}
+
+#budgetOverlay .sheet-modal {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}

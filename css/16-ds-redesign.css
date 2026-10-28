@@ -1,0 +1,95 @@
+/* Vaultet — css/16-ds-redesign.css : โฉมใหม่ (ds47+): ชุดปุ่มใหม่, แผ่นเลือก, แถบบน, หน้าหลัก, รายการทั้งหมด — ของใหม่เพิ่มท้ายไฟล์นี้ (แยกจาก ds.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* =====================================================================
+   ds47 รอบ 1 โฉมใหม่: ชุดปุ่มใหม่ / แถบบน / หน้าหลัก / หน้ารายการทั้งหมด
+   ===================================================================== */
+/* ---------- ชุดปุ่มใหม่ (ใช้แบบเดียวกันทุกหน้า) ---------- */
+html body .v-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border: 0 !important; border-radius: 14px !important; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s ease, background .2s ease, color .2s ease, opacity .2s ease; }
+html body .v-btn-go { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+html body .v-btn-quiet { background: var(--v-surface-2) !important; color: var(--v-fg) !important; }
+html body .v-btn-warn { background: color-mix(in srgb, var(--v-out) 14%, transparent) !important; color: var(--v-out) !important; }
+html body .v-btn-text { min-height: 40px; padding: 0 4px; background: none !important; color: var(--v-accent) !important; font-size: 14px; font-weight: 500; }
+html body .v-btn:disabled { background: var(--v-surface-2) !important; color: #6b7078 !important; cursor: default; }
+html body .v-btn[hidden] { display: none; }
+.v-btn:focus-visible, .v-fchip:focus-visible, .v-pick-row:focus-visible, .ux-month-btn:focus-visible, .ux-month-chip:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  html body .v-btn:active:not(:disabled), html body .v-fchip:active, html body .ux-month-btn:active, html body .ux-month-chip:active,
+  html body .ux-avatar:active, html body .ux-back:active, html body .ux-bell:active, html body .v-pick-row:active, html body .ux-bottom-item:active { transform: scale(.96); }
+  html body .v-sc:active i { transform: scale(.94); }
+  html body .v-sc i, html body .ux-avatar, html body .ux-back, html body .ux-bell, html body .ux-bottom-item { transition: transform .12s ease, background .2s ease; }
+}
+
+/* ---------- แผ่นเลือกจากล่าง (vaultetPick) ---------- */
+html body .v-dlg-back.v-dlg-back-sheet { align-items: flex-end; padding: 0; }
+html body .v-dlg.v-dlg-sheet { width: 100%; max-width: 480px; max-height: 80dvh; border-bottom: 0; border-radius: 24px 24px 0 0; padding: 8px 12px calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px rgba(0,0,0,.4); }
+@media (prefers-reduced-motion: no-preference) { html body .v-dlg.v-dlg-sheet { animation: v-sheet-up .26s cubic-bezier(.3,.7,.2,1); } }
+@keyframes v-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+.v-pick-grip { width: 36px; height: 4px; border-radius: 4px; background: #3a3f46; margin: 0 auto 12px; }
+html body .v-dlg-sheet .v-dlg-title { margin: 0; padding: 0 12px 8px; font-size: 17px; }
+.v-pick-list { display: flex; flex-direction: column; gap: 2px; }
+html body .v-pick-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 12px; background: none !important; border: 0 !important; border-radius: 14px; color: var(--v-fg); font: inherit; text-align: left; cursor: pointer; transition: background .15s, transform .12s; }
+html body .v-pick-row.is-on { background: var(--v-surface-2) !important; }
+.v-pick-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.v-pick-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.v-pick-label { font-size: 15px; }
+.v-pick-sub { font-size: 12px; color: var(--v-muted); }
+.v-pick-radio { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #3a3f46; display: grid; place-items: center; }
+.v-pick-row.is-on .v-pick-radio { border-color: var(--v-accent); }
+.v-pick-row.is-on .v-pick-radio::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--v-accent); }
+
+/* ---------- แถบบน ---------- */
+html body .ux-topbar { min-height: 64px; gap: 12px; }
+html body .ux-avatar { display: none !important; }
+html body.ux-home-active .ux-avatar { display: grid !important; width: 44px; height: 44px; background: var(--v-surface-2) !important; }
+.ux-avatar-letter { font-size: 17px; font-weight: 600; line-height: 1; color: var(--v-fg); }
+html body.ux-sub-active .ux-back { display: grid; }
+html body .ux-brand { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+html body .ux-topbar .ux-brand-name { display: none !important; font-size: 13px !important; font-weight: 400 !important; color: var(--v-muted) !important; letter-spacing: 0; }
+html body .ux-topbar #uxPageName { display: block !important; font-size: 20px !important; font-weight: 600 !important; margin: 0 !important; color: var(--v-fg) !important; }
+html body.ux-home-active .ux-topbar .ux-brand-name { display: block !important; }
+html body.ux-home-active .ux-topbar #uxPageName { display: none !important; }
+html body .ux-month-btn { display: none; align-items: center; gap: 4px; align-self: flex-start; padding: 0; min-height: 28px; background: none !important; border: 0 !important; color: var(--v-fg); font: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
+html body.ux-home-active .ux-month-btn { display: inline-flex; }
+html body .ux-month-chip { display: none; flex: none; align-items: center; gap: 4px; height: 40px; padding: 0 12px 0 14px; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: 999px !important; color: var(--v-fg); font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
+html body.ux-list-active .ux-month-chip { display: inline-flex; }
+.ux-month-chev { width: 16px; height: 16px; fill: none; stroke: var(--v-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- หน้าหลัก ---------- */
+html body #ux-home > #budgetDashboardCard, html body #ux-home > #upcomingCard { margin: 14px 16px 0 !important; }
+html body #ux-home > #notificationDashboardCard { margin: 14px 16px 0 !important; }
+html body #budgetDashboardCard.is-collapsed #budgetDashboardRows { display: none; }
+html body .v-budget-more { width: 100%; margin-top: 6px; min-height: 40px; gap: 4px; color: var(--v-muted) !important; }
+.v-budget-more svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.v-budget-more[aria-expanded="true"] svg { transform: rotate(180deg); }
+.v-recent { padding: 6px 16px 28px; }
+.v-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 4px 6px; }
+.v-sec-title { margin: 0; font-size: 16px; font-weight: 600; }
+
+/* ว่างเปล่า: ไอคอน + ข้อความสั้น + ปุ่มทำต่อได้ทันที */
+.v-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 28px 20px; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: var(--v-r-lg); }
+.v-empty-ic { width: 56px; height: 56px; margin-bottom: 6px; border-radius: 18px; background: var(--v-surface-2); color: var(--v-muted); display: grid; place-items: center; }
+.v-empty-ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.v-empty-t { font-size: 15px; font-weight: 600; }
+.v-empty-s { font-size: 13px; color: var(--v-muted); line-height: 1.5; }
+.v-empty .v-btn { margin-top: 10px; }
+
+/* ---------- เงินของฉัน: ทางลัด/สินทรัพย์ย้ายมาอยู่ที่นี่ ---------- */
+html body #ux-plan > .hero-cards { padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; }
+html body #ux-plan .v-assets { margin: 0 0 4px !important; }
+html body #ux-plan .v-shortcuts { margin: 12px 0 4px; }
+
+/* ---------- หน้ารายการทั้งหมด ---------- */
+html body #ux-list { padding-left: 16px !important; padding-right: 16px !important; padding-bottom: 24px; }
+html body #ux-list > .ux-view-title, html body #ux-list > .ux-view-sub { display: none; }
+html body #ux-list .list-section { background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0; padding: 0 !important; margin: 0 !important; }
+html body #ux-list .list-header-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 4px 8px; }
+html body #ux-list .list-header-row .section-label, html body #ux-list #typeFilter { display: none !important; }
+.v-list-hint { font-size: 12px; color: var(--v-muted); }
+.v-fchips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 12px; padding: 2px 16px; }
+.v-fchips::-webkit-scrollbar { display: none; }
+html body .v-fchip { flex: none; height: 36px; padding: 0 16px; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: 999px !important; color: var(--v-muted) !important; font: inherit; font-size: 14px; cursor: pointer; transition: background .2s, color .2s, transform .12s; }
+html body .v-fchip.is-on { background: var(--v-fg) !important; border-color: var(--v-fg) !important; color: var(--v-bg) !important; font-weight: 600; }
+html body .v-search { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; margin: 0; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 14px; color: var(--v-muted); transition: border-color .2s, box-shadow .2s; }
+html body .v-search:focus-within { border-color: var(--v-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--v-accent) 18%, transparent); }
+.v-search > svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+html body .v-search input { flex: 1; min-width: 0; height: 100%; padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; outline: none; color: var(--v-fg) !important; font: inherit; font-size: 15px; }
+html body .v-search input::placeholder { color: var(--v-muted); }

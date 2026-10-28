@@ -1,0 +1,643 @@
+/* Vaultet — css/10-old-advisor-ai.css : ที่ปรึกษา AI, แท็บ, AI (หมวด 22-28) (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ======================================================================
+   22. AI Advisor  (source: vaultet-final-advisor-ux-polish)
+   ====================================================================== */
+
+.ai-icon-btn {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+
+.ai-icon-btn svg {
+  width: 17px !important;
+  height: 17px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.ai-chat-actions button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  min-height: 32px !important;
+  padding: 5px 7px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
+.ai-chat-actions button svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  flex: 0 0 14px;
+}
+
+#aiAnalystOverlay .modal-header>div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+#aiAnalystOverlay .ai-chat-input-row {
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn {
+  flex: 0 0 36px !important;
+}
+
+#aiAnalystOverlay .ai-chat-input-row button {
+  margin: 0 !important;
+}
+
+#aiAnalystOverlay .ai-chat-input-row button::after {
+  line-height: 1 !important;
+}
+
+#aiAnalystOverlay #aiChatSendBtn.stop-btn::after {
+  font-size: 12px !important;
+}
+
+.ai-completion-notice {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 1600;
+  width: min(340px,calc(100vw - 24px));
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 5px;
+  background: rgba(24,24,27,.96);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.28);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity .18s ease,transform .18s ease;
+}
+
+.ai-completion-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.ai-completion-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 8px 7px;
+  border-radius: 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ai-completion-main:active {
+  background: rgba(255,255,255,.06);
+}
+
+.ai-completion-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(29,185,84,.12);
+  color: var(--income);
+}
+
+.ai-completion-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ai-completion-main strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.ai-completion-main small {
+  display: block;
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+.ai-completion-dismiss {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  align-self: center;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  font-size: 20px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.ai-completion-dismiss:active {
+  background: rgba(255,255,255,.06);
+}
+
+@media(max-width:600px) {
+  body.ux-chat-active .ux-shell {
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+  }
+  body.ux-chat-active #ux-chat {
+    padding-top: 0 !important;
+  }
+  body.ux-chat-active .ai-chat-input-row {
+    padding-bottom: 4px !important;
+  }
+  body.ux-chat-active #aiChatInput {
+    min-width: 0 !important;
+  }
+}
+
+#settingsOverlay .settings-card:has(#aiProfileNickname),
+#settingsOverlay .settings-card:has(#aiGoalsList) {
+  display: none !important;
+}
+
+#typeToggle .type-btn::before,
+#typeToggle .type-btn::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ======================================================================
+   23. UI fixes  (source: vaultet-regression-fix-only)
+   ====================================================================== */
+
+@media(max-width:600px) {
+  body.ux-chat-active .ux-shell {
+    position: relative !important;
+    display: block !important;
+    z-index: 100 !important;
+  }
+  body.ux-chat-active .ux-topbar {
+    display: grid !important;
+  }
+  body.ux-chat-active .ux-brand-page {
+    display: block !important;
+  }
+  body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel {
+    padding-bottom: calc(var(--ux-bottom-nav-space) + env(safe-area-inset-bottom)) !important;
+  }
+  body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row {
+    margin-bottom: 0 !important;
+  }
+  body.ux-chat-active {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+  body.ux-chat-active .page {
+    height: var(--ux-vv-height,100dvh) !important;
+    max-height: var(--ux-vv-height,100dvh) !important;
+    overflow: hidden !important;
+  }
+  body.ux-chat-active #ux-chat {
+    height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
+    max-height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
+    overflow: hidden !important;
+  }
+  body.ux-chat-active .ux-chat-panel {
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  body.ux-chat-active .ux-chat-panel .ai-analyst-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+  body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 3 !important;
+  }
+  body.ux-chat-active.ux-keyboard-open .ux-bottom-nav {
+    display: none !important;
+  }
+  body.ux-chat-active.ux-keyboard-open .ux-chat-panel {
+    padding-bottom: 8px !important;
+  }
+}
+
+/* ======================================================================
+   24. AI Advisor  (source: vaultet-final-advisor-ux-polish-2)
+   ====================================================================== */
+
+.gdrive-auto-status {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.gdrive-auto-status[data-state="ready"] {
+  color: var(--income);
+  background: rgba(29,185,84,.07);
+}
+
+.gdrive-auto-status[data-state="error"],
+.gdrive-auto-status[data-state="needs-auth"] {
+  color: #d8a54b;
+  background: rgba(216,165,75,.07);
+}
+
+.gdrive-auto-status[data-state="off"] {
+  opacity: .8;
+}
+
+/* ======================================================================
+   25. Navigation / Tabs  (source: vaultet-round12-tabs-paint-order)
+   ====================================================================== */
+
+#typeToggle {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#typeToggle .type-btn {
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: 0 !important;
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  color: var(--faint) !important;
+  overflow: hidden !important;
+}
+
+#typeToggle .type-btn::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  background: transparent;
+  z-index: -1 !important;
+  pointer-events: none !important;
+}
+
+#typeToggle .type-btn.active-expense::before {
+  background: var(--expense) !important;
+}
+
+#typeToggle .type-btn.active-income::before {
+  background: var(--income) !important;
+}
+
+#typeToggle .type-btn.active-saving::before {
+  background: var(--saving) !important;
+}
+
+#typeToggle .type-btn.active-transfer::before {
+  background: var(--transfer) !important;
+}
+
+#typeToggle .type-btn.active-expense,
+#typeToggle .type-btn.active-income,
+#typeToggle .type-btn.active-saving {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+#typeToggle .type-btn.active-transfer {
+  color: #101018 !important;
+  background: transparent !important;
+}
+
+#typeToggle .type-btn-label {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+  color: inherit !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* ======================================================================
+   26. UI fixes  (source: vaultet-final-ux-regression-fix)
+   ====================================================================== */
+
+@media(max-width:600px) {
+  #aiInputOverlay {
+    position: fixed !important;
+    inset: 0 !important;
+    height: var(--ux-vv-height,100dvh) !important;
+    max-height: var(--ux-vv-height,100dvh) !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: none !important;
+  }
+  #aiInputOverlay .sheet-modal {
+    max-height: min(92vh,calc(var(--ux-vv-height,100dvh) - 12px)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+  }
+  body.ux-chat-active .ai-chat-input-row button,
+  #aiAnalystOverlay .ai-chat-input-row button,
+  #aiChatSendBtn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    flex: 0 0 38px !important;
+    display: grid !important;
+    place-items: center !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    border: none !important;
+    touch-action: manipulation !important;
+  }
+  #aiChatSendBtn svg {
+    width: 18px !important;
+    height: 18px !important;
+    display: block !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+  #aiChatSendBtn.stop-btn svg rect {
+    fill: currentColor !important;
+    stroke: none !important;
+  }
+  #aiAnalystOverlay .ai-chat-input-row button::after,
+  #aiChatSendBtn::after {
+    content: none !important;
+  }
+  .notification-dashboard-card .notification-title {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+  }
+  .notification-dashboard-card .notification-sub {
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+  }
+  .notification-dashboard-card .notification-item-title {
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+  }
+  .notification-dashboard-card .notification-item-body {
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+  }
+  #notificationOverlay .notification-item-title {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  #notificationOverlay .notification-item-body {
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* ======================================================================
+   27. AI  (source: vaultet-ai-user-requested-fixes)
+   ====================================================================== */
+
+.ux-chat-top-actions {
+  display: none !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 3px !important;
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+}
+
+body.ux-chat-active .ux-topbar {
+  justify-content: space-between !important;
+  gap: 6px !important;
+}
+
+body.ux-chat-active .ux-month,
+body.ux-chat-active .ux-bell {
+  display: none !important;
+}
+
+body.ux-chat-active .ux-chat-top-actions {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 300 !important;
+  flex: 0 0 auto !important;
+}
+
+body.ux-chat-active .ux-chat-top-actions .ai-icon-btn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: #92929A !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+}
+
+body.ux-chat-active .ux-chat-top-actions .ai-icon-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+body.ux-chat-active .ux-chat-top-actions .ai-icon-btn:active {
+  background: rgba(255,255,255,.07) !important;
+  transform: scale(.96);
+}
+
+body.ux-chat-active .ux-chat-panel>.modal-header {
+  display: none !important;
+}
+
+body.ux-chat-active #aiChatSendBtn.is-composer-empty {
+  display: none !important;
+}
+
+@media(max-width:600px) {
+  body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+  }
+  body.ux-chat-active .ai-chat-input-row {
+    min-height: 48px !important;
+    padding: 4px 6px 4px 14px !important;
+    margin-top: 6px !important;
+    margin-bottom: 0 !important;
+  }
+  body.ux-chat-active #aiChatSendBtn,
+  body.ux-chat-active .ai-chat-input-row button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    flex: 0 0 40px !important;
+    border-radius: 50% !important;
+    display: grid !important;
+    place-items: center !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+  body.ux-chat-active #aiChatSendBtn {
+    background: #1A73E8 !important;
+    color: #fff !important;
+  }
+  body.ux-chat-active #aiChatSendBtn.stop-btn {
+    background: #303134 !important;
+    color: #fff !important;
+  }
+  body.ux-chat-active #aiChatSendBtn svg {
+    width: 19px !important;
+    height: 19px !important;
+    display: block !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+  body.ux-chat-active #aiChatSendBtn.stop-btn svg rect {
+    fill: currentColor !important;
+    stroke: none !important;
+  }
+  body.ux-chat-active #aiChatSendBtn::after,
+  body.ux-chat-active .ai-chat-input-row button::after {
+    content: none !important;
+    display: none !important;
+  }
+}
+
+/* ======================================================================
+   28. AI  (source: vaultet-ai-final-two-fixes)
+   ====================================================================== */
+
+body.ux-chat-active #uxChatTopActions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 4px !important;
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 999 !important;
+}
+
+body.ux-chat-active #uxChatTopActions .ai-icon-btn {
+  display: grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #92929A !important;
+  border-radius: 11px !important;
+}
+
+body.ux-chat-active #uxChatTopActions .ai-icon-btn svg {
+  display: block !important;
+  width: 19px !important;
+  height: 19px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+body.ux-chat-active .ux-topbar {
+  display: flex !important;
+  align-items: center !important;
+}
+
+body.ux-chat-active .ux-brand {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+body.ux-chat-active .ux-brand-page {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

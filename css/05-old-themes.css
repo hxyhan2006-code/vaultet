@@ -1,0 +1,564 @@
+/* Vaultet — css/05-old-themes.css : แก้ UI + ธีม (หมวด 02-04) (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ======================================================================
+   02. UI fixes  (source: unnamed block)
+   ====================================================================== */
+
+.ux-shell {
+  box-shadow: 0 4px 18px rgba(0,0,0,.14);
+}
+
+.ux-month {
+  border-color: rgba(255,255,255,.08);
+}
+
+.ux-view-title,
+.ux-view-sub {
+  display: none;
+}
+
+#ux-home {
+  padding-top: 0;
+}
+
+#ux-home>header .balance-row {
+  margin-bottom: 14px;
+  gap: 5px;
+}
+
+#ux-home>header .pill-row {
+  margin: 0;
+}
+
+#ux-home>header .pill {
+  flex: 1;
+  justify-content: space-between;
+  border-color: rgba(255,255,255,.10);
+  font-size: 11px;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child {
+  margin-top: -14px;
+  border-color: rgba(255,255,255,.075);
+  box-shadow: 0 14px 30px rgba(0,0,0,.25);
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-top {
+  padding-bottom: 2px;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-sub {
+  margin-top: 7px;
+  padding-top: 7px;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child #accountsList {
+  display: none;
+}
+
+.networth-card,
+.ux-section-card,
+.financial-brain-card,
+.emergency-dashboard-card,
+.notification-dashboard-card {
+  border-color: rgba(255,255,255,.075);
+}
+
+@media(max-width:600px) {
+  .ux-bottom-nav {
+    background: rgba(18,24,21,.96);
+    border-color: rgba(255,255,255,.08);
+  }
+  .ux-bottom-item {
+    font-size: 9.5px;
+  }
+  #ux-home>.hero-cards>.networth-card:first-child {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* ======================================================================
+   03. Theme  (source: banchee-round8-electric-lime)
+   ====================================================================== */
+
+:root {
+  --paper: #0A0A0C;
+  --surface: #141416;
+  --surface-2: #1A1A1D;
+  --surface-3: #202024;
+  --ink: #F5F5F7;
+  --faint: #8E8E96;
+  --line: rgba(255,255,255,.08);
+  --income: #1DB954;
+  --income-soft: rgba(29,185,84,.12);
+  --expense: #FF453A;
+  --expense-soft: rgba(255,69,58,.12);
+  --saving: #8AB4FF;
+  --saving-soft: rgba(138,180,255,.12);
+  --transfer: #F2C94C;
+  --transfer-soft: rgba(242,201,76,.12);
+  --locked: #A8A8B0;
+  --accent1: #1DB954;
+  --accent2: #1DB954;
+  --accent-grad: #1DB954;
+  --ux-accent: #1DB954;
+  --ux-accent-soft: rgba(29,185,84,.11);
+  --shadow-card: none;
+  --shadow-soft: none;
+}
+
+html,
+body,
+.page {
+  background: #0A0A0C !important;
+  color: var(--ink);
+}
+
+.mono {
+  font-family: 'SFMono-Regular','Roboto Mono',Consolas,monospace;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.ux-shell {
+  background: rgba(10,10,12,.94) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.ux-month {
+  background: #141416 !important;
+  border: 1px solid #27272A !important;
+  color: #F5F5F7 !important;
+  border-radius: 9999px !important;
+  padding: 9px 14px !important;
+}
+
+.ux-brand-name {
+  font-weight: 850 !important;
+  letter-spacing: -.7px !important;
+}
+
+.ux-brand-page {
+  color: #77777F !important;
+}
+
+#monthSelect {
+  display: none !important;
+}
+
+#ux-home>header .header-top {
+  display: none !important;
+}
+
+#ux-home>header {
+  background: #0A0A0C !important;
+  border-radius: 0 !important;
+  padding: 26px 20px 18px !important;
+  box-shadow: none !important;
+}
+
+#ux-home>header .balance-row {
+  display: block !important;
+  margin: 0 !important;
+}
+
+#ux-home>header .balance-label {
+  display: block;
+  font-size: 12px !important;
+  color: #85858D !important;
+  margin-bottom: 7px;
+}
+
+#ux-home>header .balance-num {
+  display: block;
+  font-size: 40px !important;
+  line-height: 1 !important;
+  font-weight: 850 !important;
+  letter-spacing: -1.8px !important;
+  color: #F5F5F7 !important;
+}
+
+#ux-home>header #netWorthNum {
+  display: block !important;
+  font-size: 12px !important;
+  color: #77777F !important;
+  margin-top: 9px;
+}
+
+#ux-home>header .pill-row {
+  display: grid !important;
+  grid-template-columns: repeat(3,1fr);
+  gap: 8px !important;
+  margin-top: 22px !important;
+}
+
+#ux-home>header .pill {
+  min-width: 0 !important;
+  padding: 12px 11px !important;
+  border-radius: 16px !important;
+  background: #141416 !important;
+  border: 1px solid #27272A !important;
+  display: block !important;
+}
+
+#ux-home>header .pill span:first-child {
+  display: block !important;
+  font-size: 11px !important;
+  color: #77777F !important;
+  margin-bottom: 5px;
+}
+
+#ux-home>header .pill .mono {
+  font-size: 13px !important;
+  font-weight: 750 !important;
+}
+
+#ux-home>.hero-cards {
+  padding: 0 16px !important;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child {
+  margin: 0 !important;
+  padding: 18px !important;
+  border-radius: 22px !important;
+  background: #141416 !important;
+  border: 1px solid #27272A !important;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-label {
+  font-size: 12px !important;
+  color: #8E8E96 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-num {
+  font-size: 27px !important;
+  font-weight: 850 !important;
+  letter-spacing: -1px !important;
+  color: #F5F5F7 !important;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-sub {
+  font-size: 12px !important;
+  color: #77777F !important;
+  border-top: 1px solid #27272A !important;
+}
+
+#ux-home>.hero-cards>.networth-card:first-child .networth-sub .real {
+  color: var(--accent1) !important;
+}
+
+.networth-card,
+.ux-section-card,
+.financial-brain-card,
+.emergency-dashboard-card,
+.notification-dashboard-card,
+.stat-box,
+.analysis-section,
+.list-section,
+.insight-box,
+.compare-headline-row,
+.compare-period-pill {
+  background: #141416 !important;
+  border: 1px solid #27272A !important;
+  border-radius: 20px !important;
+  box-shadow: none !important;
+}
+
+button.primary,
+.primary-btn,
+#aiConfirmSubmitBtn,
+.mark-paid-btn {
+  background: var(--accent1) !important;
+  color: #0A0A0C !important;
+  border: none !important;
+  border-radius: 9999px !important;
+}
+
+button.primary:hover,
+.primary-btn:hover {
+  background: #1ED760 !important;
+}
+
+.manage-accounts-btn,
+.accounts-toggle,
+.quick-amount-btn,
+.type-btn,
+.cat-chip,
+.close-btn {
+  box-shadow: none !important;
+}
+
+.manage-accounts-btn {
+  border-radius: 9999px !important;
+}
+
+.quick-amount-btn,
+.cat-chip {
+  border-radius: 9999px !important;
+}
+
+.type-toggle {
+  border-radius: 9999px !important;
+  background: #1A1A1D !important;
+  border: 1px solid #27272A !important;
+}
+
+.type-btn {
+  border-radius: 9999px !important;
+}
+
+.accounts-toggle,
+.manage-accounts-btn {
+  color: #1DB954 !important;
+}
+
+.brain-status.healthy,
+.emergency-status.healthy {
+  color: #1DB954 !important;
+  background: rgba(29,185,84,.10) !important;
+}
+
+.brain-fill {
+  background: #1DB954 !important;
+}
+
+.brain-status.critical {
+  color: #FF453A !important;
+  background: rgba(255,69,58,.10) !important;
+}
+
+.fab,
+.ai-fab,
+#fabBtn,
+#aiFabBtn {
+  background: #1DB954 !important;
+  color: #0A0A0C !important;
+  border-radius: 9999px !important;
+  border: 0 !important;
+}
+
+.ux-bottom-nav {
+  border: 1px solid #27272A !important;
+  border-radius: 22px !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.ux-bottom-item {
+  color: #77777F !important;
+  border-radius: 16px !important;
+}
+
+#ux-home>#upcomingCard,
+#ux-home>#aiProactiveCard {
+  margin-left: 16px !important;
+  margin-right: 16px !important;
+}
+
+#ux-home .section-label {
+  color: #77777F !important;
+}
+
+header,
+.hero,
+.hero-card,
+.balance-card {
+  background-image: none !important;
+}
+
+input,
+select,
+textarea {
+  border-color: #27272A !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #1DB954 !important;
+}
+
+.overlay .sheet,
+.sheet-modal {
+  background: #141416 !important;
+  border: 1px solid #27272A !important;
+  border-radius: 24px 24px 0 0 !important;
+}
+
+@media(max-width:600px) {
+  .ux-month {
+    max-width: 118px !important;
+  }
+  #ux-home>header .balance-num {
+    font-size: 38px !important;
+  }
+  #ux-home>header .pill {
+    padding: 11px 9px !important;
+  }
+  #ux-home>.hero-cards>.networth-card:first-child {
+    border-radius: 20px !important;
+  }
+}
+
+/* ======================================================================
+   04. Theme  (source: vaultet-green-override)
+   ====================================================================== */
+
+:root {
+  --vaultet-green: #1DB954;
+  --vaultet-green-bright: #1ED760;
+  --vaultet-green-dark: #169C46;
+  --vaultet-bg: #0A0A0C;
+  --vaultet-surface: #141416;
+  --vaultet-surface-2: #1C1C1E;
+  --vaultet-border: rgba(255,255,255,.08);
+  --vaultet-text: #F5F5F5;
+  --vaultet-muted: #8E8E93;
+  --vaultet-red: #FF453A;
+}
+
+html,
+body {
+  background: #0A0A0C !important;
+  color: #F5F5F5 !important;
+}
+
+body {
+  font-family: Inter,system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Noto Sans Thai",sans-serif !important;
+}
+
+* {
+  box-shadow: none !important;
+}
+
+.ux-shell {
+  border-bottom: 1px solid rgba(255,255,255,.08) !important;
+}
+
+.ux-shell .brand,
+.ux-shell .brand-name,
+#uxPageName {
+  color: #F5F5F5 !important;
+}
+
+button,
+.btn,
+.action-btn {
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+button.primary,
+.btn-primary,
+.cta,
+.fab,
+.quick-add,
+.add-btn,
+[class*="primary"] {
+  background: #1DB954 !important;
+  color: #061108 !important;
+  border-color: #1DB954 !important;
+}
+
+button.primary:hover,
+.btn-primary:hover,
+.cta:hover,
+.fab:hover,
+.quick-add:hover,
+.add-btn:hover {
+  background: #1ED760 !important;
+}
+
+.card,
+.hero,
+.panel,
+.section-card,
+.ux-section-card,
+.stat-card,
+.modal,
+.sheet,
+.overlay-card {
+  background: #141416 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+}
+
+input,
+select,
+textarea {
+  background: #141416 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  color: #F5F5F5 !important;
+}
+
+.amount,
+.money,
+.balance,
+.income,
+.positive,
+.success,
+[class*="income"],
+[class*="positive"] {
+  color: #1DB954 !important;
+}
+
+.expense,
+.negative,
+.danger,
+[class*="expense"],
+[class*="negative"] {
+  color: #FF453A !important;
+}
+
+.progress-fill,
+.progress-bar .fill,
+.meter-fill {
+  background: #1DB954 !important;
+}
+
+.badge,
+.pill-accent {
+  background: rgba(29,185,84,.14) !important;
+  color: #1ED760 !important;
+  border-color: rgba(29,185,84,.35) !important;
+}
+
+.bottom-nav button.active,
+.bottom-nav .active,
+.ux-bottom-nav .active {
+  background: #1DB954 !important;
+  color: #061108 !important;
+}
+
+.notification-dot,
+#uxBellDot {
+  background: #1DB954 !important;
+}
+
+.month-select,
+.ux-month-select {
+  background: #141416 !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  color: #F5F5F5 !important;
+}
+
+.number,
+.numeric,
+[data-number],
+.money-value,
+.amount-value {
+  font-variant-numeric: tabular-nums lining-nums !important;
+  font-feature-settings: "tnum" 1,"lnum" 1 !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+.title,
+.brand-name {
+  letter-spacing: -.02em;
+}

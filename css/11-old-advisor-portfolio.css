@@ -1,0 +1,637 @@
+/* Vaultet — css/11-old-advisor-portfolio.css : แก้ UI, รายละเอียดที่ปรึกษา, พอร์ตหุ้น (หมวด 29-31) (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ======================================================================
+   29. UI fixes  (source: vaultet-user-fixes-2026-10)
+   ====================================================================== */
+
+body #aiAnalystOverlay .ai-chat-input-row,
+body.ux-chat-active .ai-chat-input-row,
+body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
+  align-items: flex-end !important;
+  border-radius: 24px !important;
+}
+
+body #aiAnalystOverlay #aiChatInput,
+body.ux-chat-active #aiChatInput,
+#aiChatInput {
+  display: block !important;
+  resize: none;
+  overflow-y: auto !important;
+  height: auto;
+  min-height: 46px !important;
+  max-height: 168px !important;
+  line-height: 1.45 !important;
+  padding: 11px 4px !important;
+  margin: 0 !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  white-space: pre-wrap !important;
+  word-break: break-word;
+  -webkit-appearance: none;
+}
+
+body #aiAnalystOverlay #aiChatSendBtn,
+body.ux-chat-active #aiChatSendBtn,
+#aiAnalystOverlay #aiChatSendBtn {
+  align-self: flex-end;
+  margin-bottom: 2px !important;
+}
+
+/* ======================================================================
+   30. AI Advisor  (source: vaultet-advisor-detail-style)
+   ====================================================================== */
+
+#notificationPreviewList .notification-item[data-adv-idx] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#notificationPreviewList .notification-item.acked {
+  opacity: .62;
+}
+
+#notificationPreviewList .adv-chevron {
+  align-self: center;
+  font-size: 20px;
+  color: #8E8E93;
+  padding-left: 6px;
+}
+
+#advDetailOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+#advDetailOverlay .adv-sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 86vh;
+  overflow-y: auto;
+  background: #18181B;
+  color: #F5F5F7;
+  border: 1px solid #27272A;
+  border-radius: 24px 24px 0 0;
+  padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+#advDetailOverlay .adv-chip {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+#advDetailOverlay .adv-chip.critical {
+  background: rgba(124,92,255,.22);
+  color: #B7A6FF;
+}
+
+#advDetailOverlay .adv-chip.normal {
+  background: rgba(255,193,7,.18);
+  color: #FFD76A;
+}
+
+#advDetailOverlay .adv-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+#advDetailOverlay .adv-summary {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #E5E5EA;
+  margin: 0 0 16px;
+}
+
+#advDetailOverlay .adv-h {
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: #8E8E93;
+  margin: 14px 0 6px;
+  font-weight: 700;
+}
+
+#advDetailOverlay .adv-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #27272A;
+  font-size: 14px;
+}
+
+#advDetailOverlay .adv-row span:first-child {
+  color: #B0B0B8;
+}
+
+#advDetailOverlay .adv-row span:last-child {
+  font-weight: 700;
+  text-align: right;
+}
+
+#advDetailOverlay .adv-todo {
+  font-size: 14.5px;
+  line-height: 1.55;
+  background: #212124;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+
+#advDetailOverlay .adv-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+#advDetailOverlay .adv-actions button {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 13px 0;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#advDetailOverlay .adv-ack {
+  background: var(--accent1,#58B662);
+  color: #fff;
+}
+
+#advDetailOverlay .adv-close {
+  background: #2A2A2E;
+  color: #F5F5F7;
+}
+
+#advDetailOverlay .adv-note {
+  font-size: 12px;
+  color: #8E8E93;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ======================================================================
+   31. Portfolio  (source: vaultet-portfolio-style)
+   ====================================================================== */
+
+#investFields {
+  margin-top: 6px;
+  padding: 12px 12px 4px;
+  border: 1px dashed var(--line,#2A2A2E);
+  border-radius: 14px;
+  background: rgba(124,92,255,.06);
+}
+
+#investFields .field-label {
+  margin-top: 0;
+}
+
+#investFields input {
+  margin-bottom: 10px;
+}
+
+#investFields .invest-hint {
+  font-size: 12px;
+  color: var(--faint,#8E8E93);
+  margin: -2px 0 10px;
+  line-height: 1.45;
+}
+
+#pfOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: none;
+  flex-direction: column;
+  background: var(--bg,#0B0B0D);
+  color: var(--ink,#F5F5F7);
+  font-family: inherit;
+  overscroll-behavior: contain;
+}
+
+#pfOverlay.open {
+  display: flex;
+}
+
+#pfOverlay * {
+  box-sizing: border-box;
+}
+
+#pfOverlay .pf-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 10px;
+}
+
+#pfOverlay .pf-title {
+  flex: 1;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+#pfOverlay .pf-iconbtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line,#2A2A2E);
+  background: var(--surface-2,#1C1C1F);
+  color: var(--ink,#F5F5F7);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#pfOverlay .pf-iconbtn.spin {
+  opacity: .5;
+  pointer-events: none;
+}
+
+#pfOverlay .pf-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 16px 24px;
+}
+
+#pfOverlay .pf-sum {
+  background: linear-gradient(160deg,#1c2a22,#141418);
+  border: 1px solid var(--line,#2A2A2E);
+  border-radius: 22px;
+  padding: 18px 18px 14px;
+}
+
+#pfOverlay .pf-sum-label {
+  font-size: 13px;
+  color: #A8B0AB;
+}
+
+#pfOverlay .pf-sum-big {
+  font-size: 34px;
+  font-weight: 800;
+  margin: 4px 0 2px;
+  letter-spacing: -.5px;
+}
+
+#pfOverlay .pf-sum-sub {
+  font-size: 14px;
+  color: #B8BDBA;
+}
+
+#pfOverlay .pf-sum-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  padding: 9px 0 0;
+  margin-top: 10px;
+  border-top: 1px dashed rgba(255,255,255,.14);
+}
+
+#pfOverlay .pf-sum-line b {
+  font-weight: 700;
+  text-align: right;
+}
+
+#pfOverlay .pos {
+  color: var(--income,#58B662);
+}
+
+#pfOverlay .neg {
+  color: var(--expense,#FF6B81);
+}
+
+#pfOverlay .mut {
+  color: var(--faint,#8E8E93);
+}
+
+#pfOverlay .pf-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 8px;
+  font-size: 13px;
+  color: var(--faint,#8E8E93);
+}
+
+#pfOverlay .pf-tools select {
+  background: var(--surface-2,#1C1C1F);
+  color: var(--ink,#F5F5F7);
+  border: 1px solid var(--line,#2A2A2E);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+#pfOverlay .pf-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line,#2A2A2E);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#pfOverlay .pf-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+}
+
+#pfOverlay .pf-t {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+#pfOverlay .pf-alloc {
+  font-size: 12.5px;
+  color: var(--faint,#8E8E93);
+  margin-top: 2px;
+}
+
+#pfOverlay .pf-r {
+  text-align: right;
+}
+
+#pfOverlay .pf-v {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#pfOverlay .pf-vs {
+  font-size: 12.5px;
+  color: var(--faint,#8E8E93);
+  margin-top: 2px;
+}
+
+#pfOverlay .pf-detail {
+  display: none;
+  padding: 6px 4px 16px;
+  border-bottom: 1px solid var(--line,#2A2A2E);
+  background: rgba(255,255,255,.02);
+}
+
+#pfOverlay .pf-detail.open {
+  display: block;
+}
+
+#pfOverlay .pf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  padding: 10px 6px;
+}
+
+#pfOverlay .pf-k {
+  font-size: 12.5px;
+  color: var(--faint,#8E8E93);
+}
+
+#pfOverlay .pf-kv {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+#pfOverlay .pf-lots {
+  margin: 6px 6px 0;
+  font-size: 13px;
+}
+
+#pfOverlay .pf-lot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line,#2A2A2E);
+  align-items: center;
+}
+
+#pfOverlay .pf-lot button {
+  background: none;
+  border: none;
+  color: var(--faint,#8E8E93);
+  font-size: 13px;
+  padding: 2px 6px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#pfOverlay .pf-actions {
+  margin: 12px 6px 0;
+}
+
+#pfOverlay .pf-actions button {
+  border-radius: 12px;
+  border: 1px solid var(--line,#2A2A2E);
+  background: var(--surface-2,#1C1C1F);
+  color: var(--ink,#F5F5F7);
+  padding: 11px 0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#pfOverlay .pf-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--faint,#8E8E93);
+  margin: 14px 2px 0;
+}
+
+#pfOverlay .pf-warn {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #FFD76A;
+  background: rgba(255,193,7,.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 12px;
+}
+
+#pfOverlay .pf-empty {
+  text-align: center;
+  color: var(--faint,#8E8E93);
+  padding: 34px 10px;
+  line-height: 1.7;
+  font-size: 14.5px;
+}
+
+#pfOverlay details.pf-key {
+  margin-top: 18px;
+  border: 1px solid var(--line,#2A2A2E);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2,#1C1C1F);
+}
+
+#pfOverlay details.pf-key summary {
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#pfOverlay details.pf-key input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line,#2A2A2E);
+  background: #121214;
+  color: var(--ink,#F5F5F7);
+  font-family: inherit;
+  font-size: 16px;
+}
+
+#pfOverlay details.pf-key button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 11px 0;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent1,#58B662);
+  color: #fff;
+  font-weight: 700;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#pfOverlay .pf-bottom {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line,#2A2A2E);
+  background: var(--bg,#0B0B0D);
+}
+
+#pfOverlay .pf-bottom button {
+  flex: 1;
+  border-radius: 14px;
+  padding: 13px 0;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--line,#2A2A2E);
+  background: var(--surface-2,#1C1C1F);
+  color: var(--ink,#F5F5F7);
+}
+
+#pfOverlay .pf-bottom button.primary {
+  background: var(--accent1,#58B662);
+  border-color: transparent;
+  color: #fff;
+}
+
+#pfOpenSheet {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(0,0,0,.6);
+  display: none;
+  align-items: flex-end;
+}
+
+#pfOpenSheet.open {
+  display: flex;
+}
+
+#pfOpenSheet .box {
+  width: 100%;
+  background: #18181B;
+  border-radius: 22px 22px 0 0;
+  padding: 20px 18px calc(18px + env(safe-area-inset-bottom));
+  border: 1px solid #27272A;
+}
+
+#pfOpenSheet h3 {
+  margin: 0 0 4px;
+  font-size: 19px;
+}
+
+#pfOpenSheet p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #8E8E93;
+  line-height: 1.5;
+}
+
+#pfOpenSheet label {
+  display: block;
+  font-size: 12.5px;
+  color: #8E8E93;
+  margin: 10px 0 4px;
+}
+
+#pfOpenSheet input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #2A2A2E;
+  background: #121214;
+  color: #F5F5F7;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+#pfOpenSheet .btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+#pfOpenSheet .btns button {
+  flex: 1;
+  padding: 13px 0;
+  border-radius: 14px;
+  border: none;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  background: #2A2A2E;
+  color: #F5F5F7;
+}
+
+#pfOpenSheet .btns button.ok {
+  background: var(--accent1,#58B662);
+  color: #fff;
+}
+
+.backup-banner.dd {
+  border-color: rgba(88,182,98,.45);
+}
+
+.backup-banner.dd.first {
+  background: rgba(88,182,98,.1);
+  padding: 13px 14px;
+}
+
+.backup-banner.dd small {
+  display: block;
+  color: var(--faint,#8E8E93);
+  margin-top: 3px;
+  font-size: 11.5px;
+}

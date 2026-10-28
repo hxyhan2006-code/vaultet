@@ -1,0 +1,614 @@
+/* Vaultet — css/09-old-profile-nav.css : โปรไฟล์, แก้ UI, แท็บ (หมวด 18-21) (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
+/* ======================================================================
+   18. Profile  (source: vaultet-user-profile-ux)
+   ====================================================================== */
+
+body.ux-profile-trigger-never {
+  display: none !important;
+}
+
+.ux-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 170px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 14px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ux-profile-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent1);
+  color: #fff;
+  font-size: 14px;
+  flex: 0 0 30px;
+}
+
+.ux-profile-mini {
+  min-width: 0;
+}
+
+.ux-profile-mini strong {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ux-profile-mini span {
+  display: block;
+  color: var(--faint);
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.48);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.profile-overlay.open {
+  display: flex;
+}
+
+.profile-sheet {
+  width: min(760px,100%);
+  max-height: min(92dvh,900px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  box-shadow: 0 -12px 40px rgba(0,0,0,.24);
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px 16px;
+}
+
+.profile-big-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: var(--accent1);
+  color: #fff;
+  font-size: 25px;
+}
+
+.profile-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.profile-head p {
+  margin: 3px 0 0;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.profile-close {
+  margin-left: auto;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.profile-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 14px;
+}
+
+.profile-card.full {
+  grid-column: 1/-1;
+}
+
+.profile-card h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.profile-card .hint {
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.5;
+  margin: -4px 0 10px;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 9px;
+}
+
+.profile-fields.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.profile-label {
+  font-size: 10px;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.profile-input,
+.profile-select,
+.profile-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 10px;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.profile-textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.profile-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.profile-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  font-size: 10px;
+  background: var(--surface);
+}
+
+.profile-check input {
+  accent-color: var(--accent1);
+}
+
+.profile-permission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.profile-permission:first-of-type {
+  border-top: 0;
+}
+
+.profile-permission small {
+  display: block;
+  color: var(--faint);
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+.profile-switch {
+  width: 42px;
+  height: 24px;
+  appearance: none;
+  background: #555;
+  border-radius: 20px;
+  position: relative;
+  flex: 0 0 42px;
+  cursor: pointer;
+}
+
+.profile-switch:checked {
+  background: var(--income);
+}
+
+.profile-switch:before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 3px;
+  left: 3px;
+  border-radius: 50%;
+  background: #fff;
+  transition: .18s;
+}
+
+.profile-switch:checked:before {
+  transform: translateX(18px);
+}
+
+.profile-save {
+  width: 100%;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 13px;
+  padding: 12px;
+  background: var(--accent1);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-danger {
+  margin-top: 8px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid rgba(255,80,80,.35);
+  background: transparent;
+  color: #ff7676;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+@media(max-width:600px) {
+  .ux-profile-trigger {
+    max-width: 132px;
+    padding: 5px 7px;
+  }
+  .ux-profile-mini strong {
+    font-size: 11px;
+  }
+  .ux-profile-mini span {
+    font-size: 8px;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-card.full {
+    grid-column: auto;
+  }
+  .profile-fields.two {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ======================================================================
+   19. Profile  (source: vaultet-profile-shell-final-fix)
+   ====================================================================== */
+
+body .ux-profile-trigger {
+  display: none !important;
+}
+
+body.ux-nonhome .ux-shell {
+  display: block !important;
+}
+
+body.ux-nonhome .ux-month,
+body.ux-nonhome .ux-bell {
+  display: none !important;
+}
+
+body.ux-nonhome .ux-topbar {
+  grid-template-columns: minmax(0,1fr) !important;
+}
+
+body.ux-nonhome .ux-brand {
+  min-width: 0 !important;
+}
+
+body.ux-nonhome .ux-brand-page {
+  display: block !important;
+}
+
+.ux-user-context {
+  margin: 10px 20px 14px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.ux-user-context-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--accent1);
+  color: #fff;
+  font-size: 16px;
+}
+
+.ux-user-context-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.ux-user-context-name {
+  font-size: 12.5px;
+  font-weight: 850;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ux-user-context-meta {
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 9.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ux-user-context-goal {
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 9px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .82;
+}
+
+.ux-user-context-edit {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--faint);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.ux-user-context-edit:active {
+  transform: scale(.98);
+}
+
+body:has(.profile-overlay.open) .ux-bottom-nav,
+body:has(.profile-overlay.open) .ux-shell,
+body:has(.profile-overlay.open) .page-anchor {
+  display: none !important;
+}
+
+body:has(.profile-overlay.open) {
+  overflow: hidden !important;
+}
+
+.profile-overlay {
+  z-index: 1200 !important;
+}
+
+@media(max-width:600px) {
+  .ux-bottom-nav {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 -1px 0 var(--line) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+  }
+  .ux-bottom-item {
+    border-radius: 0 !important;
+  }
+  .ux-bottom-item.active {
+    border-radius: 0 !important;
+    background: rgba(29,185,84,.09) !important;
+  }
+}
+
+body:not(.ux-chat-active) {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body:not(.ux-chat-active) .page {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 100vh !important;
+}
+
+body:not(.ux-chat-active) .ux-view.active {
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+body.ux-nonhome .page-anchor {
+  display: none !important;
+}
+
+body.ux-home-active .page-anchor {
+  display: block !important;
+}
+
+/* ======================================================================
+   20. UI fixes  (source: vaultet-production-audit-fixes)
+   ====================================================================== */
+
+html.app-modal-open,
+body.app-modal-open {
+  overscroll-behavior: none;
+}
+
+body.app-modal-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+body.app-modal-open .overlay.open .sheet-modal,
+body.app-modal-open .profile-overlay.open .profile-sheet {
+  touch-action: auto;
+}
+
+.overlay.open {
+  overscroll-behavior: contain;
+}
+
+.overlay.open>.sheet-modal,
+.overlay.open>.sheet {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.type-toggle {
+  display: flex !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.type-btn {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.type-btn[class*="active-"] {
+  z-index: 2 !important;
+}
+
+body.ux-chat-active {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+body.ux-chat-active .page {
+  height: var(--ux-vv-height,100dvh) !important;
+  max-height: var(--ux-vv-height,100dvh) !important;
+  overflow: hidden !important;
+}
+
+body.ux-chat-active .ux-shell {
+  position: relative !important;
+  z-index: 100 !important;
+  flex: none !important;
+}
+
+body.ux-chat-active #ux-chat {
+  height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
+  max-height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
+}
+
+body.ux-chat-active .ux-chat-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+body.ux-chat-active .ux-chat-panel .ai-analyst-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
+  flex: 0 0 auto !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+#typeToggle {
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  isolation: isolate !important;
+}
+
+#typeToggle .type-btn {
+  text-overflow: clip !important;
+}
+
+@media(max-width:380px) {
+  #typeToggle .type-btn {
+    font-size: 11.5px !important;
+    padding: 0 3px !important;
+  }
+}
+
+/* ======================================================================
+   21. Navigation / Tabs  (source: vaultet-round11-mobile-tabs-final)
+   ====================================================================== */
+
+#typeToggle {
+  width: 100% !important;
+  padding: 4px !important;
+}
+
+#typeToggle .type-btn {
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 5px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  text-shadow: none;
+}
+
+#typeToggle .type-btn-label {
+  pointer-events: none !important;
+}
+
+@media(max-width:390px) {
+  #typeToggle {
+    gap: 3px !important;
+    padding: 3px !important;
+  }
+  #typeToggle .type-btn {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 3px !important;
+    font-size: 11.5px !important;
+  }
+}
