@@ -18,7 +18,7 @@ await pg.goto('http://localhost:8139/index.html#plan');  // ทางลัด�
 await pg.waitForTimeout(1200);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 const debts=()=>pg.evaluate(()=>JSON.parse(localStorage.getItem('finance_tracker_debts_v1')));
-await pg.click('#manageDebtsBtn'); await pg.waitForTimeout(400);
+await pg.click('#vMoneyDebtTile'); await pg.waitForTimeout(400);
 ok('two debt cards', (await pg.locator('.v-debt').count())===2);
 ok('balance shown', (await pg.textContent('.v-debt >> nth=0')).includes('58,000'));
 ok('history collapsed by default', !(await pg.isVisible('.v-debt >> nth=0 >> .v-hrow')));

@@ -82,7 +82,7 @@ ok('home month label follows the same month', (await pg.textContent('#uxMonthLab
 
 // ---- เงินของฉัน ----
 await tab('plan'); await pg.waitForTimeout(300);
-ok('เงินของฉัน: assets + shortcuts + emergency card here', await vis('#ux-plan #vAssets') && await vis('#ux-plan #vShortcuts') && await vis('#emergencyDashboardCard'));
+ok('เงินของฉัน: assets + money rows + emergency card here', await vis('#ux-plan #vAssets') && await vis('#ux-plan #vMoneyAccounts') && await vis('#emergencyDashboardCard'));
 ok('avatar only on home', !(await vis('#uxAvatarBtn')) && (await pg.textContent('#uxPageName')).trim()==='เงินของฉัน');
 await pg.screenshot({path:shots+'r1-money.png'});
 

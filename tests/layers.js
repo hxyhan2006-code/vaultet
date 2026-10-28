@@ -65,28 +65,12 @@ ok('"AI ตอบแล้ว" card is horizontally centred ('+JSON.stringify(tb
 await pg.screenshot({path:shots+'layers-toast.png'});
 await pg.click('#aiCompletionDismissBtn'); await pg.waitForTimeout(300);
 
-// ---- ทางลัด: อยู่กึ่งกลาง + จัดเรียงเอง (แท็บ "เงินของฉัน") ----
+// ---- เงินของฉัน (ds52): ทางลัดเดิม (รวมจัดเรียง) ถูกแทนด้วยแถวในหน้า จึงซ่อนไว้ ----
 await pg.evaluate(()=>vaultetGo('plan')); await pg.evaluate(()=>window.scrollTo(0,0)); await pg.waitForTimeout(300);
-await pg.click('#vMoreBtn'); await pg.waitForTimeout(250);
-const rowC=await pg.evaluate(()=>{const row=document.getElementById('vMoreRow').getBoundingClientRect();const kids=[...document.querySelectorAll('#vMoreRow .v-sc')].map(k=>k.getBoundingClientRect());const l=Math.min(...kids.map(k=>k.left)),r=Math.max(...kids.map(k=>k.right));return {n:kids.length,off:Math.round((l+r)/2-(row.left+row.width/2))}});
-ok('second row has 4 items (3 + จัดเรียง) and is centred (offset '+rowC.off+'px)', rowC.n===4 && Math.abs(rowC.off)<=2);
-await pg.screenshot({path:shots+'layers-shortcuts.png'});
-const firstId=()=>pg.evaluate(()=>[...document.querySelectorAll('#vShortcuts > .v-sc')].map(b=>b.id).join(','));
-ok('default main row: portfolio, emergency, debts, more', (await firstId())==='openPortfolioBtn,vEmergencyBtn,manageDebtsBtn,vMoreBtn');
-await pg.click('#vScEdit'); await pg.waitForSelector('.v-dlg');
-ok('sort dialog lists 6 shortcuts', (await pg.locator('.v-sc-sort-row').count())===6);
-await pg.click('.v-sc-sort-row >> nth=3 >> [data-d="-1"]'); await pg.waitForTimeout(200);
-ok('moving "บัญชี" up puts it on the main row (replaces the 3rd)', (await firstId())==='openPortfolioBtn,vEmergencyBtn,manageAccountsBtn,vMoreBtn');
-ok('order is saved', (await pg.evaluate(()=>JSON.parse(localStorage.getItem('vaultet_ui_shortcuts_v1')||'[]'))).indexOf('manageAccountsBtn')===2);
-await pg.screenshot({path:shots+'layers-sort.png'});
-await pg.click('.v-dlg-ok'); await pg.waitForTimeout(300);
-await pg.reload(); await pg.waitForTimeout(900);
-ok('order survives a reload', (await firstId())==='openPortfolioBtn,vEmergencyBtn,manageAccountsBtn,vMoreBtn');
-await pg.click('#manageAccountsBtn'); await pg.waitForTimeout(400);
-ok('a moved shortcut still works (opens Accounts)', await pg.evaluate(()=>document.getElementById('accountsOverlay').classList.contains('open')));
+ok('old shortcut grid is hidden (rows replace it)', !(await pg.isVisible('#vShortcuts')) && await pg.isVisible('#vMoneyAccounts'));
+await pg.click('#vMoneyAccounts [data-act="accounts"]'); await pg.waitForTimeout(400);
+ok('"จัดการ" on accounts opens the Accounts sheet', await pg.evaluate(()=>document.getElementById('accountsOverlay').classList.contains('open')));
 await pg.evaluate(()=>document.querySelectorAll('.overlay.open').forEach(e=>e.classList.remove('open'))); await pg.waitForTimeout(300);
-await pg.click('#vMoreBtn'); await pg.click('#vScEdit'); await pg.waitForSelector('.v-dlg'); await pg.click('.v-dlg-cancel'); await pg.waitForTimeout(200); await pg.click('.v-dlg-ok'); await pg.waitForTimeout(300);
-ok('reset restores the default order', (await firstId())==='openPortfolioBtn,vEmergencyBtn,manageDebtsBtn,vMoreBtn');
 // ---- ไอคอนแอป: manifest ชี้ไฟล์ที่มีจริง ขนาดถูก ----
 const ic=await pg.evaluate(async()=>{const m=await (await fetch('manifest.webmanifest')).json();const out=[];for(const i of m.icons){const r=await fetch(i.src);const buf=new Uint8Array(await r.arrayBuffer());const dv=new DataView(buf.buffer);out.push({src:i.src,sizes:i.sizes,purpose:i.purpose,ok:r.ok,png:buf[1]===0x50&&buf[2]===0x4E,w:dv.getUint32(16),h:dv.getUint32(20)});}
 const ap=document.querySelector('link[rel=apple-touch-icon]').getAttribute('href');const r2=await fetch(ap);return {out,ap,apOk:r2.ok};});

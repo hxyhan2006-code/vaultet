@@ -26,26 +26,18 @@ await pg.reload(); await pg.waitForTimeout(800); ok('eye state persists', await 
 await pg.click('#vEyeBtn'); ok('eye shows again', await pg.evaluate(()=>!document.body.classList.contains('v-hide-numbers')));
 // more (ทางลัด/สินทรัพย์รวมย้ายไปแท็บ "เงินของฉัน" ตั้งแต่ ds47)
 await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(300);
-await pg.click('#vMoreBtn'); ok('more row opens', await pg.isVisible('#manageAccountsBtn'));
-await pg.click('#vMoreBtn'); ok('more row closes', !(await pg.isVisible('#manageAccountsBtn')));
+ok('old shortcut grid hidden, money rows shown (ds52)', !(await pg.isVisible('#vShortcuts')) && await pg.isVisible('#vMoneyHero') && await pg.isVisible('#vMoneyAccounts'));
 // assets
 await pg.click('#vAssets summary'); ok('assets opens', await pg.evaluate(()=>document.getElementById('vAssets').open));
 await pg.screenshot({path:shots+'assets-open.png'});
 await pg.reload(); await pg.waitForTimeout(800); await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(300); ok('assets state persists', await pg.evaluate(()=>document.getElementById('vAssets').open));
 await pg.click('#vAssets summary');
-// shortcuts open overlays
-for (const [id,name] of [['openPortfolioBtn','portfolio'],['manageDebtsBtn','debts']]) {
-  await pg.click('#'+id); await pg.waitForTimeout(400);
-  const opened=await pg.evaluate(()=>!!document.querySelector('.overlay.open, .pf-overlay.open, [id*="verlay"].open, .open'));
-  ok('shortcut '+name+' opens something', opened);
-  await pg.screenshot({path:shots+'sc-'+name+'.png'});
-  await pg.evaluate(()=>{document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'));});
-}
-await pg.click('#vMoreBtn');
-for (const [id,name] of [['manageAccountsBtn','accounts'],['manageReservedBtn','reserved'],['manageLoansBtn','loans']]) {
-  await pg.click('#'+id); await pg.waitForTimeout(400);
-  ok('shortcut '+name+' opens something', await pg.evaluate(()=>!!document.querySelector('.open')));
-  await pg.evaluate(()=>{document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'));});
+// แถวในหน้าเงินของฉันเปิดหน้าต่างเดิม (แทนทางลัด)
+for (const [sel,name,ov] of [['#vMoneyPfRow','portfolio',null],['#vMoneyDebtTile','debts','debtsOverlay'],['#vMoneyAccounts [data-act="accounts"]','accounts','accountsOverlay'],['#vMoneyReservedRow','reserved','reservedOverlay'],['#vMoneyLoanTile','loans','loansOverlay']]) {
+  await pg.click(sel); await pg.waitForTimeout(400);
+  ok('money row '+name+' opens its sheet', await pg.evaluate(ov=>ov?document.getElementById(ov)?.classList.contains('open'):!!document.querySelector('.open'),ov));
+  await pg.screenshot({path:shots+'money-'+name+'.png'});
+  await pg.evaluate(()=>{document.querySelectorAll('.open').forEach(e=>e.classList.remove('open'));}); await pg.waitForTimeout(150);
 }
 // tx row tap -> edit form
 await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(300);

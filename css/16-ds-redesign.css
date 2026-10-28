@@ -255,3 +255,60 @@ html body .v-rbar:disabled { cursor: default; }
 .v-rmore[open] .v-chev { transform: rotate(180deg); }
 .v-rmore summary:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 html body .v-rmore .analysis-section { margin: 12px 0 0 !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+
+/* =====================================================================
+   ds52 รอบ 4: หน้า "เงินของฉัน" โฉมใหม่ (app/15-money.js)
+   ===================================================================== */
+html body #ux-plan.active { gap: 12px; }
+html body #ux-plan > .hero-cards { display: none !important; }
+/* มูลค่าสุทธิ */
+.v-mhero { display: flex; flex-direction: column; gap: 10px; }
+.v-mhero-k { font-size: 13px; color: var(--v-muted); }
+.v-mhero-v { font-family: var(--v-mono); font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.v-mbar { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--v-surface-2); }
+.v-mbar i { display: block; min-width: 3px; }
+.v-mlegend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--v-muted); }
+.v-mlegend:empty { display: none; }
+.v-mlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.v-mlegend i { width: 8px; height: 8px; border-radius: 2px; }
+.v-mhero-debt { font-size: 12px; color: var(--v-muted); }
+.v-mhero-debt:empty { display: none; }
+/* สินทรัพย์รวม (พับได้) อยู่ในการ์ดนี้ = ที่มาของตัวเลข */
+html body .v-mhero .v-assets { margin: 2px 0 0 !important; background: none !important; border: 0 !important; border-top: 1px solid var(--v-line) !important; border-radius: 0 !important; }
+html body .v-mhero .v-assets summary { padding: 12px 0 2px; }
+html body .v-mhero .v-assets-body { padding: 4px 0 0; }
+html body .v-mhero .v-row-total, html body .v-mhero #accountsList { display: none !important; }
+/* หัวข้อแต่ละส่วน */
+.v-msec { display: flex; flex-direction: column; }
+.v-msec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 6px 4px 4px; }
+.v-msec-title { margin: 0; font-size: 13px; font-weight: 500; color: var(--v-muted); }
+.v-msec-body { display: flex; flex-direction: column; gap: 12px; }
+/* แถว (บัญชี / เงินกันไว้ / พอร์ต) */
+.v-mlist { background: var(--v-surface); border: 1px solid var(--v-line); border-radius: var(--v-r-lg); overflow: hidden; }
+html body .v-mrow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 16px; background: none !important; border: 0 !important; border-top: 1px solid var(--v-line) !important; border-radius: 0 !important; color: var(--v-fg); font: inherit; text-align: left; cursor: pointer; transition: background .15s; }
+html body .v-mlist > .v-mrow:first-child { border-top: 0 !important; }
+html body .v-mrow:active { background: var(--v-surface-2) !important; }
+html body .v-mrow:focus-visible { outline: 2px solid var(--v-accent); outline-offset: -2px; }
+html body .v-mrow-card { background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-lg) !important; }
+.v-mrow-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--v-accent) 12%, transparent); color: var(--v-accent); }
+.v-mrow-ic-pf { background: color-mix(in srgb, var(--v-xfer) 12%, transparent); color: var(--v-xfer); }
+.v-mrow-add .v-mrow-ic { background: var(--v-surface-2); color: var(--v-muted); }
+.v-m-ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.v-mrow-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.v-mrow-t { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-mrow-s { font-size: 12px; color: var(--v-muted); }
+.v-mrow-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.v-mrow-v { font-family: var(--v-mono); font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.v-mrow-pl { font-family: var(--v-mono); font-size: 12px; white-space: nowrap; }
+.v-mrow-pl.is-up { color: var(--v-in); }
+.v-mrow-pl.is-down { color: var(--v-out); }
+.v-mrow-chev { flex: none; width: 18px; height: 18px; fill: none; stroke: var(--v-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* หนี้ / เงินให้ยืม */
+.v-mtiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html body .v-mtile { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 16px; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: var(--v-r-lg) !important; color: var(--v-fg); font: inherit; text-align: left; cursor: pointer; transition: transform .12s ease; }
+@media (prefers-reduced-motion: no-preference) { html body .v-mtile:active, html body .v-mrow-card:active { transform: scale(.97); } }
+html body .v-mtile:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+.v-mtile-k { font-size: 12px; color: var(--v-muted); }
+.v-mtile-v { font-family: var(--v-mono); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.v-mtile-v.is-debt { color: var(--v-out); }
+.v-mtile-s { font-size: 12px; color: var(--v-muted); }
