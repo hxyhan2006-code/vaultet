@@ -430,3 +430,10 @@ html body #uxChatTopActions { gap: 0; margin-right: -8px; }
 
 /* ds58: เมนูเล็กตอนกดค้าง ห้ามเลือกข้อความ */
 .v-aimenu-pop-back, .v-aimenu-pop, .v-aimenu-pop * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* ds60: หมวดงบที่ปกติพับรวมไว้ ให้หมวดที่ต้องสนใจเด่นกว่า */
+html body details.v-calm { border-top: 1px solid var(--v-line); margin-top: 4px; }
+html body details.v-calm > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 13px; color: var(--v-muted); }
+html body details.v-calm > summary::-webkit-details-marker { display: none; }
+html body details.v-calm > summary::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-right: 4px; transition: transform .2s; }
+html body details.v-calm[open] > summary::after { transform: rotate(-135deg); }

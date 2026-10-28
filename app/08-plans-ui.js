@@ -322,32 +322,37 @@ function renderBudgetDashboard(){
   if(!s.budgetCount&&!sv.budgetCount&&!bf){card.style.display="none";return;}card.style.display="block";
   const rem=document.getElementById("budgetDashboardRemaining"), sub=document.getElementById("budgetDashboardSub"), fill=document.getElementById("budgetDashboardFill");
   if(s.budgetCount){
+    const bigLbl=rem.nextElementSibling; if(bigLbl) bigLbl.textContent=s.totalRemaining<0?"เกินงบรวม":"คงเหลือ";
     rem.textContent=(s.totalRemaining<0?"-":"")+"฿"+fmt(Math.abs(s.totalRemaining));rem.style.color=s.totalRemaining<0?"var(--v-out)":"";
     sub.textContent=`ใช้ ฿${fmt(s.totalSpent)} จาก ฿${fmt(s.totalBudget)} · ${s.overCount?`เกินงบ ${s.overCount} หมวด`:s.watchCount?`ควรเฝ้าดู ${s.watchCount} หมวด`:"อยู่ในกรอบงบ"} · เหลือ ${s.remainingDays} วัน`;
     fill.style.width=Math.min(100,Math.max(0,s.totalPct))+"%";fill.style.background=s.totalRemaining<0?"var(--v-out)":s.totalPct>=80?"var(--v-xfer)":"var(--v-accent)";
   } else {
+    const bigLbl2=rem.nextElementSibling; if(bigLbl2) bigLbl2.textContent="ออมแล้ว";
     rem.textContent="฿"+fmt(sv.totalSpent);rem.style.color="var(--v-save)";
     sub.textContent=`ออมแล้ว ฿${fmt(sv.totalSpent)} จากเป้า ฿${fmt(sv.totalBudget)} · เหลือ ${sv.remainingDays} วัน`;
     fill.style.width=Math.min(100,Math.max(0,sv.totalPct))+"%";fill.style.background="var(--v-save)";
   }
   const order={OVER:0,WATCH:1,SAFE:2};
-  let html=s.rows.slice().sort((a,b)=>order[a.status]-order[b.status]).map(r=>budgetRowHtml(r,false)).join("");
+  const sorted=s.rows.slice().sort((a,b)=>order[a.status]-order[b.status]);
+  const hotRows=sorted.filter(r=>r.status==="OVER"||r.status==="WATCH"), calmRows=sorted.filter(r=>r.status!=="OVER"&&r.status!=="WATCH");
+  // หมวดที่ต้องสนใจขึ้นก่อน หมวดปกติพับรวมไว้ (ไม่ลบ แค่ไม่ให้แย่งสายตา)
+  let html=hotRows.map(r=>budgetRowHtml(r,false)).join("");
+  if(hotRows.length&&calmRows.length) html+=`<details class="v-calm"><summary>ปกติ ${calmRows.length} หมวด</summary>${calmRows.map(r=>budgetRowHtml(r,false)).join("")}</details>`;
+  else html+=calmRows.map(r=>budgetRowHtml(r,false)).join("");
   if(sv.budgetCount){
     html+=`<div class="v-subhead"><span>เป้าออมเดือนนี้</span>${sv.rows.length>1?`<span class="v-subhead-r">฿${fmt(sv.totalSpent)} / ฿${fmt(sv.totalBudget)} · ${fmt(sv.totalPct)}%</span>`:""}</div>`+sv.rows.map(r=>budgetRowHtml(r,false)).join("");
   }
   if(bf){
     const low=bf.remaining<0, col=low?"var(--v-out)":"var(--v-accent)", w=bf.amount>0?Math.min(100,Math.max(0,bf.used/bf.amount*100)):0;
-    html+=`<div class="v-subhead"><span>เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="v-pill v-pill-${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">ใช้ไปนอกงบ</span><span class="v-brow-amt">฿${fmt(bf.used)}<small> / ฿${fmt(bf.amount)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))} · ${bf.swept>0?`ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:"ถ้าสิ้นเดือนเหลือ ย้ายไปออมได้"}</span></div>${bf.remaining>0?`<button type="button" id="bufferSweepBtn" class="v-btn-block">ย้ายเศษ ฿${fmt(bf.remaining)} ไปเป็นเงินออม</button>`:""}</div>`;
+    html+=`<div class="v-subhead"><span>เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="v-pill v-pill-${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">ใช้ไปนอกงบ</span><span class="v-brow-amt">฿${fmt(bf.used)}<small> / ฿${fmt(bf.amount)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))}${bf.swept>0?` · ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:""}</span></div></div>`;
   }
   // เตือนช่วงท้ายเดือน (เหลือ ≤5 วัน)
   if(s.remainingDays<=5){
     const tips=[];
-    if(bf&&bf.remaining>0) tips.push(`เงินสำรองเผื่อเหตุไม่คาดฝันเหลือ ฿${fmt(bf.remaining)} → ย้ายไปออมได้`);
     if(bf&&bf.remaining<0) tips.push(`ใช้เกินเงินสำรอง ฿${fmt(Math.abs(bf.remaining))} → เดือนหน้าลดหมวดไม่จำเป็นชดเชย`);
     if(sv.budgetCount&&sv.totalRemaining>0) tips.push(`เป้าออมยังขาด ฿${fmt(sv.totalRemaining)}`);
     if(s.overCount) tips.push(`เกินงบ ${s.overCount} หมวด`);
     if(tips.length){
-      html=`<div class="v-note"><div class="v-note-title">ใกล้สิ้นเดือน (เหลือ ${s.remainingDays} วัน)</div>${tips.map(t=>escapeHtml(t)).join("<br>")}</div>`+html;
       // ตอนโหลดหน้าแรก ai.js (ที่มีระบบแจ้งเตือน) ยังไม่โหลด: ข้ามไปก่อน รอบ render ถัดไปค่อยเพิ่ม
       if(typeof loadVaultetNotifications==="function") try{
         const mk=monthKey(todayISO()), nid="monthend-"+mk, list=loadVaultetNotifications();
@@ -357,15 +362,6 @@ function renderBudgetDashboard(){
   }
   document.getElementById("budgetDashboardRows").innerHTML=html;
 }
-document.addEventListener("click",async e=>{
-  const b=e.target.closest&&e.target.closest("#bufferSweepBtn"); if(!b) return;
-  const bf=getBufferInfo(); if(!bf||bf.remaining<=0){ showToast("ไม่มีเศษเงินสำรองให้ย้าย"); return; }
-  const amt=Math.round(bf.remaining*100)/100;
-  if(!(await vaultetAsk("ย้ายเศษ", `ย้ายเศษเงินสำรอง ฿${fmt(amt)} ไปบันทึกเป็นรายการออมใช่ไหม?`, false))) return;
-  const r=sweepBufferToSaving(bf.month,amt,"เงินออม");
-  if(!r.ok){ showToast(r.msg||"บันทึกไม่สำเร็จ"); return; }
-  render(); showToast("ย้ายไปออมแล้ว (ลบได้ที่รายการออมถ้ากดผิด)");
-});
 document.getElementById("budgetDashboardManageBtn")?.addEventListener("click",openBudgetManager);
 document.getElementById("closeBudgetBtn")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
 document.getElementById("budgetOverlay")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
