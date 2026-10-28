@@ -18,7 +18,7 @@ jobs:
       - name: เตรียมโฟลเดอร์ห่อแอป
         run: |
           mkdir -p wrap/www
-          cp index.html *.js *.css *.png manifest.webmanifest wrap/www/
+          cp -r index.html *.js *.css *.png manifest.webmanifest app wrap/www/
           cd wrap
           npm init -y >/dev/null
           npm install --no-audit --no-fund @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
