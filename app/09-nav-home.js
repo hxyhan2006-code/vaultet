@@ -274,29 +274,49 @@
     chips.querySelectorAll('.v-fchip').forEach(b=>{ const on=b.dataset.f===sel.value; b.classList.toggle('is-on',on); b.setAttribute('aria-pressed',on?'true':'false'); });
   }
 
-  // งบเดือนนี้บนหน้าหลัก: ซ่อนรายหมวดไว้ก่อน กด "ดูรายหมวด" ถึงจะกาง (จำค่าไว้)
+  // งบเดือนนี้บนหน้าหลัก: แตะที่การ์ดเพื่อกาง/พับรายหมวด (ไม่มีปุ่ม) กางแบบนุ่ม ~0.25 วิ จำค่าไว้
   const K_BUDGET='vaultet_ui_budget_open_v1';
   const bCard=document.getElementById('budgetDashboardCard'), bRows=document.getElementById('budgetDashboardRows');
-  let bBtn=null;
   if(bCard&&bRows){
-    bBtn=document.createElement('button');
-    bBtn.type='button'; bBtn.className='v-btn v-btn-text v-budget-more'; bBtn.id='vBudgetMoreBtn';
-    bBtn.innerHTML='<span>ดูรายหมวด</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-    bCard.append(bBtn);
-    const apply=open=>{ bCard.classList.toggle('is-collapsed',!open); bBtn.setAttribute('aria-expanded',open?'true':'false'); bBtn.querySelector('span').textContent=open?'ซ่อนรายหมวด':'ดูรายหมวด'; };
+    const calm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
     let open=false; try{ open=localStorage.getItem(K_BUDGET)==='1'; }catch(e){}
-    apply(open);
-    bBtn.addEventListener('click',()=>{ open=!open; apply(open); try{ localStorage.setItem(K_BUDGET,open?'1':'0'); }catch(e){} });
+    let timer=0;
+    const finish=()=>{ clearTimeout(timer); bRows.style.height=''; bRows.style.transition=''; bCard.classList.toggle('is-collapsed',!open); };
+    const apply=(o,animate)=>{
+      open=o; bCard.setAttribute('aria-expanded',o?'true':'false');
+      if(!animate||calm){ finish(); return; }
+      const from=o?0:bRows.offsetHeight;
+      bCard.classList.remove('is-collapsed');
+      const to=o?bRows.scrollHeight:0;
+      bRows.style.transition='none'; bRows.style.height=from+'px'; void bRows.offsetHeight;
+      bRows.style.transition='height .25s ease'; bRows.style.height=to+'px';
+      clearTimeout(timer); timer=setTimeout(finish,280);
+    };
+    bCard.tabIndex=0; bCard.setAttribute('role','group');
+    apply(open,false);
+    const toggle=()=>{ if(!bRows.innerHTML.trim()) return; apply(!open,true); try{ localStorage.setItem(K_BUDGET,open?'1':'0'); }catch(e){} };
+    bCard.addEventListener('click',e=>{
+      if(e.target.closest('#budgetDashboardManageBtn, .v-brow, a, button, input, select')) return;
+      toggle();
+    });
+    bCard.addEventListener('keydown',e=>{ if(e.target===bCard&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); toggle(); } });
   }
-  function syncBudgetBtn(){ if(bBtn&&bRows) bBtn.hidden=!bRows.innerHTML.trim(); }
+  // การ์ดกำลังจะต้องจ่าย: แตะที่การ์ดเพื่อเปิดรายการทั้งหมด (แผ่นจากล่าง) ไม่มีปุ่ม
+  const uCard=document.getElementById('upcomingCard');
+  if(uCard){
+    uCard.tabIndex=0;
+    const openUp=()=>{ renderUpcomingOverlay(); document.getElementById('upcomingOverlay').classList.add('open'); };
+    uCard.addEventListener('click',e=>{ if(e.target.closest('a, button, input, select')) return; openUp(); });
+    uCard.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openUp(); } });
+  }
 
   const __prevRender=render;
   render=function(){
     __prevRender();
-    try{ renderRecent(); syncChips(); syncBudgetBtn(); }catch(e){ console.error(e); }
+    try{ renderRecent(); syncChips(); }catch(e){ console.error(e); }
     const m=document.getElementById('monthSelect'); if(m) m.dispatchEvent(new Event('vaultet-month-sync'));
   };
-  renderRecent(); syncChips(); syncBudgetBtn();
+  renderRecent(); syncChips();
 })();
 
 /* ===== Round 6: AI chat page bridge ===== */

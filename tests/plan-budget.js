@@ -25,7 +25,7 @@ await pg.goto('http://localhost:8131/index.html');await pg.waitForTimeout(1000);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 // งบเดือนนี้อยู่หน้าหลักตั้งแต่ ds47 (รายหมวดพับไว้ กด "ดูรายหมวด" ก่อน); ds61 แถวโชว์ข้อความสถานะ ไม่มีป้าย/ปุ่มย้ายเศษ
 ok('budget card visible on home', await pg.isVisible('#ux-home #budgetDashboardCard'));
-await pg.click('#vBudgetMoreBtn');await pg.waitForTimeout(200);
+await pg.click('#budgetDashboardCard .v-card-title');await pg.waitForTimeout(450);
 ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent('#budgetDashboardRemaining')));
 ok('over-budget row says เกินงบ ฿… under its bar', (await pg.textContent('#budgetDashboardRows .v-brow-st.over >> nth=0')).includes('เกินงบ ฿'));
 ok('every row shows a status line (none hidden)', (await pg.locator('#budgetDashboardRows details.v-brow-c').count())===(await pg.locator('#budgetDashboardRows details.v-brow-c .v-brow-st').count()));

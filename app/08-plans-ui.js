@@ -64,10 +64,7 @@ document.getElementById("upcomingFilterSelect").addEventListener("change", (e) =
   upcomingFilter = e.target.value;
   renderUpcomingOverlay();
 });
-document.getElementById("viewUpcomingBtn").addEventListener("click", () => {
-  renderUpcomingOverlay();
-  document.getElementById("upcomingOverlay").classList.add("open");
-});
+// เปิดรายการทั้งหมด: แตะที่การ์ด #upcomingCard (ผูกใน app/09-nav-home.js)
 document.getElementById("closeUpcomingBtn").addEventListener("click", () => {
   document.getElementById("upcomingOverlay").classList.remove("open");
 });
