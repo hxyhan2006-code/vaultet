@@ -431,9 +431,16 @@ html body #uxChatTopActions { gap: 0; margin-right: -8px; }
 /* ds58: เมนูเล็กตอนกดค้าง ห้ามเลือกข้อความ */
 .v-aimenu-pop-back, .v-aimenu-pop, .v-aimenu-pop * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
-/* ds61: การ์ดงบแบบ B — หัวข้อกลุ่ม + ข้อความสถานะใต้แท่ง (ไม่พับหมวด) */
-html body .v-subhead-g .v-subhead-r { color: var(--v-muted); font-family: inherit; }
-html body .v-subhead-g { color: var(--v-fg); }
-html body .v-brow-st { margin-top: 5px; font-size: 12.5px; color: var(--v-muted); }
+/* ds62: การ์ดงบกะทัดรัด — เลขเล็กลงให้ "ใช้ได้จริง" เด่นกว่า, แถวหมวดสองบรรทัด (สถานะอยู่ข้างชื่อ), ระยะแน่นขึ้น */
+html body #budgetDashboardCard .v-big-row { margin: 8px 0 0; }
+html body #budgetDashboardCard .v-big { font-size: 20px; }
+html body #budgetDashboardCard > .v-bar { height: 4px; margin-top: 10px; }
+html body #budgetDashboardCard .v-card-sub { margin-top: 6px; }
+html body #budgetDashboardCard .v-subhead { margin-top: 12px; padding-top: 10px; }
+html body #budgetDashboardCard .v-subhead-g .v-subhead-r { color: var(--v-muted); font-family: inherit; }
+html body #budgetDashboardCard .v-subhead-g { color: var(--v-fg); }
+html body #budgetDashboardCard .v-brow-c summary { padding: 9px 0; }
+html body #budgetDashboardCard .v-brow-c .v-bar-xs { height: 4px; margin-top: 6px; }
+html body .v-brow-st { margin-left: 6px; font-size: 12.5px; font-weight: 400; color: var(--v-muted); }
 html body .v-brow-st.over { color: var(--v-out); }
 html body .v-brow-st.watch { color: var(--v-xfer); }

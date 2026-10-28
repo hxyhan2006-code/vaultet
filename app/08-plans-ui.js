@@ -297,9 +297,9 @@ function budgetRowHtml(r,manage){
   const meta1 = [rem, pace].filter(Boolean).join(" · ");
   if(!manage){
     const detail = [pace, proj].filter(Boolean).join(" · ");
-    const stTxt = sv ? rem : (r.status==="OVER" ? `เกินงบ ฿${fmt(Math.abs(r.remaining))}` : r.status==="WATCH" ? `${rem} · เฝ้าดู` : rem);
+    const stTxt = sv ? (r.remaining<=0?"ครบเป้า":`อีก ฿${fmt(r.remaining)}`) : (r.status==="OVER" ? `เกินงบ ฿${fmt(Math.abs(r.remaining))}` : r.status==="WATCH" ? `${rem} · เฝ้าดู` : rem);
     const stCls = !sv && r.status==="OVER" ? "over" : !sv && r.status==="WATCH" ? "watch" : "";
-    return `<details class="v-brow v-brow-c"><summary><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-st ${stCls}">${escapeHtml(stTxt)}</div></summary>${detail?`<div class="v-brow-more">${escapeHtml(detail)}</div>`:""}</details>`;
+    return `<details class="v-brow v-brow-c"><summary><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}<span class="v-brow-st ${stCls}">${escapeHtml(stTxt)}</span></span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${w}%;background:${col}"></i></div></summary>${detail?`<div class="v-brow-more">${escapeHtml(detail)}</div>`:""}</details>`;
   }
   return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${escapeHtml(r.category)}</span><span class="v-brow-amt">฿${fmt(r.spent)}<small> / ฿${fmt(r.budget)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${escapeHtml(meta1)}${proj?` · ${proj}`:""}</span>${showPill?`<span class="v-pill v-pill-${pillCls}">${m.label}</span>`:""}</div>${manage?`<div class="v-brow-actions"><button type="button" class="v-icon-btn budget-edit-btn" data-id="${escapeHtml(r.id)}" aria-label="แก้ไขงบ">แก้ไข</button><button type="button" class="v-icon-btn v-icon-danger budget-delete-btn" data-id="${escapeHtml(r.id)}" aria-label="ลบงบ">ลบ</button></div>`:""}</div>`;
 }
@@ -347,7 +347,7 @@ function renderBudgetDashboard(){
   }
   if(bf){
     const low=bf.remaining<0, col=low?"var(--v-out)":"var(--v-accent)", w=bf.amount>0?Math.min(100,Math.max(0,bf.used/bf.amount*100)):0;
-    html+=`<div class="v-subhead"><span>เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="v-pill v-pill-${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">ใช้ไปนอกงบ</span><span class="v-brow-amt">฿${fmt(bf.used)}<small> / ฿${fmt(bf.amount)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div><div class="v-brow-meta"><span>${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))}${bf.swept>0?` · ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:""}</span></div></div>`;
+    html+=`<div class="v-subhead"><span>เงินสำรองเผื่อเหตุไม่คาดฝัน</span><span class="v-pill v-pill-${low?"over":"safe"}">${low?"เกินสำรอง":"พร้อมใช้"}</span></div><div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">ใช้ไปนอกงบ<span class="v-brow-st ${low?"over":""}">${low?"เกิน":"เหลือ"} ฿${fmt(Math.abs(bf.remaining))}${bf.swept>0?` · ย้ายไปออมแล้ว ฿${fmt(bf.swept)}`:""}</span></span><span class="v-brow-amt">฿${fmt(bf.used)}<small> / ฿${fmt(bf.amount)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${w}%;background:${col}"></i></div></div>`;
   }
   // เตือนช่วงท้ายเดือน (เหลือ ≤5 วัน)
   if(s.remainingDays<=5){

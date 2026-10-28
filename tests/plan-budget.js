@@ -28,7 +28,7 @@ ok('budget card visible on home', await pg.isVisible('#ux-home #budgetDashboardC
 await pg.click('#vBudgetMoreBtn');await pg.waitForTimeout(200);
 ok('remaining shows 1000 (4700-... check text)', /฿/.test(await pg.textContent('#budgetDashboardRemaining')));
 ok('over-budget row says เกินงบ ฿… under its bar', (await pg.textContent('#budgetDashboardRows .v-brow-st.over >> nth=0')).includes('เกินงบ ฿'));
-ok('every row shows a status line (none hidden)', (await pg.locator('#budgetDashboardRows details.v-brow-c').count())===(await pg.locator('#budgetDashboardRows .v-brow-st').count()));
+ok('every row shows a status line (none hidden)', (await pg.locator('#budgetDashboardRows details.v-brow-c').count())===(await pg.locator('#budgetDashboardRows details.v-brow-c .v-brow-st').count()));
 ok('no sweep-to-saving button or month-end box in the card', !(await pg.locator('#bufferSweepBtn, #budgetDashboardCard .v-note').count()));
 ok('big number reads เกิน ฿… when over total budget, never a minus sign', await pg.evaluate(()=>{const t=document.getElementById('budgetDashboardRemaining').textContent;return !t.includes('-')&&(t.startsWith('เกิน ฿')||t.startsWith('฿'));}));
 { const c=pg.locator('#budgetDashboardRows details.v-brow-c'); const n=await c.count(); const h=await pg.evaluate(()=>document.querySelector('#budgetDashboardRows details.v-brow-c').getBoundingClientRect().height);
