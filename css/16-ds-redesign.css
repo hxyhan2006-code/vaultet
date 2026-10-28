@@ -312,3 +312,44 @@ html body .v-mtile:focus-visible { outline: 2px solid var(--v-accent); outline-o
 .v-mtile-v { font-family: var(--v-mono); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .v-mtile-v.is-debt { color: var(--v-out); }
 .v-mtile-s { font-size: 12px; color: var(--v-muted); }
+
+/* =====================================================================
+   ds53 รอบ 5: หน้าแชท AI + หน้าตั้งค่า
+   ===================================================================== */
+/* แชท: ข้อความเราเป็นฟองสีเขียว / ข้อความ AI มีไอคอนประกายเล็กๆ */
+html body.ux-chat-active .ai-chat-msg.role-user .ai-chat-bubble { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; border: 0 !important; border-radius: 18px 18px 4px 18px !important; }
+html body.ux-chat-active .ai-chat-msg.role-model { position: relative; padding-left: 38px; }
+html body.ux-chat-active .ai-chat-msg.role-model::before { content: ""; position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 9px; background: color-mix(in srgb, var(--v-accent) 14%, transparent); }
+html body.ux-chat-active .ai-chat-msg.role-model::after { content: ""; position: absolute; left: 5px; top: 7px; width: 18px; height: 18px; background: var(--v-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z'/%3E%3C/svg%3E") center / contain no-repeat; }
+/* ปุ่มส่ง: สีเขียวของแอป (เดิมเป็นสีฟ้า) */
+html body.ux-chat-active #aiChatSendBtn:not(.stop-btn) { background: var(--v-accent) !important; color: var(--v-accent-ink) !important; }
+html body.ux-chat-active #aiChatSendBtn svg { stroke: currentColor; }
+html body.ux-chat-active .ai-chat-input-row { border-radius: 26px !important; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; transition: border-color .2s, box-shadow .2s; }
+html body.ux-chat-active .ai-chat-input-row:focus-within { border-color: var(--v-accent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--v-accent) 16%, transparent); }
+/* หน้าว่าง: ไอคอน + ข้อความ + คำถามแนะนำ */
+html body .ai-chat-empty.v-chat-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 16px 8px; text-align: center; }
+.v-chat-empty-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: color-mix(in srgb, var(--v-accent) 12%, transparent); color: var(--v-accent); }
+.v-chat-empty-ic svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.v-chat-empty-s { max-width: 300px; font-size: 14px; line-height: 1.6; color: var(--v-muted); }
+.v-chat-sugs { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; max-width: 320px; margin-top: 10px; }
+html body .v-chat-sug { min-height: 44px; padding: 10px 16px; background: var(--v-surface) !important; border: 1px solid var(--v-line) !important; border-radius: 14px !important; color: var(--v-fg); font: inherit; font-size: 14px; text-align: left; cursor: pointer; transition: transform .12s ease, border-color .2s; }
+html body .v-chat-sug:active { transform: scale(.98); border-color: var(--v-accent) !important; }
+html body .v-chat-sug:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+
+/* ตั้งค่า: ไอคอนหน้าแถว + สวิตช์ + ป้ายสถานะ */
+.v-set-ic { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--v-surface-2); color: var(--v-fg); }
+.v-set-ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.v-set-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; color: var(--v-in); background: color-mix(in srgb, var(--v-in) 12%, transparent); }
+html body input[type="checkbox"].v-switch { -webkit-appearance: none; appearance: none; flex: none; position: relative; width: 50px !important; height: 30px !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 15px !important; background: #2a2e34 !important; cursor: pointer; transition: background .2s; }
+html body input[type="checkbox"].v-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: transform .22s cubic-bezier(.3,.7,.2,1); }
+html body input[type="checkbox"].v-switch:checked { background: var(--v-accent) !important; }
+html body input[type="checkbox"].v-switch:checked::after { transform: translateX(20px); }
+html body input[type="checkbox"].v-switch:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+/* การ์ดโปรไฟล์บนหน้าตั้งค่า: ตัวอักษรแรกของชื่อ */
+html body #ux-more .ux-user-context-avatar.has-letter { display: grid; place-items: center; font-size: 18px; font-weight: 600; color: var(--v-accent-ink); background: var(--v-accent) !important; }
+html body #ux-more .ux-user-context { padding: 14px 16px !important; gap: 12px; }
+html body #ux-more .ux-user-context-avatar { width: 44px !important; height: 44px !important; flex: none; }
+html body #ux-more .ux-user-context-name { font-size: 16px !important; font-weight: 600; }
+html body #ux-more .ux-user-context-meta, html body #ux-more .ux-user-context-goal { font-size: 12px !important; color: var(--v-muted) !important; }

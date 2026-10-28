@@ -87,7 +87,7 @@ await closeAll(); await pg.waitForTimeout(600); await pg.keyboard.press('Escape'
 
 // ===== lock (PIN) =====
 await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(300);
-await pg.click('#lockSettingsBtn'); await pg.waitForSelector('.v-dlg');
+await pg.click('#vSetLock'); await pg.waitForSelector('.v-dlg');
 ok('PIN fields are masked (password type)', await pg.evaluate(()=>[...document.querySelectorAll('.v-dlg input')].every(i=>i.type==='password')));
 await pg.fill('.v-dlg [name="p"]','12ab56'); await pg.fill('.v-dlg [name="p2"]','123456'); await pg.click('.v-dlg-ok');
 ok('non-digit PIN rejected', await T.errShown(pg));
@@ -99,13 +99,13 @@ await T.dlgOK(pg); // "เปิดล็อกแอปแล้ว"
 await pg.waitForTimeout(200);
 let lk=await get('vlock_v1'); ok('lock enabled and PIN stored hashed (not plain)', lk&&lk.on===true&&lk.pin&&lk.pin!=='123456'&&!JSON.stringify(lk).includes('123456')&&lk.q==='สัตว์เลี้ยงตัวแรก');
 // menu: turn off (needs current PIN)
-await pg.click('#lockSettingsBtn'); await T.dlgChoose(pg,'ปิดล็อก');
+await pg.click('#vSetLock'); await T.dlgChoose(pg,'ปิดล็อก');
 await pg.waitForSelector('.v-dlg [name="o"]'); await pg.fill('.v-dlg [name="o"]','000000'); await pg.click('.v-dlg-ok');
 ok('wrong current PIN is refused', (await T.dlgText(pg)).includes('รหัสไม่ถูกต้อง')); await T.dlgOK(pg);
-await pg.click('#lockSettingsBtn'); await T.dlgChoose(pg,'ปิดล็อก'); await T.dlgOK(pg,{o:'123456'}); await T.dlgOK(pg); await pg.waitForTimeout(200);
+await pg.click('#vSetLock'); await T.dlgChoose(pg,'ปิดล็อก'); await T.dlgOK(pg,{o:'123456'}); await T.dlgOK(pg); await pg.waitForTimeout(200);
 lk=await get('vlock_v1'); ok('correct PIN turns the lock off', lk.on===false);
 // forgot flow via the lock screen
-await pg.click('#lockSettingsBtn'); await T.dlgChoose(pg,'เปิดล็อก'); await T.dlgOK(pg,{o:'123456'}); await T.dlgOK(pg); await pg.waitForTimeout(200);
+await pg.click('#vSetLock'); await T.dlgChoose(pg,'เปิดล็อก'); await T.dlgOK(pg,{o:'123456'}); await T.dlgOK(pg); await pg.waitForTimeout(200);
 await pg.evaluate(()=>{document.dispatchEvent(new Event('visibilitychange'))});
 await pg.evaluate(()=>{const ov=[...document.body.children].find(e=>e.querySelector&&e.querySelector('#lockForgot'));ov.style.display='flex'});
 await pg.click('#lockForgot'); await T.dlgOK(pg,{a:'ผิด'}); await pg.waitForSelector('.v-dlg'); ok('wrong recovery answer refused', (await T.dlgText(pg)).includes('คำตอบไม่ถูกต้อง')); await T.dlgOK(pg);

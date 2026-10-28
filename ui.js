@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds52";
+  const UI_VERSION = "ds53";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -165,10 +165,24 @@
 
   // ---------- หน้า "ตั้งค่า" (เปิดจากรูปโปรไฟล์มุมขวาบน) ----------
   const CHEV = '<svg class="v-row-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-  function rowBtn(id, title, sub, onClick){
+  // ไอคอนหน้าแถว (ds53)
+  const SI = {
+    key: '<path d="M15 7a4 4 0 11-3.500 6L4 20.500H3v-3l1-1h2v-2h2l1.500-1.500A4 4 0 0115 7z"/><path d="M16 9h.01"/>',
+    pulse: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+    up: '<path d="M7 18a5 5 0 01-.500-10A6 6 0 0118 9a4.500 4.500 0 01-1 9z"/><path d="M12 11v6M9 14l3-3 3 3"/>',
+    fileDown: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M12 11v6M9 14l3 3 3-3"/>',
+    fileUp: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M12 17v-6M9 14l3-3 3 3"/>',
+    cloud: '<path d="M7 18a5 5 0 01-.500-10A6 6 0 0118 9a4.500 4.500 0 01-1 9z"/>',
+    bell: '<path d="M6 16V11a6 6 0 0112 0v5l1.500 2h-15z"/><path d="M10 20a2 2 0 004 0"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+    cents: '<path d="M5 19L19 5"/><circle cx="7" cy="7" r="2"/><circle cx="17" cy="17" r="2"/>',
+    chart: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>'
+  };
+  const sic = k => SI[k] ? '<span class="v-set-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' + SI[k] + "</svg></span>" : "";
+  function rowBtn(id, title, sub, onClick, icon){
     const b = document.createElement("button");
     b.type = "button"; b.className = "v-set-row"; if(id) b.id = id;
-    b.innerHTML = '<span class="v-set-main"><span class="v-set-title"></span><span class="v-set-sub"></span></span><span class="v-set-side"></span>' + CHEV;
+    b.innerHTML = sic(icon) + '<span class="v-set-main"><span class="v-set-title"></span><span class="v-set-sub"></span></span><span class="v-set-side"></span>' + CHEV;
     b.querySelector(".v-set-title").textContent = title;
     b.querySelector(".v-set-sub").textContent = sub || "";
     b.addEventListener("click", onClick);
@@ -205,17 +219,17 @@
       const b = document.getElementById("vSetBackupNow"); b.classList.add("is-busy");
       try{ document.getElementById("gdriveSyncNowBtn")?.click(); }catch(e){}
       setTimeout(() => { b.classList.remove("is-busy"); refreshSettings(); }, 1500);
-    });
+    }, "up");
     backupNow.classList.add("v-set-primary");
-    const exp = rowBtn("vSetExport", "สำรองเป็นไฟล์", "", () => { exportBtn.click(); setTimeout(refreshSettings, 600); });
-    const imp = rowBtn("vSetImport", "กู้คืนจากไฟล์", "เลือกไฟล์สำรองที่เคยบันทึกไว้", () => importBtn.click());
-    const drive = rowBtn("vSetDrive", "Google Drive", "", () => openSettingsSheet("drive"));
-    const notif = rowBtn("vSetNotif", "การแจ้งเตือน", "ประวัติและเลือกว่าจะให้เตือนเรื่องอะไร", () => { if(typeof openVaultetNotificationCenter === "function") openVaultetNotificationCenter(); });
-    const aikey = rowBtn("vSetAiKey", "Gemini API Key", "", () => openSettingsSheet("aikey"));
+    const exp = rowBtn("vSetExport", "สำรองเป็นไฟล์", "", () => { exportBtn.click(); setTimeout(refreshSettings, 600); }, "fileDown");
+    const imp = rowBtn("vSetImport", "กู้คืนจากไฟล์", "เลือกไฟล์สำรองที่เคยบันทึกไว้", () => importBtn.click(), "fileUp");
+    const drive = rowBtn("vSetDrive", "Google Drive", "", () => openSettingsSheet("drive"), "cloud");
+    const notif = rowBtn("vSetNotif", "การแจ้งเตือน", "ประวัติและเลือกว่าจะให้เตือนเรื่องอะไร", () => { if(typeof openVaultetNotificationCenter === "function") openVaultetNotificationCenter(); }, "bell");
+    const aikey = rowBtn("vSetAiKey", "Gemini API Key", "", () => openSettingsSheet("aikey"), "key");
     // ค่า AI วันนี้/เดือนนี้ แสดงบนหน้านี้เลย ไม่ต้องกดเข้าไปดู (เฉพาะดูอย่างเดียว)
     const costBox = document.createElement("div"); costBox.id = "vSetAiCost"; costBox.className = "v-set-cost"; costBox.hidden = true;
-    const orRow = rowBtn("vSetOR", "OpenRouter · AI หลายค่าย", "", () => openSettingsSheet("or"));
-    const stock = rowBtn("vSetStock", "ราคาหุ้น (Twelve Data)", "", () => openSettingsSheet("stock"));
+    const orRow = rowBtn("vSetOR", "OpenRouter · AI หลายค่าย", "", () => openSettingsSheet("or"), "pulse");
+    const stock = rowBtn("vSetStock", "ราคาหุ้น (Twelve Data)", "", () => openSettingsSheet("stock"), "chart");
 
     // แสดงเศษสตางค์: ย้ายสวิตช์เดิมมาไว้หน้านี้ (id เดิม ตัวจัดการเดิมยังทำงาน) แล้วลบการ์ดเก่าที่ว่างแล้วออก
     const dec = document.getElementById("showDecimalsToggle");
@@ -223,16 +237,21 @@
     if(dec){
       const decCard = dec.closest(".settings-card");
       decRow = document.createElement("label"); decRow.className = "v-set-row v-set-switch";
-      decRow.innerHTML = '<span class="v-set-main"><span class="v-set-title">แสดงเศษสตางค์</span><span class="v-set-sub">โชว์ทศนิยมในตัวเลขเงินทุกที่</span></span>';
-      dec.removeAttribute("style"); decRow.append(dec);
+      decRow.innerHTML = sic("cents") + '<span class="v-set-main"><span class="v-set-title">แสดงเศษสตางค์</span><span class="v-set-sub">โชว์ทศนิยมในตัวเลขเงินทุกที่</span></span>';
+      dec.removeAttribute("style"); dec.classList.add("v-switch"); dec.setAttribute("role", "switch"); decRow.append(dec);
       decCard?.remove();
     }
 
+    let lockRow = null;
+    if(lockCard){
+      lockCard.hidden = true;
+      lockRow = rowBtn("vSetLock", "ล็อกแอปด้วย PIN", "", () => document.getElementById("lockSettingsBtn")?.click(), "lock");
+    }
     const groups = [
       group("AI", costBox, aikey, orRow),
       group("สำรองข้อมูล", backupNow, exp, imp, drive),
       group("การแจ้งเตือน", notif),
-      lockCard ? group("ความปลอดภัย", lockCard) : null,
+      lockCard ? group("ความปลอดภัย", lockRow, lockCard) : null,
       group("การแสดงผลและข้อมูล", ...[decRow, stock].filter(Boolean))
     ].filter(Boolean);
     const anchor = more.querySelector(".v-version");
@@ -270,7 +289,18 @@
     renderAiCost();
     set("vSetAiKey", typeof aiGeminiSummary === "function" ? aiGeminiSummary() : (document.getElementById("apiKeyStatus")?.textContent || ""));
     set("vSetOR", typeof aiORSummary === "function" ? aiORSummary() : "");
+    let lk = null; try{ lk = JSON.parse(localStorage.getItem("vlock_v1") || "null"); }catch(e){}
+    set("vSetLock", lk && lk.on ? "เปิดอยู่ · ถามรหัส 6 หลักทุกครั้งที่เปิดแอป" : (lk ? "ปิดอยู่ · แตะเพื่อเปิดหรือเปลี่ยนรหัส" : "ยังไม่ได้ตั้ง · แตะเพื่อตั้งรหัส 6 หลัก"), lk && lk.on ? '<span class="v-set-pill">เปิดอยู่</span>' : "");
+    // วงกลมโปรไฟล์: ตัวอักษรแรกของชื่อเล่น (เหมือนแถบบนหน้าหลัก)
+    let nm = ""; try{ const pf = JSON.parse(localStorage.getItem("vaultet_user_profile_v1") || "{}") || {}; nm = String(pf.nickname || pf.firstName || "").trim(); }catch(e){}
+    const av = document.querySelector("#ux-more .ux-user-context-avatar");
+    if(av && nm){ av.textContent = Array.from(nm)[0].toUpperCase(); av.classList.add("has-letter"); }
   }
+  // กล่องข้อความปิด (เช่น ตั้ง/ปิดล็อกเสร็จ) ขณะอยู่หน้าตั้งค่า → อัปเดตสถานะแถวทันที
+  new MutationObserver(ms => {
+    if(!document.body.classList.contains("ux-more-active")) return;
+    if(ms.some(m => [...m.removedNodes].some(n => n.classList && n.classList.contains("v-dlg-back")))) refreshSettings();
+  }).observe(document.body, { childList: true });
   // หน้าตั้งค่าสร้างหลังโค้ดเดิมโหลดครบ (บางส่วนถูกสร้างด้วย timer) — ลองใหม่สั้นๆ จนกว่าจะพร้อม
   let tries = 0;
   (function wait(){ if(buildSettings() || ++tries > 20) return; setTimeout(wait, 150); })();

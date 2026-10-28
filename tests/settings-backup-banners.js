@@ -48,7 +48,7 @@ await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(300
 ok('decimals switch is saved and changes fmt()', (await pg.evaluate(()=>localStorage.getItem('vaultet_show_decimals_v1')))==='1' && (await pg.evaluate(()=>fmt(1.5)))==='1.5');
 // lock card still there
 await gotoPage(pg,'more');
-ok('lock button still present', await pg.isVisible('#lockSettingsBtn'));
+ok('lock row present (ds53: row instead of card button)', await pg.isVisible('#vSetLock') && !(await pg.isVisible('#lockSettingsBtn')));
 // banners: only one at a time, only on home
 await pg.evaluate(()=>{document.getElementById('backupBanner').classList.add('show');document.getElementById('debtBumpBanner').classList.add('show');document.getElementById('driveDirtyBanner').classList.add('show')});
 await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(200);
