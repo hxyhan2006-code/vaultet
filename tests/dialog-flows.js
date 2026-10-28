@@ -52,9 +52,10 @@ await T.dlgCancel(pg); await closeAll();
 
 // ===== merge categories =====
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250); await pg.click('#vManageBtn'); await pg.click('#mergeCatBtn');
-await pg.waitForSelector('.v-dlg'); await pg.selectOption('.v-dlg [name="src"]','คาเฟ่'); await pg.selectOption('.v-dlg [name="dst"]','คาเฟ่'); await pg.click('.v-dlg-ok');
+await pg.waitForSelector('.v-dlg'); // ds54: ช่องเลือกในกล่องข้อความเป็นปุ่มที่กางรายการในกล่องเดิม
+await pg.click('.v-dlg .v-fbtn[data-name="src"]'); await pg.click('.v-dlg .v-fpanel .v-pick-row[data-value="คาเฟ่"]'); await pg.click('.v-dlg .v-fbtn[data-name="dst"]'); await pg.click('.v-dlg .v-fpanel .v-pick-row[data-value="คาเฟ่"]'); await pg.click('.v-dlg-ok');
 ok('merge: same source and target is rejected', (await T.errShown(pg)) && (await pg.locator('.v-dlg').count())===1);
-await pg.selectOption('.v-dlg [name="dst"]','กิน'); await pg.click('.v-dlg-ok'); await pg.waitForSelector('.v-dlg-danger'); ok('merge asks for confirmation with a danger button', (await T.dlgText(pg)).includes('รวม'));
+await pg.click('.v-dlg .v-fbtn[data-name="dst"]'); await pg.click('.v-dlg .v-fpanel .v-pick-row[data-value="กิน"]'); await pg.click('.v-dlg-ok'); await pg.waitForSelector('.v-dlg-danger'); ok('merge asks for confirmation with a danger button', (await T.dlgText(pg)).includes('รวม'));
 await T.dlgOK(pg); await pg.waitForTimeout(300);
 const es=await get('finance_tracker_entries_v1'); ok('merge moved the expense entries to the target category', es.filter(e=>e.type==='expense').every(e=>e.category==='กิน') && es.filter(e=>e.type==='expense').length===2);
 await closeAll();

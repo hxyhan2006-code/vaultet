@@ -139,6 +139,7 @@
           input.autocomplete = "off";
         }
         input.id = id; input.name = f.key;
+        if(f.required) input.required = true; // ให้ตัวเลือกวันที่รู้ว่าห้ามเว้นว่าง (ฟอร์มนี้ตรวจเอง ไม่ใช้ตัวตรวจของเบราว์เซอร์)
         if(f.placeholder) input.placeholder = f.placeholder;
         wrap.append(input);
         if(f.hint) wrap.append(el("div", "v-dlg-hint", f.hint));
@@ -257,8 +258,9 @@ window.vaultetPick = function(opts){
   });
 };
 
-// ---------- เลือกวันที่แบบปฏิทินไทย (แผ่นจากล่าง) ----------
-// const iso = await vaultetPickDate({ value:"2026-10-28", title:"เลือกวันที่" })  // null = ปิดไปเฉยๆ
+// ---------- เลือกวันที่แบบปฏิทินไทย ----------
+// const iso = await vaultetPickDate({ value:"2026-10-28", title:"เลือกวันที่", clearable:true })  // null = ปิดไปเฉยๆ, "" = ไม่ระบุวัน
+// vaultetCalendar(กล่อง, { value, clearable, onPick(iso) }) = ปฏิทินแบบฝังในกล่องที่มีอยู่ (ใช้ในกล่องข้อความ)
 (function(){
   const TH_MONTH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
   const TH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -277,10 +279,45 @@ window.vaultetPick = function(opts){
     if(s === iso(shift(today(), 1))) return "พรุ่งนี้";
     return d.getDate() + " " + TH_SHORT[d.getMonth()] + " " + String(d.getFullYear() + 543).slice(-2);
   };
+  window.vaultetCalendar = function(host, o){
+    o = o || {};
+    const sel = parse(o.value);
+    let view = sel ? new Date(sel.getFullYear(), sel.getMonth(), 1, 12) : new Date(today().getFullYear(), today().getMonth(), 1, 12);
+    const quick = document.createElement("div"); quick.className = "v-date-quick";
+    const chips = [["วันนี้", 0], ["เมื่อวาน", -1], ["2 วันก่อน", -2]].map(([label, n]) => [label, iso(shift(today(), n))]);
+    if(o.clearable) chips.push(["ไม่ระบุวัน", ""]);
+    chips.forEach(([label, v]) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "v-fchip" + ((sel ? iso(sel) : "") === v && (v || o.clearable) ? " is-on" : ""); b.textContent = label; b.dataset.date = v;
+      b.addEventListener("click", () => o.onPick && o.onPick(v)); quick.append(b);
+    });
+    const head = document.createElement("div"); head.className = "v-date-head";
+    const prev = document.createElement("button"); prev.type = "button"; prev.className = "v-date-nav"; prev.setAttribute("aria-label", "เดือนก่อน"); prev.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
+    const next = document.createElement("button"); next.type = "button"; next.className = "v-date-nav"; next.setAttribute("aria-label", "เดือนถัดไป"); next.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+    const title = document.createElement("span"); title.className = "v-date-title"; title.setAttribute("aria-live", "polite");
+    head.append(prev, title, next);
+    const grid = document.createElement("div"); grid.className = "v-date-grid"; grid.setAttribute("role", "grid");
+    host.append(quick, head, grid);
+    const draw = () => {
+      title.textContent = TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543);
+      grid.innerHTML = WK.map(w => '<span class="v-date-wk">' + w + "</span>").join("");
+      for(let i = 0; i < view.getDay(); i++) grid.insertAdjacentHTML("beforeend", "<span></span>");
+      const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+      const t = iso(today()), s = sel ? iso(sel) : "";
+      for(let d = 1; d <= days; d++){
+        const v = view.getFullYear() + "-" + pad(view.getMonth() + 1) + "-" + pad(d);
+        const b = document.createElement("button"); b.type = "button"; b.className = "v-date-day" + (v === s ? " is-on" : "") + (v === t ? " is-today" : "");
+        b.textContent = d; b.dataset.date = v; b.setAttribute("aria-label", d + " " + TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543));
+        if(v === s) b.setAttribute("data-autofocus", "");
+        b.addEventListener("click", () => o.onPick && o.onPick(v));
+        grid.append(b);
+      }
+    };
+    prev.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1, 12); draw(); });
+    next.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1, 12); draw(); });
+    draw();
+  };
   window.vaultetPickDate = function(opts){
     const o = opts || {};
-    const sel = parse(o.value) || today();
-    let view = new Date(sel.getFullYear(), sel.getMonth(), 1, 12);
     return window.__vaultetShow(ctx => {
       ctx.cancelValue = null;
       const box = ctx.box;
@@ -288,39 +325,110 @@ window.vaultetPick = function(opts){
       if(box.parentElement) box.parentElement.classList.add("v-dlg-back-sheet");
       box.insertAdjacentHTML("beforeend", '<div class="v-pick-grip" aria-hidden="true"></div>');
       const h = document.createElement("h2"); h.className = "v-dlg-title"; h.id = "vdlgd" + Date.now(); h.textContent = o.title || "เลือกวันที่"; box.append(h); box.setAttribute("aria-labelledby", h.id);
-      const quick = document.createElement("div"); quick.className = "v-date-quick";
-      [["วันนี้", 0], ["เมื่อวาน", -1], ["2 วันก่อน", -2]].forEach(([label, n]) => {
-        const v = iso(shift(today(), n));
-        const b = document.createElement("button"); b.type = "button"; b.className = "v-fchip" + (v === iso(sel) ? " is-on" : ""); b.textContent = label; b.dataset.date = v;
-        b.addEventListener("click", () => ctx.close(v)); quick.append(b);
-      });
-      box.append(quick);
-      const head = document.createElement("div"); head.className = "v-date-head";
-      const prev = document.createElement("button"); prev.type = "button"; prev.className = "v-date-nav"; prev.setAttribute("aria-label", "เดือนก่อน"); prev.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
-      const next = document.createElement("button"); next.type = "button"; next.className = "v-date-nav"; next.setAttribute("aria-label", "เดือนถัดไป"); next.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-      const title = document.createElement("span"); title.className = "v-date-title"; title.setAttribute("aria-live", "polite");
-      head.append(prev, title, next); box.append(head);
-      const grid = document.createElement("div"); grid.className = "v-date-grid"; grid.setAttribute("role", "grid"); box.append(grid);
-      const draw = () => {
-        title.textContent = TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543);
-        grid.innerHTML = WK.map(w => '<span class="v-date-wk">' + w + "</span>").join("");
-        for(let i = 0; i < view.getDay(); i++) grid.insertAdjacentHTML("beforeend", "<span></span>");
-        const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-        const t = iso(today()), s = iso(sel);
-        for(let d = 1; d <= days; d++){
-          const v = view.getFullYear() + "-" + pad(view.getMonth() + 1) + "-" + pad(d);
-          const b = document.createElement("button"); b.type = "button"; b.className = "v-date-day" + (v === s ? " is-on" : "") + (v === t ? " is-today" : "");
-          b.textContent = d; b.dataset.date = v; b.setAttribute("aria-label", d + " " + TH_MONTH[view.getMonth()] + " " + (view.getFullYear() + 543));
-          if(v === s) b.setAttribute("data-autofocus", "");
-          b.addEventListener("click", () => ctx.close(v));
-          grid.append(b);
-        }
-      };
-      prev.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1, 12); draw(); });
-      next.addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1, 12); draw(); });
-      draw();
+      window.vaultetCalendar(box, { value: o.value, clearable: o.clearable, onPick: v => ctx.close(v) });
     });
   };
+})();
+
+// ---------- เปลี่ยนช่องเลือก <select> / ช่องวันที่ของเบราว์เซอร์ที่เหลือทั้งแอป เป็นปุ่มแบบใหม่ ----------
+// ช่องเดิมยังอยู่ (ซ่อนไว้) และเป็นตัวเก็บค่าจริง โค้ดเดิมอ่าน/ตั้งค่าได้เหมือนเดิม ปุ่มอัปเดตตามเองเมื่อค่าเปลี่ยน
+// นอกกล่องข้อความ = เปิดแผ่นเลือกจากล่าง / ในกล่องข้อความ = กางรายการ/ปฏิทินในกล่องเดิม (เปิดกล่องซ้อนไม่ได้)
+// ไม่ต้องการให้เปลี่ยน: ใส่ data-native ที่ช่องนั้น
+(function(){
+  // ค่าเปลี่ยนจากโค้ด (el.value = ...) ไม่มี event → ดักที่ตัวตั้งค่าแล้วบอกปุ่มให้อัปเดต
+  const hook = (proto, prop) => {
+    const d = Object.getOwnPropertyDescriptor(proto, prop); if(!d || !d.set) return;
+    Object.defineProperty(proto, prop, { configurable: true, enumerable: d.enumerable, get(){ return d.get.call(this); }, set(v){ d.set.call(this, v); if(this.__vSync) this.__vSync(); } });
+  };
+  hook(HTMLSelectElement.prototype, "value"); hook(HTMLSelectElement.prototype, "selectedIndex"); hook(HTMLInputElement.prototype, "value");
+  const CHEV = '<svg class="v-fbtn-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  const SKIP = new Set(["monthSelect", "typeFilter"]);
+  const TH_MONTH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  const monthLabel = v => { const m = /^(\d{4})-(\d{2})$/.exec(v || ""); return m ? TH_MONTH[+m[2] - 1] + " " + (+m[1] + 543) : ""; };
+  // เดือน: ย้อนหลัง 24 เดือน ถึงล่วงหน้า 12 เดือน (เดือนล่าสุดอยู่บน) + เดือนที่เลือกอยู่ถ้าอยู่นอกช่วง
+  function monthOptions(cur){
+    const n = new Date(), out = [];
+    for(let i = 12; i >= -24; i--){ const d = new Date(n.getFullYear(), n.getMonth() + i, 1); const v = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); out.push({ value: v, label: monthLabel(v) + (i === 0 ? " (เดือนนี้)" : "") }); }
+    if(cur && !out.some(o => o.value === cur)) out.unshift({ value: cur, label: monthLabel(cur) });
+    return out;
+  }
+  function titleOf(el){
+    const lab = (el.id && document.querySelector('label[for="' + el.id + '"]')) || el.closest("label");
+    let t = lab ? lab.textContent.trim() : "";
+    if(!t) t = el.getAttribute("aria-label") || el.getAttribute("title") || "";
+    return t.replace(/\s+/g, " ").slice(0, 40) || (el.tagName === "SELECT" ? "เลือก" : "เลือกวันที่");
+  }
+  function fire(el){ el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); }
+  window.vaultetEnhanceField = function(el){
+    if(!el || el.__vEnh || el.hasAttribute("data-native") || SKIP.has(el.id) || el.classList.contains("v-native-hidden")) return;
+    const isDate = el.tagName === "INPUT" && el.type === "date", isMonth = el.tagName === "INPUT" && el.type === "month";
+    if(el.tagName === "INPUT" && !isDate && !isMonth) return;
+    el.__vEnh = true;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "v-fbtn v-fbtn-auto";
+    b.innerHTML = '<span class="v-fbtn-v"><span class="v-fbtn-t"></span>' + CHEV + "</span>";
+    if(el.id) b.dataset.for = el.id;
+    if(el.name) b.dataset.name = el.name;
+    el.classList.add("v-native-hidden"); el.setAttribute("aria-hidden", "true"); el.tabIndex = -1;
+    el.after(b);
+    let panel = null;
+    const sync = () => {
+      const t = b.querySelector(".v-fbtn-t");
+      if(isDate) t.textContent = el.value ? vaultetDateLabel(el.value) : (el.placeholder || "ไม่ระบุวัน");
+      else if(isMonth) t.textContent = el.value ? monthLabel(el.value) : "เลือกเดือน";
+      else t.textContent = el.selectedOptions[0]?.textContent || "เลือก";
+      b.classList.toggle("is-empty", (isDate || isMonth) ? !el.value : !el.value && !el.selectedOptions[0]?.textContent);
+      b.disabled = el.disabled;
+    };
+    el.__vSync = sync;
+    el.addEventListener("change", sync); el.addEventListener("input", sync);
+    if(el.tagName === "SELECT") new MutationObserver(sync).observe(el, { childList: true, subtree: true, attributes: true, characterData: true });
+    const set = v => { el.value = v; fire(el); sync(); };
+    b.addEventListener("click", async () => {
+      const inDialog = !!b.closest(".v-dlg");
+      if(inDialog){
+        if(panel){ panel.remove(); panel = null; b.setAttribute("aria-expanded", "false"); return; }
+        panel = document.createElement("div"); panel.className = "v-fpanel";
+        const close = () => { if(panel){ panel.remove(); panel = null; b.setAttribute("aria-expanded", "false"); b.focus(); } };
+        if(isMonth) monthOptions(el.value).forEach(o => {
+          const r = document.createElement("button"); r.type = "button"; r.className = "v-pick-row" + (o.value === el.value ? " is-on" : ""); r.dataset.value = o.value;
+          r.innerHTML = '<span class="v-pick-main"><span class="v-pick-label"></span></span><span class="v-pick-radio" aria-hidden="true"></span>';
+          r.querySelector(".v-pick-label").textContent = o.label; r.addEventListener("click", () => { set(o.value); close(); }); panel.append(r);
+        });
+        else if(isDate) vaultetCalendar(panel, { value: el.value, clearable: !el.required, onPick: v => { set(v); close(); } });
+        else [...el.options].forEach(o => {
+          const r = document.createElement("button"); r.type = "button"; r.className = "v-pick-row" + (o.value === el.value ? " is-on" : ""); r.dataset.value = o.value;
+          r.innerHTML = '<span class="v-pick-main"><span class="v-pick-label"></span></span><span class="v-pick-radio" aria-hidden="true"></span>';
+          r.querySelector(".v-pick-label").textContent = o.textContent;
+          r.disabled = o.disabled;
+          r.addEventListener("click", () => { set(o.value); close(); });
+          panel.append(r);
+        });
+        b.after(panel); b.setAttribute("aria-expanded", "true");
+        return;
+      }
+      if(isMonth){
+        const v = await vaultetPick({ title: titleOf(el), value: el.value, options: monthOptions(el.value) });
+        if(v != null && v !== el.value) set(v);
+      }else if(isDate){
+        const v = await vaultetPickDate({ title: titleOf(el), value: el.value, clearable: !el.required });
+        if(v != null && v !== el.value) set(v);
+      }else{
+        const v = await vaultetPick({ title: titleOf(el), value: el.value, options: [...el.options].filter(o => !o.disabled).map(o => ({ value: o.value, label: o.textContent })) });
+        if(v != null && v !== el.value) set(v);
+      }
+    });
+    sync();
+  };
+  const SEL = "select, input[type=date], input[type=month]";
+  const scan = root => { if(!root || !root.querySelectorAll) return; if(root.matches && root.matches(SEL)) vaultetEnhanceField(root); root.querySelectorAll(SEL).forEach(vaultetEnhanceField); };
+  let queued = [];
+  const flush = () => { const q = queued; queued = []; q.forEach(scan); };
+  const start = () => {
+    scan(document.body);
+    new MutationObserver(ms => { ms.forEach(m => m.addedNodes.forEach(n => { if(n.nodeType === 1){ if(!queued.length) queueMicrotask(flush); queued.push(n); } })); }).observe(document.body, { childList: true, subtree: true });
+  };
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
 
 // ---------- แจ้งผลลอยล่างจอ พร้อมปุ่มทำต่อ (เช่น "ย้อน") ----------

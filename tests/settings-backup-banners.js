@@ -56,7 +56,7 @@ const vis=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBann
 ok('only the debt banner shows when all three are on (got '+vis.join(',')+')', vis.length===1&&vis[0]==='debtBumpBanner');
 await pg.evaluate(()=>document.getElementById('debtBumpBanner').classList.remove('show'));
 const vis2=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
-ok('then only the backup banner (got '+vis2.join(',')+')', vis2.length===1&&vis2[0]==='backupBanner');
+ok('backup banner never shows on home (moved into the bell, ds54) → Drive banner next (got '+vis2.join(',')+')', vis2.length===1&&vis2[0]==='driveDirtyBanner');
 await pg.evaluate(()=>document.getElementById('backupBanner').classList.remove('show'));
 const vis3=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
 ok('then only the Drive banner (got '+vis3.join(',')+')', vis3.length===1&&vis3[0]==='driveDirtyBanner');

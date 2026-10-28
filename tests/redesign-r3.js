@@ -99,7 +99,7 @@ ok('mode and type tab are remembered', await pg.evaluate(()=>document.querySelec
 
 // เทียบแบบกำหนดเอง (ของเดิม) ยังใช้ได้ในส่วนพับ
 await pg.click('#vRepMore summary'); await pg.waitForTimeout(200);
-ok('custom compare (old tool) is inside the folded section and works', await vis('#compareSection') && await vis('#comparePreset'));
+ok('custom compare (old tool) is inside the folded section and works', await vis('#compareSection') && await vis('.v-fbtn[data-for="comparePreset"]'));
 
 // เพิ่มรายการแล้วรายงานอัปเดตเอง
 await pg.click('#vRepMore summary'); await pg.click('.v-rseg [data-mode="month"]'); await pg.click('.v-rtab[data-type="expense"]'); await pg.waitForTimeout(150);

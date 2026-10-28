@@ -5,7 +5,9 @@ exports.dlgOK = async (pg, fill={}) => {
   for (const [k,v] of Object.entries(fill)) {
     const sel = `.v-dlg [name="${k}"]`;
     const tag = await pg.$eval(sel, e => e.tagName);
-    if (tag === 'SELECT') await pg.selectOption(sel, String(v)); else await pg.fill(sel, String(v));
+    // ช่องเลือก/วันที่ถูกซ่อนแล้วแทนด้วยปุ่มแบบใหม่ (ds54) → ตั้งค่าที่ช่องจริงตรงๆ เหมือนผู้ใช้เลือกจากปุ่ม
+    if (!(await pg.isVisible(sel))) await pg.$eval(sel, (e, v) => { e.value = v; e.dispatchEvent(new Event('input', {bubbles:true})); e.dispatchEvent(new Event('change', {bubbles:true})); }, String(v));
+    else if (tag === 'SELECT') await pg.selectOption(sel, String(v)); else await pg.fill(sel, String(v));
   }
   const h = await pg.$('.v-dlg');
   await pg.click('.v-dlg-ok');

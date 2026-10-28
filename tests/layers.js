@@ -21,7 +21,8 @@ const vis=s=>pg.isVisible(s);
 const scrollY=()=>pg.evaluate(()=>Math.round(window.scrollY));
 const locked=()=>pg.evaluate(()=>document.body.classList.contains('v-scroll-locked'));
 
-// ---- ล็อกการเลื่อน ----
+// ---- ล็อกการเลื่อน ---- (หน้าตั้งค่ายาวพอให้เลื่อน — หน้าหลักสั้นลงตั้งแต่ ds54 ที่ย้ายแถบเตือนไปกระดิ่ง)
+await pg.evaluate(()=>vaultetGo('more')); await pg.waitForTimeout(600);
 await pg.evaluate(()=>window.scrollTo(0,500)); await pg.waitForTimeout(200);
 const y0=await scrollY(); ok('page is scrolled before opening anything ('+y0+'px)', y0>200);
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(450);
