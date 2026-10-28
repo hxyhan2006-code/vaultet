@@ -485,3 +485,6 @@ html body .v-ai-head > svg { width: 15px; height: 15px; fill: none; stroke: var(
 html body .v-ai-head #aiProactiveRefreshBtn { position: static !important; margin: -8px -8px -8px auto; }
 html body #aiProactiveBody { display: block; }
 html body #aiProactiveBody p { margin: 0 0 6px; }
+
+/* ds67: เลขรวมในการ์ดกำลังจะต้องจ่ายเล็กลง ไม่แย่งซีน "ใช้ได้จริง" (ระยะห่างแถวคงเดิม) */
+html body #upcomingCard #upcomingTotalNum { font-size: 20px !important; line-height: 1.2; }

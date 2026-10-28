@@ -52,6 +52,7 @@ ok('"จัดการ" opens the manager and does not fold the card', await vi
 await pg.click('#closeBudgetBtn'); await pg.waitForTimeout(200);
 await pg.click('#budgetDashboardCard .v-card-title'); await pg.waitForTimeout(450);
 ok('tapping the empty part of the card folds it again', !(await vis('#budgetDashboardRows')) && (await pg.getAttribute('#budgetDashboardCard','aria-expanded'))==='false');
+ok('upcoming total is small (20px), not competing with the main balance', await pg.evaluate(()=>parseFloat(getComputedStyle(document.getElementById('upcomingTotalNum')).fontSize)<=20));
 ok('upcoming card has no "ดูทั้งหมด" button; tapping it opens the sheet', await (async()=>{
   const none=(await pg.locator('#viewUpcomingBtn').count())===0;
   await pg.evaluate(()=>{document.getElementById('upcomingCard').style.display='block';});
