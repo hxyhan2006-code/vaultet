@@ -23,22 +23,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
-<link rel="stylesheet" href="css/01-old-foundation-1.css?v=ds64">
-<link rel="stylesheet" href="css/02-old-foundation-2.css?v=ds64">
-<link rel="stylesheet" href="css/03-old-foundation-3.css?v=ds64">
-<link rel="stylesheet" href="css/04-old-foundation-4.css?v=ds64">
-<link rel="stylesheet" href="css/05-old-themes.css?v=ds64">
-<link rel="stylesheet" href="css/06-old-fixes-notify-modal.css?v=ds64">
-<link rel="stylesheet" href="css/07-old-ai-chat-spacing.css?v=ds64">
-<link rel="stylesheet" href="css/08-old-ui-fixes.css?v=ds64">
-<link rel="stylesheet" href="css/09-old-profile-nav.css?v=ds64">
-<link rel="stylesheet" href="css/10-old-advisor-ai.css?v=ds64">
-<link rel="stylesheet" href="css/11-old-advisor-portfolio.css?v=ds64">
-<link rel="stylesheet" href="css/12-old-portfolio-fixes.css?v=ds64">
-<link rel="stylesheet" href="css/13-ds-base.css?v=ds64">
-<link rel="stylesheet" href="css/14-ds-pages.css?v=ds64">
-<link rel="stylesheet" href="css/15-ds-sheets-ai.css?v=ds64">
-<link rel="stylesheet" href="css/16-ds-redesign.css?v=ds64">
+<link rel="stylesheet" href="css/01-old-foundation-1.css?v=ds65">
+<link rel="stylesheet" href="css/02-old-foundation-2.css?v=ds65">
+<link rel="stylesheet" href="css/03-old-foundation-3.css?v=ds65">
+<link rel="stylesheet" href="css/04-old-foundation-4.css?v=ds65">
+<link rel="stylesheet" href="css/05-old-themes.css?v=ds65">
+<link rel="stylesheet" href="css/06-old-fixes-notify-modal.css?v=ds65">
+<link rel="stylesheet" href="css/07-old-ai-chat-spacing.css?v=ds65">
+<link rel="stylesheet" href="css/08-old-ui-fixes.css?v=ds65">
+<link rel="stylesheet" href="css/09-old-profile-nav.css?v=ds65">
+<link rel="stylesheet" href="css/10-old-advisor-ai.css?v=ds65">
+<link rel="stylesheet" href="css/11-old-advisor-portfolio.css?v=ds65">
+<link rel="stylesheet" href="css/12-old-portfolio-fixes.css?v=ds65">
+<link rel="stylesheet" href="css/13-ds-base.css?v=ds65">
+<link rel="stylesheet" href="css/14-ds-pages.css?v=ds65">
+<link rel="stylesheet" href="css/15-ds-sheets-ai.css?v=ds65">
+<link rel="stylesheet" href="css/16-ds-redesign.css?v=ds65">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -48,9 +48,6 @@
     <div style="display:none"><select id="monthSelect"></select></div>
     <div class="v-hero-label">
       <span id="heroLabel">คงเหลือเดือนนี้</span>
-      <button type="button" class="v-eye" id="vEyeBtn" aria-label="ซ่อนตัวเลข" aria-pressed="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
     </div>
     <div class="v-hero-num v-sens" id="balanceNum">฿0</div>
     <div class="v-hero-sub v-sens" id="carryNum"></div>
@@ -105,22 +102,22 @@
       <div id="upcomingPreviewList"></div>
     </div>
 
-    <div class="networth-card" id="aiProactiveCard" style="display:none; padding:14px 40px 14px 16px; border-width:1.5px;">
-      <button class="icon-btn ai-icon-btn" id="aiProactiveRefreshBtn" type="button" aria-label="รีเฟรชการวิเคราะห์" title="รีเฟรชการวิเคราะห์" style="position:absolute; top:8px; right:8px;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.7-4L4 9"/><path d="M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14.7 4L20 15"/><path d="M20 19v-4h-4"/></svg></button>
+    <div class="networth-card" id="aiProactiveCard" style="display:none;">
+      <div class="v-ai-head"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg><span>คำแนะนำจาก AI</span>
+        <button class="icon-btn ai-icon-btn" id="aiProactiveRefreshBtn" type="button" aria-label="รีเฟรชการวิเคราะห์" title="รีเฟรชการวิเคราะห์"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.7-4L4 9"/><path d="M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14.7 4L20 15"/><path d="M20 19v-4h-4"/></svg></button>
+      </div>
       <div style="display:flex; gap:8px; align-items:flex-start;">
-        <span id="aiProactiveIcon" style="display:inline-flex;line-height:1.5;"></span>
-        <div id="aiProactiveBody" style="font-size:13px; line-height:1.55; color:var(--ink); flex:1; min-width:0;"></div>
+        <span id="aiProactiveIcon" style="display:none;"></span>
+        <div id="aiProactiveBody" style="font-size:14px; line-height:1.65; color:var(--ink); flex:1; min-width:0;"></div>
       </div>
     </div>
-
     <section class="v-card" id="budgetDashboardCard" style="display:none;">
-      <div class="v-card-head"><h2 class="v-card-title">งบประมาณเดือนนี้</h2><button type="button" class="v-link" id="budgetDashboardManageBtn">จัดการ</button></div>
+      <div class="v-card-head"><h2 class="v-card-title">งบประมาณเดือนนี้</h2><button type="button" class="v-iconbtn" id="budgetDashboardManageBtn" aria-label="จัดการงบ" title="จัดการงบ"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button></div>
       <div class="v-big-row"><span class="v-big" id="budgetDashboardRemaining">฿0</span><span class="v-big-label">คงเหลือ</span></div>
       <div class="v-bar"><i id="budgetDashboardFill" style="width:0%"></i></div>
       <div class="v-card-sub" id="budgetDashboardSub">ยังไม่ได้ตั้งงบประมาณ</div>
       <div class="v-rows" id="budgetDashboardRows"></div>
     </section>
-
 
     <section class="v-card" id="emergencyDashboardCard" style="display:none;">
       <div class="v-card-head"><h2 class="v-card-title">เงินสำรองฉุกเฉิน</h2><button type="button" class="v-link" id="emergencyDashboardManageBtn">ตั้งค่า</button></div>
@@ -784,35 +781,35 @@
 
 <!-- Final patch: restore AI top actions + guarantee first-message arrow -->
 
-<script src="dialog.js?v=ds64"></script>
-<script src="app/01-base.js?v=ds64"></script>
-<script src="app/02-state.js?v=ds64"></script>
-<script src="app/03-calc.js?v=ds64"></script>
-<script src="app/04-compare-totals.js?v=ds64"></script>
-<script src="app/05-render-form.js?v=ds64"></script>
-<script src="app/06-backup-ui.js?v=ds64"></script>
-<script src="app/07-boot-money.js?v=ds64"></script>
-<script src="app/08-plans-ui.js?v=ds64"></script>
-<script src="app/09-nav-home.js?v=ds64"></script>
-<script src="app/10-ai-ui-lock.js?v=ds64"></script>
-<script src="app/11-tools.js?v=ds64"></script>
-<script src="app/12-portfolio.js?v=ds64"></script>
-<script src="app/13-form-v2.js?v=ds64"></script>
-<script src="app/14-report.js?v=ds64"></script>
-<script src="app/15-money.js?v=ds64"></script>
-<script src="app/16-polish.js?v=ds64"></script>
-<script src="openrouter.js?v=ds64"></script>
-<script src="ai/01-settings.js?v=ds64"></script>
-<script src="ai/02-gemini.js?v=ds64"></script>
-<script src="ai/03-snapshot.js?v=ds64"></script>
-<script src="ai/04-brain-chat.js?v=ds64"></script>
-<script src="ai/05-memory-status.js?v=ds64"></script>
-<script src="ai/06-stream-proactive.js?v=ds64"></script>
-<script src="ai/07-weekly.js?v=ds64"></script>
-<script src="ai/08-notify-chat.js?v=ds64"></script>
-<script src="ai/09-chat-ui.js?v=ds64"></script>
-<script src="ai/10-confirm-boot.js?v=ds64"></script>
-<script src="ai/11-chat-look.js?v=ds64"></script>
-<script src="ui.js?v=ds64"></script>
+<script src="dialog.js?v=ds65"></script>
+<script src="app/01-base.js?v=ds65"></script>
+<script src="app/02-state.js?v=ds65"></script>
+<script src="app/03-calc.js?v=ds65"></script>
+<script src="app/04-compare-totals.js?v=ds65"></script>
+<script src="app/05-render-form.js?v=ds65"></script>
+<script src="app/06-backup-ui.js?v=ds65"></script>
+<script src="app/07-boot-money.js?v=ds65"></script>
+<script src="app/08-plans-ui.js?v=ds65"></script>
+<script src="app/09-nav-home.js?v=ds65"></script>
+<script src="app/10-ai-ui-lock.js?v=ds65"></script>
+<script src="app/11-tools.js?v=ds65"></script>
+<script src="app/12-portfolio.js?v=ds65"></script>
+<script src="app/13-form-v2.js?v=ds65"></script>
+<script src="app/14-report.js?v=ds65"></script>
+<script src="app/15-money.js?v=ds65"></script>
+<script src="app/16-polish.js?v=ds65"></script>
+<script src="openrouter.js?v=ds65"></script>
+<script src="ai/01-settings.js?v=ds65"></script>
+<script src="ai/02-gemini.js?v=ds65"></script>
+<script src="ai/03-snapshot.js?v=ds65"></script>
+<script src="ai/04-brain-chat.js?v=ds65"></script>
+<script src="ai/05-memory-status.js?v=ds65"></script>
+<script src="ai/06-stream-proactive.js?v=ds65"></script>
+<script src="ai/07-weekly.js?v=ds65"></script>
+<script src="ai/08-notify-chat.js?v=ds65"></script>
+<script src="ai/09-chat-ui.js?v=ds65"></script>
+<script src="ai/10-confirm-boot.js?v=ds65"></script>
+<script src="ai/11-chat-look.js?v=ds65"></script>
+<script src="ui.js?v=ds65"></script>
 </body>
 </html>

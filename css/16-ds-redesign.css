@@ -454,3 +454,35 @@ html body #budgetDashboardCard .v-brow, html body #budgetDashboardCard .v-brow s
   html body #upcomingOverlay.open { animation: v-fade-in .2s ease-out; }
   html body #upcomingOverlay.open > .sheet-modal { animation: v-sheet-up .25s ease-out; }
 }
+
+/* ds65: ไม่มีลูกตา, ปุ่มจัดการเป็นจุดสามจุด, การ์ดสิ่งที่ควรรู้แบบมีแท่ง */
+html body .v-iconbtn { width: 36px; height: 36px; margin: -6px -6px -6px 0; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--v-muted); cursor: pointer; }
+html body .v-iconbtn svg { width: 20px; height: 20px; fill: currentColor; }
+html body .v-iconbtn:active { background: var(--v-surface-2); }
+html body .v-iconbtn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+html body #notificationDashboardCard .notification-sub { display: none !important; }
+html body #notificationDashboardCard .notification-top { margin-bottom: 4px; }
+html body #notificationDashboardCard .notification-title { font-size: 17px !important; }
+html body .v-know-item { padding: 10px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; border-top: 1px solid var(--v-line); }
+html body .v-know-item:first-child { border-top: 0; padding-top: 6px; }
+html body .v-know-item:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; border-radius: 8px; }
+html body .v-know-top { display: flex; align-items: center; gap: 12px; }
+html body .v-know-ic { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; background: rgba(255,107,96,.12); color: var(--v-out); }
+html body .v-know-item:not(.is-crit) .v-know-ic { background: rgba(242,201,76,.12); color: var(--v-xfer); }
+html body .v-know-item.is-acked .v-know-ic { background: rgba(29,185,84,.12); color: var(--v-accent); }
+html body .v-know-ic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html body .v-know-title { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; }
+html body .v-know-chev { width: 16px; height: 16px; fill: none; stroke: var(--v-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+html body .v-know-meter { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; margin: 10px 0 6px; }
+html body .v-know-meter i { display: block; height: 100%; background: var(--v-out); border-radius: 3px; }
+html body .v-know-item:not(.is-crit) .v-know-meter i { background: var(--v-xfer); }
+html body .v-know-nums { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--v-muted); }
+html body .v-know-nums b { font-family: var(--v-mono); font-weight: 600; font-size: 14px; color: var(--v-fg); }
+html body .v-know-sum { margin-top: 8px; font-size: 13px; line-height: 1.6; color: var(--v-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html body #notificationDashboardCard #aiProactiveCard { padding: 14px 0 0 !important; margin: 10px 0 0 !important; }
+html body .v-ai-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--v-muted); margin-bottom: 6px; }
+html body .v-ai-head > svg { width: 15px; height: 15px; fill: none; stroke: var(--v-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html body .v-ai-head #aiProactiveRefreshBtn { position: static !important; margin: -8px -8px -8px auto; }
+html body #aiProactiveBody { cursor: pointer; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html body #aiProactiveBody.is-open { display: block; }
+html body #aiProactiveBody p { margin: 0 0 6px; }

@@ -206,7 +206,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
   function human(it){
     const ev=parseEv(it.evidence), d=Object.assign({},ev,it.data||{});
     const sev=it.severity==='critical'?'critical':'normal';
-    let title='สิ่งที่ควรรู้', summary=plain(it.action)||'มีประเด็นที่ควรตรวจสอบ', rows=[];
+    let title='สิ่งที่ควรรู้', summary=plain(it.action)||'มีประเด็นที่ควรตรวจสอบ', rows=[], meter=null;
     switch(it.type){
       case 'LIQUIDITY_FORECAST':
         title='เงินสดอาจตึงตัวก่อนสิ้นเดือน';
@@ -216,13 +216,15 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
         const a=num(d.available),t=num(d.target!==undefined?d.target:d.minReserveTarget);
         title='เงินกันชนต่ำกว่าที่ตั้งไว้';
         summary=`เงินสดที่ใช้ได้รวมเงินสำรองฉุกเฉิน ${baht(a)} ต่ำกว่าเป้าขั้นต่ำที่คุณตั้งไว้ ${baht(t)}${t>a?' (ขาดอีก '+baht(t-a)+')':''}`;
-        rows=[['เงินที่มีอยู่ (ใช้ได้ + สำรองฉุกเฉิน)',baht(a)],['เป้าขั้นต่ำที่ตั้งไว้',baht(t)],['ส่วนที่ขาด',baht(Math.max(0,t-a))]];break;}
+        rows=[['เงินที่มีอยู่ (ใช้ได้ + สำรองฉุกเฉิน)',baht(a)],['เป้าขั้นต่ำที่ตั้งไว้',baht(t)],['ส่วนที่ขาด',baht(Math.max(0,t-a))]];
+        if(t>0) meter={pct:a/t,left:baht(a)+' / '+baht(t),right:t>a?'ขาดอีก '+baht(t-a):''};break;}
       case 'OBLIGATION_SHORTFALL':{
         const st=String(d.status||'');const stT=st==='overdue'?'เลยกำหนดแล้ว':st==='dueToday'?'ครบกำหนดวันนี้':'ใกล้ถึงกำหนด';
         title=`ภาระ "${d.name||'รายการ'}" ยังกันเงินไม่พอ`;
         summary=`${d.name||'รายการนี้'} ${stT} ต้องจ่าย ${baht(d.amount)} แต่เงินที่กันไว้ยังขาดอีก ${baht(d.shortfall)}`;
         rows=[['ยอดที่ต้องจ่าย',baht(d.amount)],['ที่ยังขาด',baht(d.shortfall)],['สถานะ',stT]];
-        if(d.nextDueDate)rows.push(['วันครบกำหนด',String(d.nextDueDate)]);break;}
+        if(d.nextDueDate)rows.push(['วันครบกำหนด',String(d.nextDueDate)]);
+        if(num(d.amount)>0) meter={pct:(num(d.amount)-num(d.shortfall))/num(d.amount),left:'กันไว้ '+baht(num(d.amount)-num(d.shortfall))+' / '+baht(d.amount),right:'ขาดอีก '+baht(d.shortfall)};break;}
       case 'SPENDING_ABOVE_BASELINE':
         title='รายจ่ายรวมสูงกว่าระดับปกติ';
         summary=`เดือนนี้ใช้ไปแล้ว ${baht(d.monthToDate!==undefined?d.monthToDate:d.currentExpense)} ถ้าใช้ในจังหวะนี้ต่อ สิ้นเดือนจะอยู่ราว ${baht(d.projectedMonthEnd!==undefined?d.projectedMonthEnd:d.projectedExpense)} สูงกว่าค่าเฉลี่ยปกติ ${baht(d.baseline)}`;
@@ -242,7 +244,7 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
         summary=`รายรับช่วงนี้ ${baht(d.current)} ต่ำกว่าค่าเฉลี่ยปกติ ${baht(d.baseline)}`;
         rows=[['รายรับช่วงนี้',baht(d.current)],['ค่าเฉลี่ยปกติ',baht(d.baseline)]];break;
     }
-    return {title,summary,rows,todo:plain(it.action),sev};
+    return {title,summary,rows,todo:plain(it.action),sev,meter};
   }
 
   let items=[];
@@ -250,10 +252,20 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     items=(list||[]).slice(0,3);
     const target=document.getElementById('notificationPreviewList'); if(!target)return;
     if(!items.length){target.innerHTML='<div class="notification-empty">ตอนนี้ไม่มีเรื่องสำคัญที่ต้องลงมือทำ</div>';return;}
+    // เรื่องแรกโชว์เต็ม (มีแท่งถ้ามีตัวเลขเทียบเป้า ไม่มีก็โชว์ข้อความสั้น) เรื่องที่เหลือเป็นแถวเล็ก
+    const warnSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.2v.01"/></svg>';
+    const okSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    const chev='<svg class="v-know-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
     target.innerHTML=items.map((it,i)=>{
-      const h=human(it), acked=isAcked(it);
-      const icon=acked?'✅':(it.severity==='critical'?'🚨':'⚠️');
-      return `<div class="notification-item ${(!acked&&it.severity==='critical')?'unread':''} ${acked?'acked':''}" data-adv-idx="${i}"><div class="notification-icon">${vaultetIcon(icon)}</div><div class="notification-content"><div class="notification-item-title">${escapeHtml(h.title)}</div><div class="notification-item-body">${escapeHtml(h.summary)}</div></div><div class="adv-chevron">›</div></div>`;
+      const h=human(it), acked=isAcked(it), crit=!acked&&it.severity==='critical';
+      const cls='v-know-item'+(i===0?' v-know-main':'')+(acked?' is-acked':'')+(crit?' is-crit':'');
+      const icon=`<span class="v-know-ic">${acked?okSvg:warnSvg}</span>`;
+      let body='';
+      if(i===0){
+        if(h.meter){ const p=Math.max(0,Math.min(1,h.meter.pct)); body=`<div class="v-know-meter"><i style="width:${Math.round(p*100)}%"></i></div><div class="v-know-nums"><b>${escapeHtml(h.meter.left)}</b><span>${escapeHtml(h.meter.right)}</span></div>`; }
+        else body=`<div class="v-know-sum">${escapeHtml(h.summary)}</div>`;
+      }
+      return `<div class="${cls}" data-adv-idx="${i}" role="button" tabindex="0"><div class="v-know-top">${icon}<span class="v-know-title">${escapeHtml(h.title)}</span>${i===0?'':chev}</div>${body}</div>`;
     }).join('');
   };
 
@@ -270,8 +282,17 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     document.body.appendChild(ov);
   }
   document.addEventListener('click',e=>{
-    const el=e.target.closest&&e.target.closest('#notificationPreviewList .notification-item[data-adv-idx]');
+    const el=e.target.closest&&e.target.closest('#notificationPreviewList [data-adv-idx]');
     if(el)openSheet(Number(el.dataset.advIdx));
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const el=e.target.closest&&e.target.closest('#notificationPreviewList [data-adv-idx]');
+    if(el){e.preventDefault();openSheet(Number(el.dataset.advIdx));}
+  });
+  // คำแนะนำจาก AI: ย่อ 2 บรรทัด แตะเพื่ออ่านทั้งหมด
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('#aiProactiveBody'); if(b)b.classList.toggle('is-open');
   });
   try{ if(typeof renderVaultetNotifications==='function') renderVaultetNotifications(); }catch(_){}
 })();

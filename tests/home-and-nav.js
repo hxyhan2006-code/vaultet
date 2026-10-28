@@ -20,10 +20,10 @@ await pg.addInitScript(()=>{ if(localStorage.getItem('__seeded'))return; localSt
 });
 await pg.goto('http://localhost:8125/index.html');await pg.waitForTimeout(1200);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
-// eye
-await pg.click('#vEyeBtn'); ok('eye hides numbers', await pg.evaluate(()=>document.body.classList.contains('v-hide-numbers')));
-await pg.reload(); await pg.waitForTimeout(800); ok('eye state persists', await pg.evaluate(()=>document.body.classList.contains('v-hide-numbers')));
-await pg.click('#vEyeBtn'); ok('eye shows again', await pg.evaluate(()=>!document.body.classList.contains('v-hide-numbers')));
+// ds65: ไม่มีลูกตาแล้ว และตัวเลขไม่ถูกซ่อนแม้เคยตั้งไว้
+ok('no eye button on home', (await pg.locator('#vEyeBtn').count())===0);
+await pg.evaluate(()=>localStorage.setItem('vaultet_ui_hide_numbers_v1','1')); await pg.reload(); await pg.waitForTimeout(800);
+ok('old hide-numbers setting is cleared on open', await pg.evaluate(()=>!document.body.classList.contains('v-hide-numbers') && localStorage.getItem('vaultet_ui_hide_numbers_v1')==='0'));
 // more (ทางลัด/สินทรัพย์รวมย้ายไปแท็บ "เงินของฉัน" ตั้งแต่ ds47)
 await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(300);
 ok('old shortcut grid hidden, money rows shown (ds52)', !(await pg.isVisible('#vShortcuts')) && await pg.isVisible('#vMoneyHero') && await pg.isVisible('#vMoneyAccounts'));
@@ -66,5 +66,14 @@ await pg.click('.ux-bottom-item[data-page="home"]');
 for (const p of ['analysis','plan','chat','more','home']) { await gotoPage(pg,p); await pg.waitForTimeout(400); await pg.screenshot({path:shots+'page-'+p+'.png'}); }
 ok('version label', await pg.evaluate(()=>!!document.querySelector('.v-version')));
 ok('no native browser dialogs ('+native.msgs.join(' | ')+')', native.n===0);
+// ds65: การ์ด "สิ่งที่ควรรู้" แบบกลาง ๆ — เรื่องที่มีตัวเลขเป้าได้แท่ง เรื่องอื่นเป็นข้อความสั้น ไม่มี "เงินสำรอง" ตายตัว
+await pg.evaluate(()=>{ window.vaultetRenderAdvisorPreview([
+  {type:'MIN_BUFFER',severity:'critical',data:{available:16705,target:30000},evidence:[],action:'เน้นรักษาเงินกันชน'},
+  {type:'CATEGORY_SPIKE',severity:'warning',data:{category:'งาน',monthToDate:2093,projectedMonthEnd:2500,baseline:500},evidence:[],action:'ลดหมวดนี้'}]); });
+ok('know card: first item with target numbers gets a meter', (await pg.locator('#notificationPreviewList .v-know-main .v-know-meter').count())===1);
+ok('know card: second item is a compact row (no meter)', (await pg.locator('#notificationPreviewList .v-know-item:not(.v-know-main) .v-know-meter').count())===0 && (await pg.locator('#notificationPreviewList .v-know-item').count())===2);
+await pg.evaluate(()=>{ window.vaultetRenderAdvisorPreview([{type:'SPENDING_ABOVE_BASELINE',severity:'warning',data:{monthToDate:5000,projectedMonthEnd:9000,baseline:6000},evidence:[],action:'ชะลอรายจ่าย'}]); });
+ok('know card: a finding without target numbers shows plain text, no meter', (await pg.locator('#notificationPreviewList .v-know-meter').count())===0 && (await pg.locator('#notificationPreviewList .v-know-sum').count())===1);
+ok('know card: tapping an item still opens the detail sheet', await (async()=>{ await pg.click('#notificationPreviewList .v-know-main'); await pg.waitForTimeout(200); const o=await pg.locator('#advDetailOverlay').count()===1; await pg.evaluate(()=>document.getElementById('advDetailOverlay')?.remove()); return o; })());
 console.log(errs.join('\n')||'no js errors');
 await b.close();srv.close()})();
