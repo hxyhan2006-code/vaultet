@@ -403,3 +403,17 @@ html body .v-chat-sug svg { flex: none; width: 22px; height: 22px; fill: none; s
 html body .v-chat-sug:active { transform: none; background: var(--v-surface) !important; }
 html body.ux-chat-active .ai-chat-input-row { background: var(--v-surface-2) !important; border: 0 !important; }
 html body.ux-chat-active .ai-chat-input-row:focus-within { box-shadow: none; }
+
+/* ds57: ประวัติแชทในเมนู AI สไตล์ ChatGPT — ไม่มีปุ่มกากบาท กดค้างเพื่อเปลี่ยนชื่อ/ลบ */
+html body .v-aimenu-label { border-top: 0; padding-top: 0; margin: 18px 20px 6px; font-size: 14px; font-weight: 600; color: var(--v-fg); }
+html body .v-aimenu-chat { border-radius: 14px; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+html body .v-aimenu-chat-main { min-height: 50px; padding: 0 14px; font-size: 16px; -webkit-tap-highlight-color: transparent; touch-action: pan-y; }
+html body .v-aimenu-chat:active:not(.is-active) { background: var(--v-surface); }
+.v-aimenu-pop-back { position: fixed; inset: 0; z-index: 9100; background: rgba(0,0,0,.25); }
+.v-aimenu-pop { position: fixed; width: 220px; padding: 6px; background: var(--v-surface-2); border: 1px solid var(--v-line); border-radius: 18px; box-shadow: 0 12px 36px rgba(0,0,0,.55); animation: v-pop-in .14s ease-out; }
+.v-aimenu-pop-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 48px; padding: 0 14px; background: none; border: 0; border-radius: 12px; color: var(--v-fg); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.v-aimenu-pop-row .v-ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.v-aimenu-pop-row:active { background: var(--v-surface); }
+.v-aimenu-pop-row.is-danger { color: var(--v-out); }
+@keyframes v-pop-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .v-aimenu-pop { animation: none; } }

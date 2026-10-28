@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds56";
+  const UI_VERSION = "ds57";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -372,6 +372,39 @@
     }
     const after = (fn, ret) => { close(); setTimeout(() => { fn(); if(ret) armReturn(); }, 230); };   // รอเมนูเลื่อนออกก่อนค่อยเปิดอย่างอื่น ไม่ให้กระตุก
     let fromMenu = false;
+    // เมนูย่อยของแชท (กดค้างที่แถว): เปลี่ยนชื่อ / ลบ
+    function chatPop(row, c, title, refresh){
+      document.querySelectorAll(".v-aimenu-pop-back").forEach(x => x.remove());
+      const back = document.createElement("div"); back.className = "v-aimenu-pop-back";
+      const pop = document.createElement("div"); pop.className = "v-aimenu-pop"; pop.setAttribute("role", "menu");
+      const closePop = () => back.remove();
+      const mk = (icon, label, fn, danger) => {
+        const x = document.createElement("button"); x.type = "button"; x.className = "v-aimenu-pop-row" + (danger ? " is-danger" : ""); x.setAttribute("role", "menuitem");
+        x.innerHTML = svg(icon) + "<span></span>"; x.querySelector("span").textContent = label;
+        x.addEventListener("click", () => { closePop(); fn(); });
+        return x;
+      };
+      pop.append(
+        mk(I.edit, "เปลี่ยนชื่อ", async () => {
+          const v = await vaultetPrompt("ชื่อแชท", title, { title: "เปลี่ยนชื่อแชท", required: true, okText: "บันทึก" });
+          if(v == null) return; const t = String(v).trim(); if(!t) return;
+          const d = chatsData(), ch = (d.chats || []).find(z => z.id === c.id); if(!ch) return;
+          ch.title = t.slice(0, 80); if(typeof saveAllChats === "function") saveAllChats(d); refresh();
+        }),
+        mk(I.trash, "ลบ", async () => {
+          if(!(await vaultetAsk("ลบ", "ลบแชทนี้ทั้งหมดใช่ไหม? กู้คืนไม่ได้", true))) return;
+          if(typeof deleteChat === "function") deleteChat(c.id);
+          if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
+          refresh();
+        }, true)
+      );
+      back.append(pop); document.body.append(back);
+      back.addEventListener("click", closePop);
+      const r = row.getBoundingClientRect(), w = pop.offsetWidth || 220, h = pop.offsetHeight || 110;
+      pop.style.left = Math.max(12, Math.min(r.left + 24, window.innerWidth - w - 12)) + "px";
+      pop.style.top = Math.max(12, Math.min(r.bottom - 6, window.innerHeight - h - 12)) + "px";
+      if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
+    }
     const renderHist = () => {
       const q = (document.getElementById("aiMenuSearch").value || "").trim().toLowerCase();
       const data = chatsData();
@@ -382,19 +415,26 @@
       if(!rows.length){ const e = document.createElement("div"); e.className = "v-aimenu-empty"; e.textContent = q ? "ไม่พบแชทที่ค้นหา" : "ยังไม่มีแชท"; hist.append(e); return; }
       rows.forEach(({ c, title }) => {
         const b = document.createElement("div"); b.className = "v-aimenu-chat" + (c.id === data.activeId ? " is-active" : "");
-        b.innerHTML = '<button type="button" class="v-aimenu-chat-main">' + svg(I.chat) + '<span></span></button><button type="button" class="v-aimenu-chat-del" aria-label="ลบแชทนี้">' + svg(I.x) + '</button>';
+        b.innerHTML = '<button type="button" class="v-aimenu-chat-main"><span></span></button>';
         b.querySelector("span").textContent = title;
-        b.querySelector(".v-aimenu-chat-main").addEventListener("click", () => after(() => {
-          if(typeof switchToChat === "function") switchToChat(c.id);
-          if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
-          if(typeof clearAiChatUnread === "function") clearAiChatUnread();
-        }));
-        b.querySelector(".v-aimenu-chat-del").addEventListener("click", async () => {
-          if(!(await vaultetAsk("ลบ", "ลบแชทนี้ทั้งหมดใช่ไหม? กู้คืนไม่ได้", true))) return;
-          if(typeof deleteChat === "function") deleteChat(c.id);
-          if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
-          renderHist();
+        const main = b.querySelector(".v-aimenu-chat-main");
+        let held = false;
+        main.addEventListener("click", () => {
+          if(held){ held = false; return; }   // กดค้างเพิ่งเปิดเมนูย่อย → ไม่นับเป็นการแตะเปิดแชท
+          after(() => {
+            if(typeof switchToChat === "function") switchToChat(c.id);
+            if(typeof renderAiChatBubbles === "function") renderAiChatBubbles();
+            if(typeof clearAiChatUnread === "function") clearAiChatUnread();
+          });
         });
+        // กดค้าง (หรือคลิกขวา) = เมนูย่อย เปลี่ยนชื่อ / ลบ แบบ ChatGPT
+        const pop = () => { held = true; chatPop(b, c, title, renderHist); };
+        let timer = 0, sx = 0, sy = 0;
+        const cancel = () => { clearTimeout(timer); timer = 0; };
+        main.addEventListener("pointerdown", e => { if(e.pointerType === "mouse" && e.button !== 0) return; held = false; sx = e.clientX; sy = e.clientY; cancel(); timer = setTimeout(pop, 450); });
+        main.addEventListener("pointermove", e => { if(timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) cancel(); });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(ev => main.addEventListener(ev, cancel));
+        main.addEventListener("contextmenu", e => { e.preventDefault(); cancel(); if(!document.querySelector(".v-aimenu-pop")) pop(); });
         hist.append(b);
       });
     };
