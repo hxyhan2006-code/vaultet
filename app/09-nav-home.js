@@ -281,14 +281,14 @@
     const calm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
     let open=false; try{ open=localStorage.getItem(K_BUDGET)==='1'; }catch(e){}
     let timer=0;
-    const finish=()=>{ clearTimeout(timer); bRows.style.height=''; bRows.style.transition=''; bCard.classList.toggle('is-collapsed',!open); };
+    const finish=()=>{ clearTimeout(timer); bRows.classList.remove('is-anim'); bRows.style.height=''; bRows.style.transition=''; bCard.classList.toggle('is-collapsed',!open); };
     const apply=(o,animate)=>{
       open=o; bCard.setAttribute('aria-expanded',o?'true':'false');
       if(!animate||calm){ finish(); return; }
       const from=o?0:bRows.offsetHeight;
       bCard.classList.remove('is-collapsed');
       const to=o?bRows.scrollHeight:0;
-      bRows.style.transition='none'; bRows.style.height=from+'px'; void bRows.offsetHeight;
+      bRows.classList.add('is-anim'); bRows.style.transition='none'; bRows.style.height=from+'px'; void bRows.offsetHeight;
       bRows.style.transition='height .25s ease'; bRows.style.height=to+'px';
       clearTimeout(timer); timer=setTimeout(finish,280);
     };

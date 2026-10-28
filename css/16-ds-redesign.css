@@ -445,7 +445,8 @@ html body .v-brow-st.watch { color: var(--v-xfer); }
 /* ds63: แตะการ์ดแทนปุ่ม + เปิดนุ่ม */
 html body #budgetDashboardCard, html body #upcomingCard { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 html body #budgetDashboardCard:focus-visible, html body #upcomingCard:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
-html body #budgetDashboardRows { overflow: hidden; }
+/* กฎเก่า (css/07) ตั้ง overflow: visible !important ไว้ ต้องทับตอนกำลังกาง/พับ ไม่งั้นเนื้อหาล้นไปทับการ์ดถัดไป */
+html body #budgetDashboardRows.is-anim { overflow: hidden !important; }
 html body #budgetDashboardCard .v-brow, html body #budgetDashboardCard .v-brow summary { cursor: pointer; }
 @keyframes v-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes v-sheet-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
