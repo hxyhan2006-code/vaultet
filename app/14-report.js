@@ -177,6 +177,7 @@
     const a = computePeriodAnalysisForRange(r.start, r.end, st.acc);
     const carry = r.start ? (st.acc ? computeAccountBalance(st.acc, r.start) : getTotalMoneyAllAccounts(r.start)) : null;
     const loanOut = loans.filter(l => l.date && (!r.start || l.date >= r.start) && (!r.end || l.date <= r.end) && (!st.acc || l.accountId === st.acc)).reduce((t, l) => t + toCents(l.amount), 0) / 100;
+    const loanBack = entries.filter(e => e.date && inAcc(e) && inRange(e, r) && isLoanRepaymentIncome(e)).reduce((t, e) => t + toCents(e.amount), 0) / 100;
     const dayMap = {}; rows(r, "expense").forEach(e => { dayMap[e.date] = (dayMap[e.date] || 0) + toCents(e.amount); });
     const peak = Object.entries(dayMap).sort((x, y) => y[1] - x[1])[0];
     const tile = (k, v, extra) => `<div class="v-rfact"><span class="v-rfact-k">${k}</span><span class="v-rfact-v v-sens"${extra || ""}>${v}</span></div>`;
@@ -185,7 +186,8 @@
       tile("คงเหลือสุทธิ (รับ − จ่าย − ออม)", money(a.netCashFlow), a.netCashFlow < 0 ? ' style="color:var(--v-out)"' : "") +
       tile("จ่ายเฉลี่ยต่อวัน", money(Math.round(a.avgExpensePerDay))) +
       (peak ? tile("วันที่จ่ายมากสุด", escapeHtml(vaultetDateLabel(peak[0])) + " · " + money(peak[1] / 100)) : "") +
-      (loanOut > 0 ? tile("ให้ยืมไป", money(loanOut)) : "");
+      (loanOut > 0 ? tile("ให้ยืมไป", money(loanOut)) : "") +
+      (loanBack > 0 ? tile("ได้คืนมา", money(loanBack)) : "");
   }
 
   // ---------- การกด ----------

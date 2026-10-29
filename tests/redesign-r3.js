@@ -120,6 +120,12 @@ ok('no native dialogs', native.n===0);
     return {dNon:after.nonLoanIncome-before.nonLoanIncome, dLoan:after.loanRepaymentIncome-before.loanRepaymentIncome, isFn:isLoanRepaymentIncome({type:'income',category:'เงินคืนจากการยืม'})};
   });
   ok('hand-typed "เงินคืนจากการยืม" is treated as a repayment, not new income', r.dNon===0 && Math.round(r.dLoan)===430 && r.isFn); }
+// ds72: ช่อง "ได้คืนมา" คู่กับ "ให้ยืมไป" ในตัวเลขสรุป (โผล่เมื่อมีเงินคืนในช่วงนั้น)
+{ await pg.evaluate(()=>{ entries.push({id:'t_back',type:'income',category:'เงินคืนจากการยืม',amount:180,note:'ปัง',date:todayISO(),accountId:UNASSIGNED_ACCOUNT_ID}); render(); });
+  await pg.evaluate(()=>vaultetGo('analysis')); await pg.waitForTimeout(400);
+  const txt=await pg.evaluate(()=>document.getElementById('vRepFacts').innerText);
+  await pg.evaluate(()=>{ entries=entries.filter(e=>e.id!=='t_back'); render(); });
+  ok('report summary shows "ได้คืนมา" when money was paid back', txt.includes('ได้คืนมา') && txt.includes('180')); }
 ok('no js errors', errs.length===0); if(errs.length) console.log('- '+errs.join(' | ').slice(0,300));
 await b.close(); srv.close();
 })();
