@@ -217,14 +217,14 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
         title='เงินกันชนต่ำกว่าที่ตั้งไว้';
         summary=`เงินสดที่ใช้ได้รวมเงินสำรองฉุกเฉิน ${baht(a)} ต่ำกว่าเป้าขั้นต่ำที่คุณตั้งไว้ ${baht(t)}${t>a?' (ขาดอีก '+baht(t-a)+')':''}`;
         rows=[['เงินที่มีอยู่ (ใช้ได้ + สำรองฉุกเฉิน)',baht(a)],['เป้าขั้นต่ำที่ตั้งไว้',baht(t)],['ส่วนที่ขาด',baht(Math.max(0,t-a))]];
-        if(t>0) meter={pct:a/t,left:baht(a)+' / '+baht(t),right:t>a?'ขาดอีก '+baht(t-a):''};break;}
+        if(t>0) meter={pct:a/t,left:baht(a)+' จาก '+baht(t),right:t>a?'ขาดอีก '+baht(t-a):''};break;}
       case 'OBLIGATION_SHORTFALL':{
         const st=String(d.status||'');const stT=st==='overdue'?'เลยกำหนดแล้ว':st==='dueToday'?'ครบกำหนดวันนี้':'ใกล้ถึงกำหนด';
         title=`ภาระ "${d.name||'รายการ'}" ยังกันเงินไม่พอ`;
         summary=`${d.name||'รายการนี้'} ${stT} ต้องจ่าย ${baht(d.amount)} แต่เงินที่กันไว้ยังขาดอีก ${baht(d.shortfall)}`;
         rows=[['ยอดที่ต้องจ่าย',baht(d.amount)],['ที่ยังขาด',baht(d.shortfall)],['สถานะ',stT]];
         if(d.nextDueDate)rows.push(['วันครบกำหนด',String(d.nextDueDate)]);
-        if(num(d.amount)>0) meter={pct:(num(d.amount)-num(d.shortfall))/num(d.amount),left:'กันไว้ '+baht(num(d.amount)-num(d.shortfall))+' / '+baht(d.amount),right:'ขาดอีก '+baht(d.shortfall)};break;}
+        if(num(d.amount)>0) meter={pct:(num(d.amount)-num(d.shortfall))/num(d.amount),left:'กันไว้ '+baht(num(d.amount)-num(d.shortfall))+' จาก '+baht(d.amount),right:'ขาดอีก '+baht(d.shortfall)};break;}
       case 'SPENDING_ABOVE_BASELINE':
         title='รายจ่ายรวมสูงกว่าระดับปกติ';
         summary=`เดือนนี้ใช้ไปแล้ว ${baht(d.monthToDate!==undefined?d.monthToDate:d.currentExpense)} ถ้าใช้ในจังหวะนี้ต่อ สิ้นเดือนจะอยู่ราว ${baht(d.projectedMonthEnd!==undefined?d.projectedMonthEnd:d.projectedExpense)} สูงกว่าค่าเฉลี่ยปกติ ${baht(d.baseline)}`;
@@ -259,10 +259,10 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     target.innerHTML=items.map((it,i)=>{
       const h=human(it), acked=isAcked(it), crit=!acked&&it.severity==='critical';
       const cls='v-know-item'+(i===0?' v-know-main':'')+(acked?' is-acked':'')+(crit?' is-crit':'');
-      const icon=`<span class="v-know-ic">${acked?okSvg:warnSvg}</span>`;
+      const icon=`<span class="v-know-ic">${warnSvg}</span>`;
       let body='';
       if(i===0){
-        if(h.meter){ const p=Math.max(0,Math.min(1,h.meter.pct)); body=`<div class="v-know-meter"><i style="width:${Math.round(p*100)}%"></i></div><div class="v-know-nums"><b>${escapeHtml(h.meter.left)}</b><span>${escapeHtml(h.meter.right)}</span></div>`; }
+        if(h.meter){ const p=Math.max(0,Math.min(1,h.meter.pct)); body=`<div class="v-know-meter"><i style="width:${Math.round(p*100)}%"></i></div><div class="v-know-line">${escapeHtml([h.meter.left,h.meter.right].filter(Boolean).join(' · '))}</div>`; }
         else body=`<div class="v-know-sum">${escapeHtml(h.summary)}</div>`;
       }
       return `<div class="${cls}" data-adv-idx="${i}" role="button" tabindex="0"><div class="v-know-top">${icon}<span class="v-know-title">${escapeHtml(h.title)}</span>${i===0?'':chev}</div>${body}</div>`;

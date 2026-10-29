@@ -494,3 +494,10 @@ html body #aiProactiveBody p { margin: 0 0 6px; }
 
 /* ds67: เลขรวมในการ์ดกำลังจะต้องจ่ายเล็กลง ไม่แย่งซีน "ใช้ได้จริง" (ระยะห่างแถวคงเดิม) */
 html body #upcomingCard #upcomingTotalNum { font-size: 20px !important; line-height: 1.2; }
+
+/* ds73: การ์ดสิ่งที่ควรรู้ใช้สูตรเดียวกับการ์ดงบ — หลอดบาง 4, ตัวเลขเป็นข้อความเทาบรรทัดเดียว, ไอคอนโทนเดียวกับหลอด */
+html body .v-know-meter { height: 4px; margin: 10px 0 0; }
+html body .v-know-line { margin-top: 6px; font-size: 13px; line-height: 1.5; color: var(--v-muted); }
+html body .v-know-item.is-acked .v-know-ic { background: var(--v-surface-2); color: var(--v-muted); }
+html body .v-know-item.is-acked .v-know-meter i { background: var(--v-muted); }
+html body #aiProactiveBody { font-size: 13px !important; line-height: 1.6 !important; }
