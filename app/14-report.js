@@ -161,7 +161,8 @@
 
     // กราฟ 6 ช่วง (โหมดอื่นๆ ใช้รายเดือน)
     const unit = st.mode === "other" ? "month" : st.mode;
-    const baseOff = st.mode === "other" ? 0 : st.off;
+    // ช่วงที่เลือกอยู่ช่องที่ 5 เว้นช่วงถัดไปไว้ 1 ช่อง (ถ้าเป็นช่วงปัจจุบันก็ชิดขวาเหมือนเดิม ไม่มีช่องว่างเปล่า)
+    const baseOff = st.mode === "other" ? 0 : Math.min(st.off + 1, 0);
     const bars = [];
     for(let i = 5; i >= 0; i--){
       const o = baseOff - i, rr = rangeFor(unit, o), v = total(rr, st.type), s = dOf(rr.start);
@@ -180,10 +181,10 @@
     const loanBack = entries.filter(e => e.date && inAcc(e) && inRange(e, r) && isLoanRepaymentIncome(e)).reduce((t, e) => t + toCents(e.amount), 0) / 100;
     const dayMap = {}; rows(r, "expense").forEach(e => { dayMap[e.date] = (dayMap[e.date] || 0) + toCents(e.amount); });
     const peak = Object.entries(dayMap).sort((x, y) => y[1] - x[1])[0];
-    const tile = (k, v, extra) => `<div class="v-rfact"><span class="v-rfact-k">${k}</span><span class="v-rfact-v v-sens"${extra || ""}>${v}</span></div>`;
+    const tile = (k, v, extra, hint) => `<div class="v-rfact"><span class="v-rfact-k">${k}</span><span class="v-rfact-v v-sens"${extra || ""}>${v}</span>${hint ? `<span class="v-rfact-h">${hint}</span>` : ""}</div>`;
     document.getElementById("vRepFacts").innerHTML =
       (carry === null ? "" : tile("ยกมาก่อนช่วงนี้", money(carry))) +
-      tile("คงเหลือสุทธิ (รับ − จ่าย − ออม)", money(a.netCashFlow), a.netCashFlow < 0 ? ' style="color:var(--v-out)"' : "") +
+      tile("คงเหลือสุทธิ", money(a.netCashFlow), a.netCashFlow < 0 ? ' style="color:var(--v-out)"' : "", "รับ − จ่าย − ออม") +
       tile("จ่ายเฉลี่ยต่อวัน", money(Math.round(a.avgExpensePerDay))) +
       (peak ? tile("วันที่จ่ายมากสุด", escapeHtml(vaultetDateLabel(peak[0])) + " · " + money(peak[1] / 100)) : "") +
       (loanOut > 0 ? tile("ให้ยืมไป", money(loanOut)) : "") +

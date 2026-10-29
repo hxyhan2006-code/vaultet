@@ -53,11 +53,14 @@ await pg.click('.v-rtab[data-type="expense"]'); await pg.waitForTimeout(150);
 // เลื่อนไปเดือนก่อน
 await pg.click('#vRepPrev'); await pg.waitForTimeout(200);
 ok('prev arrow: last month shows จ่าย 1,000 and next arrow is enabled', (await tx('.v-rtab >> nth=0')).includes('฿1,000') && !(await pg.isDisabled('#vRepNext')));
+ok('trend: viewing last month keeps this month visible one slot to the right (selected is 5th of 6)', await pg.evaluate(()=>{const b=[...document.querySelectorAll('#vRepBars .v-rbar')];return b.length===6&&b.findIndex(x=>x.classList.contains('is-on'))===4;}));
 await pg.click('#vRepNext'); await pg.waitForTimeout(200);
 // กดแท่งกราฟ = ไปช่วงนั้น
 await pg.click('#vRepBars .v-rbar >> nth=3'); await pg.waitForTimeout(200);
 ok('tapping the 2-months-ago bar jumps there (ช้อปปิ้ง ฿250)', (await tx('.v-rtab >> nth=0')).includes('฿250') && (await tx('#vRepCats')).includes('ช้อปปิ้ง'));
 await pg.click('#vRepNext'); await pg.click('#vRepNext'); await pg.waitForTimeout(200);
+ok('trend: viewing this month the chart stays flush right (selected is the 6th, no empty slot)', await pg.evaluate(()=>{const b=[...document.querySelectorAll('#vRepBars .v-rbar')];return b.findIndex(x=>x.classList.contains('is-on'))===5;}));
+ok('summary tile label is one line; formula is a small hint', await pg.evaluate(()=>{const f=[...document.querySelectorAll('#vRepFacts .v-rfact')].find(x=>x.textContent.includes('คงเหลือสุทธิ'));return !!f&&f.querySelector('.v-rfact-k').textContent==='คงเหลือสุทธิ'&&!!f.querySelector('.v-rfact-h');}));
 ok('next arrow twice returns to this month', await pg.isDisabled('#vRepNext') && (await tx('.v-rtab >> nth=0')).includes('฿600'));
 
 // บัญชี
