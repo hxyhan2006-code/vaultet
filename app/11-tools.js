@@ -262,10 +262,10 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
       const icon=`<span class="v-know-ic">${warnSvg}</span>`;
       let body='';
       if(i===0){
-        if(h.meter){ const p=Math.max(0,Math.min(1,h.meter.pct)); body=`<div class="v-know-meter"><i style="width:${Math.round(p*100)}%"></i></div><div class="v-know-line">${escapeHtml([h.meter.left,h.meter.right].filter(Boolean).join(' · '))}</div>`; }
-        else body=`<div class="v-know-sum">${escapeHtml(h.summary)}</div>`;
+        if(h.meter){ const p=Math.max(0,Math.min(1,h.meter.pct)); body=`<div class="v-know-meter"><i style="width:${Math.round(p*100)}%"></i></div><div class="v-know-line">${escapeHtml([h.meter.left,h.meter.right,acked?'รับทราบแล้ว':''].filter(Boolean).join(' · '))}</div>`; }
+        else body=`<div class="v-know-sum">${escapeHtml(h.summary)}</div>${acked?'<div class="v-know-line">รับทราบแล้ว</div>':''}`;
       }
-      return `<div class="${cls}" data-adv-idx="${i}" role="button" tabindex="0"><div class="v-know-top">${icon}<span class="v-know-title">${escapeHtml(h.title)}</span>${i===0?'':chev}</div>${body}</div>`;
+      return `<div class="${cls}" data-adv-idx="${i}" role="button" tabindex="0"><div class="v-know-top">${icon}<span class="v-know-title">${escapeHtml(h.title)}</span>${i!==0&&acked?'<span class="v-know-ack">รับทราบแล้ว</span>':''}${i===0?'':chev}</div>${body}</div>`;
     }).join('');
   };
 

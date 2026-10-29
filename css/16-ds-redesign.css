@@ -501,3 +501,6 @@ html body .v-know-line { margin-top: 6px; font-size: 13px; line-height: 1.5; col
 html body .v-know-item.is-acked .v-know-ic { background: var(--v-surface-2); color: var(--v-muted); }
 html body .v-know-item.is-acked .v-know-meter i { background: var(--v-muted); }
 html body #aiProactiveBody { font-size: 13px !important; line-height: 1.6 !important; }
+
+/* ds74: ป้าย "รับทราบแล้ว" บอกว่าทำไมการ์ดเป็นสีเทา */
+html body .v-know-ack { flex: none; font-size: 12.5px; font-weight: 400; color: var(--v-muted); }
