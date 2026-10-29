@@ -81,6 +81,8 @@ ok('old shortcut grid hidden', !(await vis('#vShortcuts')));
 ok('no "income/positive/primary" in new class names', await pg.evaluate(()=>![...document.querySelectorAll('#ux-plan [class]')].filter(e=>e.closest('#vMoneyHero,.v-msec')&&!e.closest('#vAssets,#emergencyDashboardCard,#goalsCard')).some(e=>/income|positive|primary/.test(e.getAttribute('class')))));
 ok('no check marks', !/[✓✔]/.test(await pg.evaluate(()=>document.getElementById('ux-plan').innerText)));
 ok('no native dialogs', native.n===0);
+// ds76: ปุ่ม "จัดการ" ของส่วนบัญชี และ "ตั้งค่า" ของเงินสำรอง เป็นจุดสามจุด ไม่มีตัวหนังสือ (ยังมีชื่อให้โปรแกรมอ่านจอ)
+ok('accounts + emergency manage buttons are icon-only dots with an accessible name', await pg.evaluate(()=>['#vMoneyAccounts [data-act="accounts"]','#emergencyDashboardManageBtn'].every(sel=>{const b=document.querySelector(sel);return b&&b.classList.contains('v-iconbtn')&&b.textContent.trim()===''&&b.getAttribute('aria-label')&&b.querySelectorAll('circle').length===3;})));
 ok('no js errors', errs.length===0); if(errs.length) console.log('- '+errs.join(' | ').slice(0,300));
 await b.close(); srv.close();
 })();

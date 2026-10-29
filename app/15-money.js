@@ -25,7 +25,7 @@
     <div class="v-mbar" id="vMoneyBar" aria-hidden="true"></div><div class="v-mlegend" id="vMoneyLegend"></div>
     <div class="v-mhero-debt" id="vMoneyDebtNote"></div>`;
   const sec = (id, title, action) => { const s = document.createElement("section"); s.className = "v-msec"; s.id = id;
-    s.innerHTML = `<div class="v-msec-head"><h2 class="v-msec-title">${title}</h2>${action ? `<button type="button" class="v-btn v-btn-text" data-act="${action[0]}">${action[1]}</button>` : ""}</div><div class="v-msec-body"></div>`; return s; };
+    s.innerHTML = `<div class="v-msec-head"><h2 class="v-msec-title">${title}</h2>${action ? `<button type="button" class="v-iconbtn" data-act="${action[0]}" aria-label="${action[1]}" title="${action[1]}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>` : ""}</div><div class="v-msec-body"></div>`; return s; };
   const accSec = sec("vMoneyAccounts", "บัญชี", ["accounts", "จัดการ"]);
   const invSec = sec("vMoneyInvest", "ลงทุน");
   const keepSec = sec("vMoneyKeep", "เงินสำรองและเป้าหมาย");
