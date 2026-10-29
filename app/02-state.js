@@ -249,6 +249,8 @@ function getMonthSavingByCategories(month,cats){ const set=new Set(cats||[]); re
 // ===== เงินสำรองเผื่อเหตุไม่คาดฝันรายเดือน (buffer) =====
 const BUFFER_KEY="vaultet_buffer_v1";
 function __readBuffer(){ let o={}; try{o=JSON.parse(localStorage.getItem(BUFFER_KEY)||"{}");}catch(e){} o.months=o.months||{}; return o; }
+// เงินคืนจากการยืม = เงินเดิมของเรา ไม่ใช่รายได้ใหม่: นับทั้งรายการจากระบบเงินให้ยืม (source) และรายการที่พิมพ์เองในหมวดนี้
+function isLoanRepaymentIncome(e){ return !!e && e.type==="income" && (e.source==="loan_repayment" || e.category==="เงินคืนจากการยืม"); }
 function getBufferInfo(month=monthKey(todayISO())){
   const amt=__readBuffer().months[month]; if(amt==null) return null;
   const covered=new Set(); budgets.filter(b=>b.enabled!==false&&(b.kind||"expense")==="expense"&&b.month===month).forEach(b=>(b.categories||[]).forEach(c=>covered.add(c)));

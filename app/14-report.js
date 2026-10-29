@@ -59,7 +59,7 @@
   const inAcc = e => !st.acc || (e.accountId || UNASSIGNED_ACCOUNT_ID) === st.acc;
   const inRange = (e, r) => (!r.start || e.date >= r.start) && (!r.end || e.date <= r.end);
   // รายรับจริง = ไม่รวมเงินคืนจากการยืม และการถอนเงินออม (เหมือนกราฟแนวโน้มเดิม)
-  const counts = (e, type) => e.type === type && !(type === "income" && (e.source === "loan_repayment" || e.category === WITHDRAW_CAT));
+  const counts = (e, type) => e.type === type && !(type === "income" && (isLoanRepaymentIncome(e) || e.category === WITHDRAW_CAT));
   function rows(r, type){ return entries.filter(e => e.date && inAcc(e) && inRange(e, r) && counts(e, type)); }
   function total(r, type){ return rows(r, type).reduce((s, e) => s + toCents(e.amount), 0) / 100; }
   function byCat(r, type){

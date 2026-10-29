@@ -110,6 +110,16 @@ ok('new entry updates the report immediately (650)', (await tx('.v-rtab >> nth=0
 ok('no "income" in report class names (old CSS would recolour)', await pg.evaluate(()=>![...document.querySelectorAll('#vReport *')].some(e=>/income|positive|primary/.test(e.className.baseVal!==undefined?e.className.baseVal:e.className))));
 ok('no check marks', !/[✓✔]/.test(await pg.evaluate(()=>document.getElementById('vReport').innerText)));
 ok('no native dialogs', native.n===0);
+// ds71: รายการที่พิมพ์เองในหมวด "เงินคืนจากการยืม" (ไม่มี source) ก็ไม่นับเป็นรายรับ เหมือนรายการจากระบบเงินให้ยืม
+{ const r=await pg.evaluate(()=>{
+    const d='2026-10-08', before=computePeriodAnalysisForRange('2026-10-01','2026-10-31');
+    entries.push({id:'t_hand',type:'income',category:'เงินคืนจากการยืม',amount:180,note:'ปัง',date:d,accountId:UNASSIGNED_ACCOUNT_ID});
+    entries.push({id:'t_auto',type:'income',category:'เงินคืนจากการยืม',amount:250,note:'รับคืนเงินจาก ลี',date:d,accountId:UNASSIGNED_ACCOUNT_ID,source:'loan_repayment',loanId:'x',repaymentId:'y'});
+    const after=computePeriodAnalysisForRange('2026-10-01','2026-10-31');
+    entries=entries.filter(e=>!e.id.startsWith('t_'));
+    return {dNon:after.nonLoanIncome-before.nonLoanIncome, dLoan:after.loanRepaymentIncome-before.loanRepaymentIncome, isFn:isLoanRepaymentIncome({type:'income',category:'เงินคืนจากการยืม'})};
+  });
+  ok('hand-typed "เงินคืนจากการยืม" is treated as a repayment, not new income', r.dNon===0 && Math.round(r.dLoan)===430 && r.isFn); }
 ok('no js errors', errs.length===0); if(errs.length) console.log('- '+errs.join(' | ').slice(0,300));
 await b.close(); srv.close();
 })();

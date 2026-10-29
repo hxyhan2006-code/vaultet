@@ -271,7 +271,7 @@ function computePeriodAnalysisForRange(start, end, accountFilter){
 
   const sumOf = t => rangeEntries.filter(e => e.type===t).reduce((s,e) => s + toCents(e.amount), 0) / 100;
   const income = sumOf("income"), expense = sumOf("expense"), saving = sumOf("saving");
-  const loanRepaymentIncome = rangeEntries.filter(e => e.type === "income" && e.source === "loan_repayment").reduce((s,e) => s + toCents(e.amount), 0) / 100;
+  const loanRepaymentIncome = rangeEntries.filter(e => isLoanRepaymentIncome(e)).reduce((s,e) => s + toCents(e.amount), 0) / 100;
   const withdrawIncome = rangeEntries.filter(e => e.type === "income" && e.category === WITHDRAW_CAT).reduce((s,e) => s + toCents(e.amount), 0) / 100;
   const nonLoanIncome = income - loanRepaymentIncome - withdrawIncome;
   const netCashFlow = income - expense - saving;

@@ -41,7 +41,7 @@ function renderTrendCard(){
   const fm=entries.reduce((m,e)=>e.date&&(!m||e.date.slice(0,7)<m)?e.date.slice(0,7):m,"");
   const rows=keys.filter(k=>!fm||k>=fm).map(k=>{const r={k,inc:0,exp:0,sav:0,rep:0};
     entries.forEach(e=>{if(!e.date||e.date.slice(0,7)!==k)return;const a=Number(e.amount)||0;
-      if(e.type==="income"){if(e.source==="loan_repayment")r.rep+=a;else if(e.category!==WITHDRAW_CAT)r.inc+=a;}
+      if(e.type==="income"){if(isLoanRepaymentIncome(e))r.rep+=a;else if(e.category!==WITHDRAW_CAT)r.inc+=a;}
       else if(e.type==="expense")r.exp+=a;else if(e.type==="saving")r.sav+=a;});
     return r;});
   const mx=Math.max(1,...rows.flatMap(r=>[r.inc,r.exp,r.sav]));
