@@ -38,6 +38,14 @@ await pg.screenshot({path:shots+'new-ai-top.png'});
 await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(250);
 ok('AI menu opens with 5 rows + history + profile row', await vis('#aiMenu') && (await pg.locator('#aiMenu .v-aimenu-row').count())===5 && await vis('#aiMenuProfile') && await vis('#aiMenuHist'));
 await pg.screenshot({path:shots+'new-ai-menu.png'});
+// ds79: รูปโปรไฟล์ที่ตั้งไว้ต้องขึ้นในแถวโปรไฟล์ของเมนู (ไม่มีรูป = ตัวอักษรแรก)
+{ const reopen=async()=>{ await pg.evaluate(()=>document.getElementById('aiMenuBack').click()); await pg.waitForTimeout(300); await pg.click('#uxChatMenuBtn'); await pg.waitForTimeout(300); };
+  await pg.evaluate(()=>window.vaultetProfilePhoto.set('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+  await reopen();
+  ok('AI menu profile row shows the photo when one is set', await pg.evaluate(()=>!!document.querySelector('#aiMenuProfile .v-aimenu-avatar img')));
+  await pg.evaluate(()=>window.vaultetProfilePhoto.clear());
+  await reopen();
+  ok('AI menu profile row falls back to the letter (or the person icon when there is no name) without a photo', await pg.evaluate(()=>{const v=document.querySelector('#aiMenuProfile .v-aimenu-avatar');return !v.querySelector('img') && (v.textContent.trim().length>0 || !!v.querySelector('svg'));})); }
 await pg.click('#aiMenuProfile'); await pg.waitForTimeout(350);
 ok('profile row opens settings page', await vis('#ux-more') && !(await vis('#aiMenu')));
 ok('back button visible on settings', await vis('#uxBackBtn'));

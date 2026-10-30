@@ -519,3 +519,7 @@ html body .v-msec-head .v-iconbtn { margin-right: 6px; }
   html body #upcomingOverlay.closing { animation: v-fade-out .2s ease-in forwards; }
   html body #upcomingOverlay.closing > .sheet-modal { animation: v-sheet-down .2s ease-in forwards; }
 }
+
+/* ds79: รูปโปรไฟล์ในเมนู AI */
+html body .v-aimenu-avatar { overflow: hidden; }
+html body .v-aimenu-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
