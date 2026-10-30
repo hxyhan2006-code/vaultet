@@ -83,6 +83,8 @@ ok('no check marks', !/[✓✔]/.test(await pg.evaluate(()=>document.getElementB
 ok('no native dialogs', native.n===0);
 // ds76: ปุ่ม "จัดการ" ของส่วนบัญชี และ "ตั้งค่า" ของเงินสำรอง เป็นจุดสามจุด ไม่มีตัวหนังสือ (ยังมีชื่อให้โปรแกรมอ่านจอ)
 ok('accounts + emergency manage buttons are icon-only dots with an accessible name', await pg.evaluate(()=>['#vMoneyAccounts [data-act="accounts"]','#emergencyDashboardManageBtn'].every(sel=>{const b=document.querySelector(sel);return b&&b.classList.contains('v-iconbtn')&&b.textContent.trim()===''&&b.getAttribute('aria-label')&&b.querySelectorAll('circle').length===3;})));
+ok('section-head dots line up with the dots inside the cards (same right edge)', await pg.evaluate(()=>{const r=sel=>document.querySelector(sel).getBoundingClientRect().right;return Math.abs(r('#vMoneyAccounts .v-iconbtn')-r('#emergencyDashboardManageBtn'))<=2;}));
+ok('goal add button is a + icon with a name', await pg.evaluate(()=>{const b=document.getElementById('goalAdd');return !!b&&b.textContent.trim()===''&&!!b.getAttribute('aria-label')&&b.classList.contains('v-iconbtn-plus');}));
 ok('no js errors', errs.length===0); if(errs.length) console.log('- '+errs.join(' | ').slice(0,300));
 await b.close(); srv.close();
 })();

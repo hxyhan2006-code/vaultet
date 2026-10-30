@@ -508,3 +508,14 @@ html body .v-know-ack { flex: none; font-size: 12.5px; font-weight: 500; color: 
 /* ds77: รายงาน — หลอดหมวดบาง 4 เท่าการ์ดงบ, ป้ายช่องสรุปบรรทัดเดียว (สูตรอยู่ใต้เลขเป็นข้อความเล็ก) */
 html body .v-rcat-bar { height: 4px; }
 html body .v-rfact-h { font-size: 11.5px; color: var(--v-muted); }
+
+/* ds78: ปุ่มเพิ่มเป้าหมายเป็นไอคอน +, จุดสามจุดหัวข้อส่วนตรงแนวกับในการ์ด, ปิดแผ่นที่ต้องจ่ายแบบเลื่อนลง */
+html body .v-iconbtn-plus { color: var(--v-accent); }
+html body .v-iconbtn-plus svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+html body .v-msec-head .v-iconbtn { margin-right: 6px; }
+@keyframes v-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes v-sheet-down { from { transform: none; opacity: 1; } to { transform: translateY(24px); opacity: .6; } }
+@media (prefers-reduced-motion: no-preference) {
+  html body #upcomingOverlay.closing { animation: v-fade-out .2s ease-in forwards; }
+  html body #upcomingOverlay.closing > .sheet-modal { animation: v-sheet-down .2s ease-in forwards; }
+}
