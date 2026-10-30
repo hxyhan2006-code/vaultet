@@ -454,12 +454,6 @@ html body #budgetDashboardCard:focus-visible, html body #upcomingCard:focus-visi
 /* กฎเก่า (css/07) ตั้ง overflow: visible !important ไว้ ต้องทับตอนกำลังกาง/พับ ไม่งั้นเนื้อหาล้นไปทับการ์ดถัดไป */
 html body #budgetDashboardRows.is-anim { overflow: hidden !important; }
 html body #budgetDashboardCard .v-brow, html body #budgetDashboardCard .v-brow summary { cursor: pointer; }
-@keyframes v-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes v-sheet-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: no-preference) {
-  html body #upcomingOverlay.open { animation: v-fade-in .2s ease-out; }
-  html body #upcomingOverlay.open > .sheet-modal { animation: v-sheet-up .25s ease-out; }
-}
 
 /* ds65: ไม่มีลูกตา, ปุ่มจัดการเป็นจุดสามจุด, การ์ดสิ่งที่ควรรู้แบบมีแท่ง */
 html body .v-iconbtn { width: 36px; height: 36px; margin: -6px -6px -6px 0; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: var(--v-muted); cursor: pointer; }
@@ -513,12 +507,6 @@ html body .v-rfact-h { font-size: 11.5px; color: var(--v-muted); }
 html body .v-iconbtn-plus { color: var(--v-accent); }
 html body .v-iconbtn-plus svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 html body .v-msec-head .v-iconbtn { margin-right: 6px; }
-@keyframes v-fade-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes v-sheet-down { from { transform: none; opacity: 1; } to { transform: translateY(24px); opacity: .6; } }
-@media (prefers-reduced-motion: no-preference) {
-  html body #upcomingOverlay.closing { animation: v-fade-out .2s ease-in forwards; }
-  html body #upcomingOverlay.closing > .sheet-modal { animation: v-sheet-down .2s ease-in forwards; }
-}
 
 /* ds79: รูปโปรไฟล์ในเมนู AI */
 html body .v-aimenu-avatar { overflow: hidden; }
@@ -543,3 +531,31 @@ html body .v-goal-btn.is-go { color: var(--v-accent); border-color: rgba(29,185,
 html body .v-goal-btn.is-del { flex: none; padding: 0 18px; color: var(--v-out); }
 html body .v-goal-btn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
 html body .v-goal-hint { margin-top: 10px; font-size: 12.5px; color: var(--v-muted); line-height: 1.55; }
+
+/* ds82: เปิด/ปิดนุ่มทั้งระบบ — หน้าต่างแบบแผ่น (.overlay ทั้งหมด), โปรไฟล์, พอร์ตหุ้น, กล่องข้อความ/แผ่นเลือก, หน้ารายละเอียดข้อเสนอ
+   หน้าต่างที่ซ่อนด้วย class "open" ใช้ visibility+opacity+transform แทน display:none จึงเลื่อนเข้า/ออกได้ทั้งตอนเปิดและปิด */
+@keyframes vs-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vs-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes vs-pop-in { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes vs-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes vs-slide-in { from { transform: translateY(32px); } to { transform: none; } }
+@keyframes vs-slide-out { from { transform: none; } to { transform: translateY(32px); } }
+@keyframes vs-sheet-out { from { transform: none; } to { transform: translateY(100%); } }
+@media (prefers-reduced-motion: no-preference) {
+  html body .overlay, html body .profile-overlay { display: flex !important; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity .2s ease, visibility 0s linear .26s; }
+  html body .overlay.open, html body .profile-overlay.open { visibility: visible; opacity: 1; pointer-events: auto; transition: opacity .2s ease, visibility 0s; }
+  html body .overlay > .sheet-modal, html body .overlay > .sheet, html body .profile-overlay > .profile-sheet { transform: translateY(32px); transition: transform .26s cubic-bezier(.2,.8,.2,1); }
+  html body .overlay.open > .sheet-modal, html body .overlay.open > .sheet, html body .profile-overlay.open > .profile-sheet { transform: none; }
+  html body #pfOverlay { display: flex !important; visibility: hidden; opacity: 0; pointer-events: none; transform: translateY(24px); transition: opacity .2s ease, transform .26s cubic-bezier(.2,.8,.2,1), visibility 0s linear .26s; }
+  html body #pfOverlay.open { visibility: visible; opacity: 1; pointer-events: auto; transform: none; transition: opacity .2s ease, transform .26s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+  html body .v-dlg-back { animation: vs-fade-in .18s ease-out; }
+  html body .v-dlg-back.is-out { animation: vs-fade-out .18s ease-in forwards; pointer-events: none; }
+  html body .v-dlg:not(.v-dlg-sheet) { animation: vs-pop-in .2s cubic-bezier(.2,.8,.2,1); }
+  html body .v-dlg-back.is-out .v-dlg:not(.v-dlg-sheet) { animation: vs-pop-out .18s ease-in forwards; }
+  html body .v-dlg-back.is-out .v-dlg.v-dlg-sheet { animation: vs-sheet-out .2s ease-in forwards; }
+  html body #advDetailOverlay { animation: vs-fade-in .18s ease-out; }
+  html body #advDetailOverlay .adv-sheet { animation: vs-slide-in .26s cubic-bezier(.2,.8,.2,1); }
+  html body #advDetailOverlay.is-out { animation: vs-fade-out .2s ease-in forwards; pointer-events: none; }
+  html body #advDetailOverlay.is-out .adv-sheet { animation: vs-slide-out .2s ease-in forwards; }
+  html body .v-aimenu-pop { animation: vs-pop-in .16s ease-out; }
+}

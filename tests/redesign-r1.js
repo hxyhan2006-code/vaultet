@@ -59,9 +59,9 @@ ok('upcoming card has no "ดูทั้งหมด" button; tapping it opens 
   await pg.click('#upcomingCard .networth-label'); await pg.waitForTimeout(300);
   const open=await pg.evaluate(()=>document.getElementById('upcomingOverlay').classList.contains('open'));
   await pg.click('#closeUpcomingBtn'); await pg.waitForTimeout(60);
-  const closing=await pg.evaluate(()=>{const o=document.getElementById('upcomingOverlay');return o.classList.contains('open')&&o.classList.contains('closing');});
+  const closing=await pg.evaluate(()=>{const o=document.getElementById('upcomingOverlay');const op=parseFloat(getComputedStyle(o).opacity);return !o.classList.contains('open')&&op>0&&op<1;});
   await pg.waitForTimeout(450);
-  const closed=await pg.evaluate(()=>!document.getElementById('upcomingOverlay').classList.contains('open'));
+  const closed=await pg.evaluate(()=>{const o=document.getElementById('upcomingOverlay');return !o.classList.contains('open')&&getComputedStyle(o).visibility==='hidden';});
   const open2=open&&closing&&closed;
   return none&&open2; })());
 ok('recent list shows at most 5 rows of this month', (await pg.locator('#vRecentList .v-tx').count())===5);

@@ -281,9 +281,14 @@ try{const __m=sessionStorage.getItem("vaultet_restored"); if(__m){ sessionStorag
     }).join('');
   };
 
-  function closeSheet(){document.getElementById('advDetailOverlay')?.remove();}
+  function closeSheet(instant){
+    const o=document.getElementById('advDetailOverlay'); if(!o)return;
+    if(instant===true||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){o.remove();return;}
+    if(o.classList.contains('is-out'))return;
+    o.classList.add('is-out'); setTimeout(()=>o.remove(),220);
+  }
   function openSheet(i){
-    const it=items[i]; if(!it)return; const h=human(it); closeSheet();
+    const it=items[i]; if(!it)return; const h=human(it); closeSheet(true);
     const ov=document.createElement('div'); ov.id='advDetailOverlay';
     const rowsHtml=h.rows.length?`<div class="adv-h">ตัวเลขที่เกี่ยวข้อง</div>`+h.rows.map(r=>`<div class="adv-row"><span>${escapeHtml(r[0])}</span><span>${escapeHtml(r[1])}</span></div>`).join(''):'';
     const acked=isAcked(it);

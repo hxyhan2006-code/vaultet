@@ -66,13 +66,7 @@ document.getElementById("upcomingFilterSelect").addEventListener("change", (e) =
 });
 // เปิดรายการทั้งหมด: แตะที่การ์ด #upcomingCard (ผูกใน app/09-nav-home.js)
 // ปิดแผ่นแบบเลื่อนลงนุ่ม ๆ (ถ้าเครื่องตั้งลดการเคลื่อนไหวก็ปิดทันที)
-function closeUpcomingSheet(){
-  const ov = document.getElementById("upcomingOverlay");
-  if(!ov.classList.contains("open") || ov.classList.contains("closing")) return;
-  if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches){ ov.classList.remove("open"); return; }
-  ov.classList.add("closing");
-  setTimeout(() => ov.classList.remove("open", "closing"), 200);
-}
+function closeUpcomingSheet(){ document.getElementById("upcomingOverlay").classList.remove("open"); } // เลื่อนลงนุ่มด้วย CSS กลาง (.overlay)
 document.getElementById("closeUpcomingBtn").addEventListener("click", closeUpcomingSheet);
 document.getElementById("upcomingOverlay").addEventListener("click", closeUpcomingSheet);
 

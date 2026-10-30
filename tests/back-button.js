@@ -39,6 +39,21 @@ ok('dialog is open', (await pg.locator('.v-dlg-back').count())===1);
 await back();
 ok('back closes the dialog as "cancel"', (await pg.locator('.v-dlg-back').count())===0 && (await q(()=>window.__ans))===false);
 
+// 2.5) ความนุ่ม: กล่องข้อความจางหายก่อนถูกลบ, แผ่นจากล่างจางเข้า/ออกแทนการหายวาบ
+{ const pr=pg.evaluate(()=>vaultetConfirm('นุ่มไหม?')); await pg.waitForTimeout(300);
+  await pg.click('.v-dlg-back:not(.is-out) .v-dlg-ok'); await pg.waitForTimeout(60);
+  ok('dialog fades out (still in the page, marked is-out) before it is removed', await pg.evaluate(()=>{const b=document.querySelector('.v-dlg-back');return !!b&&b.classList.contains('is-out');}));
+  await pg.waitForTimeout(400); await pr;
+  ok('...and is removed after the fade', (await pg.locator('.v-dlg-back').count())===0);
+  await pg.evaluate(()=>document.getElementById('budgetOverlay').classList.add('open')); await pg.waitForTimeout(40);
+  const mid=await pg.evaluate(()=>{const o=document.getElementById('budgetOverlay');return {op:parseFloat(getComputedStyle(o).opacity),vis:getComputedStyle(o).visibility};});
+  await pg.waitForTimeout(350);
+  ok('bottom sheet fades in (opacity '+mid.op.toFixed(2)+' mid-way, then fully visible)', mid.vis==='visible' && mid.op<1 && (await pg.evaluate(()=>getComputedStyle(document.getElementById('budgetOverlay')).opacity))==='1');
+  await pg.evaluate(()=>document.getElementById('budgetOverlay').classList.remove('open')); await pg.waitForTimeout(80);
+  const out=await pg.evaluate(()=>{const o=document.getElementById('budgetOverlay');return {op:parseFloat(getComputedStyle(o).opacity),vis:getComputedStyle(o).visibility};});
+  await pg.waitForTimeout(450);
+  ok('bottom sheet fades out then is hidden (opacity '+out.op.toFixed(2)+' mid-way)', out.vis==='visible' && out.op>0 && out.op<1 && (await pg.evaluate(()=>getComputedStyle(document.getElementById('budgetOverlay')).visibility))==='hidden'); }
+
 // 3) หน้าย่อย/แท็บอื่น
 await pg.evaluate(()=>vaultetGo('analysis')); await pg.waitForTimeout(200);
 await back();

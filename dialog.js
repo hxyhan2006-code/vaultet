@@ -30,7 +30,9 @@
       const close = value => {
         if(closed) return; closed = true;
         document.removeEventListener("keydown", onKey, true);
-        back.remove();
+        // ปิดแบบจางหาย/เลื่อนลง (ถ้าเครื่องตั้งลดการเคลื่อนไหวก็ลบทันที) แล้วค่อยลบออกจากหน้า
+        if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) back.remove();
+        else{ back.classList.add("is-out"); setTimeout(() => back.remove(), 200); }
         try{ prevFocus && prevFocus.focus && prevFocus.focus({ preventScroll:true }); }catch(e){}
         resolve(value);
       };

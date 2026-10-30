@@ -71,7 +71,7 @@ await pg.evaluate(()=>{localStorage.setItem('vaultet_ai_keystate_local',JSON.str
 ok('แถว Gemini: เต็มทั้งหมด',/2 คีย์ · เต็มทั้งหมด \d\d:\d\d/.test(await pg.evaluate(()=>document.querySelector('#vSetAiKey').innerText)));
 // รายคีย์ในหน้าตั้งคีย์
 await pg.evaluate(()=>renderApiKeyList());
-ok('รายคีย์แสดงเต็มพร้อมเวลา',/เต็ม \d\d:\d\d/.test(await pg.evaluate(()=>document.getElementById('apiKeyList').innerText)));
+ok('รายคีย์แสดงเต็มพร้อมเวลา',/เต็ม \d\d:\d\d/.test(await pg.evaluate(()=>document.getElementById('apiKeyList').textContent)));
 // เพิ่ม/ลบคีย์ → ล้างสถานะเก่า
 await pg.evaluate(()=>saveApiKeys(['KEY-1']));
 ok('แก้รายการคีย์แล้วล้างสถานะเก่า',await pg.evaluate(()=>localStorage.getItem('vaultet_ai_keystate_local')===null));

@@ -15,7 +15,7 @@ const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 let p=pg.evaluate(()=>vaultetConfirm('ลบรายการนี้ใช่ไหม?',{okText:'ลบ',danger:true,title:'ยืนยันการลบ'}));
 await pg.waitForSelector('.v-dlg'); ok('confirm shows', (await pg.textContent('.v-dlg')).includes('ลบรายการนี้ใช่ไหม?'));
 await pg.screenshot({path:shots+'dlg-confirm.png'});
-await pg.click('.v-dlg-ok'); ok('confirm OK -> true', (await p)===true); ok('dialog removed', (await pg.locator('.v-dlg').count())===0);
+await pg.click('.v-dlg-ok'); ok('confirm OK -> true', (await p)===true); await pg.waitForTimeout(350); ok('dialog removed', (await pg.locator('.v-dlg').count())===0);
 p=pg.evaluate(()=>vaultetConfirm('x')); await pg.waitForSelector('.v-dlg'); await pg.click('.v-dlg-cancel'); ok('confirm cancel -> false', (await p)===false);
 p=pg.evaluate(()=>vaultetConfirm('x')); await pg.waitForSelector('.v-dlg'); await pg.keyboard.press('Escape'); ok('Esc cancels -> false', (await p)===false);
 // form: validation + success
@@ -36,7 +36,7 @@ p=pg.evaluate(()=>vaultetPrompt('ชื่อหมวดใหม่','',{title
 p=pg.evaluate(()=>vaultetAlert('ต้องเป็นตัวเลข 6 หลัก')); await pg.waitForSelector('.v-dlg'); await pg.click('.v-dlg-ok'); await p; ok('alert resolves', true);
 // queue: two at once show one after another
 const both=pg.evaluate(()=>Promise.all([vaultetConfirm('A'),vaultetConfirm('B')]));
-await pg.waitForSelector('.v-dlg'); ok('only one dialog at a time', (await pg.locator('.v-dlg').count())===1);
+await pg.waitForTimeout(350); await pg.waitForSelector('.v-dlg'); ok('only one dialog at a time', (await pg.locator('.v-dlg').count())===1);
 await pg.click('.v-dlg-ok'); await pg.waitForTimeout(150); await pg.click('.v-dlg-ok'); const bb=await both; ok('queued dialogs both resolve', bb[0]===true&&bb[1]===true);
 ok('no native browser dialogs were used', native===0);
 console.log(errs.join('\n')||'no js errors');

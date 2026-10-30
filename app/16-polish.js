@@ -44,10 +44,10 @@
   const lastOf = s => { const l = document.querySelectorAll(s); return l.length ? l[l.length - 1] : null; };
   const steps = [
     // กล่องข้อความ/แผ่นเลือกของแอป (dialog.js) — เหมือนแตะพื้นหลัง = ยกเลิก
-    () => { const d = lastOf(".v-dlg-back"); if(!d) return false; d.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); return true; },
+    () => { const d = lastOf(".v-dlg-back:not(.is-out)"); if(!d) return false; d.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); return true; },
     () => { const p = $(".v-aimenu-pop-back"); if(!p) return false; p.click(); return true; },
     () => { const m = $("#aiMenuBack.is-open"); if(!m) return false; m.click(); return true; },
-    () => { const a = $("#advDetailOverlay"); if(!a) return false; a.click(); return true; },
+    () => { const a = $("#advDetailOverlay:not(.is-out)"); if(!a) return false; a.click(); return true; },
     () => { const p = $("#vaultetProfileOverlay.open"); if(!p) return false; p.classList.remove("open"); return true; },
     () => { const s = $("#pfOpenSheet.open"); if(!s) return false; s.classList.remove("open"); return true; },
     () => { const p = $("#pfOverlay.open"); if(!p) return false; const b = p.querySelector("#pfClose"); if(b) b.click(); else p.classList.remove("open"); return true; },
@@ -100,7 +100,8 @@
 
 // ===== แถวที่แตะแล้วกาง (details) ในการ์ดงบและหน้ารายงาน: กาง/พับแบบนุ่ม เปิดได้ทีละแถว (ds81) =====
 (function(){
-  const ROWS = "details.v-brow-c, details.v-rcat";
+  const ROWS = "details.v-brow-c, details.v-rcat";   // เปิดได้ทีละแถวในกลุ่มเดียวกัน
+  const SIMPLE = "details.v-assets, details.v-loan-hist, details.v-loan-done, details.v-debt-more, details.v-rmore";   // กางพับนุ่ม ไม่ปิดอันอื่น
   const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function closedHeight(d){ d.open = false; const h = d.offsetHeight; d.open = true; return h; }
   function animate(d, toOpen){
@@ -121,11 +122,11 @@
   }
   document.addEventListener("click", e => {
     const sum = e.target.closest && e.target.closest("summary"); if(!sum) return;
-    const d = sum.parentElement; if(!d || !d.matches(ROWS)) return;
+    const d = sum.parentElement; if(!d || !(d.matches(ROWS) || d.matches(SIMPLE))) return;
     e.preventDefault();
     const willOpen = !d.open || d._vClosing;
     const group = d.parentElement;
-    if(willOpen && group) group.querySelectorAll(":scope > details[open]").forEach(o => { if(o !== d && o.matches(ROWS)) animate(o, false); });
+    if(willOpen && group && d.matches(ROWS)) group.querySelectorAll(":scope > details[open]").forEach(o => { if(o !== d && o.matches(ROWS)) animate(o, false); });
     animate(d, willOpen);
   }, true);
 })();

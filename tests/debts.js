@@ -39,8 +39,8 @@ await pg.click('.v-debt >> nth=1 >> summary'); await pg.waitForTimeout(150);
 await pg.click('.v-debt >> nth=1 >> [data-undo]'); await T.dlgOK(pg); await pg.waitForTimeout(400);
 d=await debts(); ok('undo restores balance (-> '+d[1].outstandingBalance+')', d[1].outstandingBalance===8000);
 // add quick chip via manage section
-await pg.click('.v-debt >> nth=1 >> summary').catch(()=>{});
-if(!(await pg.isVisible('.v-debt >> nth=1 >> [data-act="addq"]'))) await pg.click('.v-debt >> nth=1 >> summary');
+await pg.click('.v-debt >> nth=1 >> summary').catch(()=>{}); await pg.waitForTimeout(350);
+if(!(await pg.isVisible('.v-debt >> nth=1 >> [data-act="addq"]'))){ await pg.click('.v-debt >> nth=1 >> summary'); await pg.waitForTimeout(350); }
 await pg.click('.v-debt >> nth=1 >> [data-act="addq"]'); await T.dlgOK(pg,{amt:'500',note:'ค่าอาหาร'}); await pg.waitForTimeout(400);
 d=await debts(); ok('add quick chip', d[1].quick.length===1 && d[1].quick[0].amount===500);
 await pg.screenshot({path:shots+'debt-manage.png'});
