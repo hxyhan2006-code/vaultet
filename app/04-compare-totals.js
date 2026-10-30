@@ -361,7 +361,8 @@ function renderAccountsSummary(){
   const netWorth = vaultetNetWorth();
   document.getElementById("netWorthNum").textContent = (netWorth<0?"-":"") + "฿" + fmt(Math.abs(netWorth));
   document.getElementById("inAccountsNum").textContent = "฿" + fmt(total);
-  document.getElementById("inAccLabel").textContent = reserved > 0 ? "ในบัญชี" : "ในบัญชี (ใช้ได้จริง)";
+  // มีบัญชีเดียว = เรียกว่า "เงินพร้อมใช้" ก้อนเดียว (ไม่พูดถึงคำว่าบัญชี)
+  document.getElementById("inAccLabel").textContent = accounts.length <= 1 ? "เงินพร้อมใช้" : (reserved > 0 ? "ในบัญชี" : "ในบัญชี (ใช้ได้จริง)");
   document.getElementById("reservedNum").textContent = "฿" + fmt(reserved);
   document.getElementById("availableNum").textContent = "฿" + fmt(total - reserved);
   vis("reservedRow", reserved > 0); vis("availRow", reserved > 0);

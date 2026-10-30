@@ -36,12 +36,14 @@ await pg.evaluate(()=>closeForm());
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150);
 await pg.click('#vAssets summary'); await pg.waitForTimeout(150);
 ok('assets detail: per-account list hidden', !(await pg.isVisible('#accountsList')));
+ok('single account: money page calls it "เงินพร้อมใช้" (no "บัญชี" / "ในบัญชี" / account name)', await pg.evaluate(()=>{const t=document.querySelector('#vMoneyAccounts .v-msec-title').textContent, row=document.querySelector('#vMoneyAccounts .v-mrow .v-mrow-t').textContent, leg=document.getElementById('vMoneyLegend').textContent, lab=document.getElementById('inAccLabel').textContent;return t==='เงินพร้อมใช้'&&row==='เงินพร้อมใช้'&&!leg.includes('ในบัญชี')&&lab==='เงินพร้อมใช้'&&!document.getElementById('vMoneyAccounts').textContent.includes('บัญชีหลัก');}));
 await pg.evaluate(()=>vaultetGo('analysis')); await pg.waitForTimeout(250);
 ok('analysis: account filters hidden', !(await pg.isVisible('#analysisAccountFilter')) && !(await pg.isVisible('#compareAccountFilter')) && !(await pg.isVisible('#vRepAccBtn')));
 // add a 2nd account -> everything comes back
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(150); await pg.click('#vMoneyAccounts [data-act="accounts"]'); await pg.waitForTimeout(250);
 await pg.click('#addAccountBtn'); await T.dlgOK(pg,{name:'ออมทรัพย์',bal:'1000'}); await pg.waitForTimeout(300);
 ok('2 accounts: recent rows show the account name again', await pg.evaluate(()=>document.getElementById('vRecentList').innerText.includes('บัญชีหลัก')));
+ok('2 accounts: money page goes back to "บัญชี" with real account names', await pg.evaluate(()=>{const t=document.querySelector('#vMoneyAccounts .v-msec-title').textContent, rows=[...document.querySelectorAll('#vMoneyAccounts .v-mrow .v-mrow-t')].map(x=>x.textContent);return t==='บัญชี'&&rows.includes('บัญชีหลัก')&&rows.includes('ออมทรัพย์');}));
 ok('2 accounts: class removed', !(await pg.evaluate(()=>document.body.classList.contains('v-single-account'))));
 await pg.evaluate(()=>document.querySelectorAll('.open').forEach(e=>e.classList.remove('open')));
 await pg.evaluate(()=>openForm(null)); await pg.waitForTimeout(250);

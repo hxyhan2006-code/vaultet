@@ -51,7 +51,8 @@
     document.getElementById("vMoneyNet").textContent = money(net);
     if(net < 0) document.getElementById("vMoneyNet").style.color = "var(--v-out)"; else document.getElementById("vMoneyNet").style.color = "";
     // แถบสัดส่วน: เฉพาะส่วนที่เป็นบวก
-    const parts = [["ในบัญชี", Math.max(0, A.total), "var(--v-accent)"], ["พอร์ตหุ้น", A.stock, "var(--v-xfer)"], ["เป้าหมาย", A.goals, "var(--v-save)"],
+    const single = accounts.length <= 1;
+    const parts = [[single ? "เงินพร้อมใช้" : "ในบัญชี", Math.max(0, A.total), "var(--v-accent)"], ["พอร์ตหุ้น", A.stock, "var(--v-xfer)"], ["เป้าหมาย", A.goals, "var(--v-save)"],
       ["เงินสำรอง", A.em, "var(--v-cat-4)"], ["ออม/ลงทุนอื่น", A.rest, "#b39ddb"], ["คนอื่นติดเรา", owed, "var(--v-muted)"]].filter(p => p[1] > 0);
     const sum = parts.reduce((s, p) => s + p[1], 0);
     document.getElementById("vMoneyBar").innerHTML = sum ? parts.map(p => `<i style="flex:${p[1]};background:${p[2]}"></i>`).join("") : "<i></i>";
@@ -60,7 +61,8 @@
 
     // บัญชี + เงินกันไว้
     const accBody = accSec.querySelector(".v-msec-body");
-    accBody.innerHTML = `<div class="v-mlist">${accounts.map(a => `<button type="button" class="v-mrow" data-acc="${escapeHtml(a.id)}"><span class="v-mrow-ic">${svg(accIcon(a.name))}</span><span class="v-mrow-main"><span class="v-mrow-t">${escapeHtml(a.name)}</span></span><span class="v-mrow-v v-sens">${money(computeAccountBalance(a.id))}</span></button>`).join("")}
+    const titleEl = accSec.querySelector(".v-msec-title"); if(titleEl) titleEl.textContent = single ? "เงินพร้อมใช้" : "บัญชี";
+    accBody.innerHTML = `<div class="v-mlist">${accounts.map(a => `<button type="button" class="v-mrow" data-acc="${escapeHtml(a.id)}"><span class="v-mrow-ic">${svg(accIcon(a.name))}</span><span class="v-mrow-main"><span class="v-mrow-t">${escapeHtml(single ? "เงินพร้อมใช้" : a.name)}</span></span><span class="v-mrow-v v-sens">${money(computeAccountBalance(a.id))}</span></button>`).join("")}
       ${reserved > 0 ? `<button type="button" class="v-mrow" id="vMoneyReservedRow"><span class="v-mrow-ic">${svg(IC.shield)}</span><span class="v-mrow-main"><span class="v-mrow-t">เงินกันไว้</span><span class="v-mrow-s">ใช้ได้จริง ${money(A.total - reserved)}</span></span><span class="v-mrow-v v-sens">${money(reserved)}</span></button>` : `<button type="button" class="v-mrow v-mrow-add" id="vMoneyReservedRow"><span class="v-mrow-ic">${svg(IC.shield)}</span><span class="v-mrow-main"><span class="v-mrow-t">เงินกันไว้</span><span class="v-mrow-s">กันเงินไว้จ่ายเรื่องที่รู้ล่วงหน้า</span></span>${svg(IC.chev, "v-mrow-chev")}</button>`}</div>`;
     accBody.querySelectorAll("[data-acc]").forEach(b => b.addEventListener("click", () => tap("manageAccountsBtn")));
     accBody.querySelector("#vMoneyReservedRow").addEventListener("click", () => tap("manageReservedBtn"));
