@@ -97,3 +97,35 @@
     armed = false; history.back(); // ไม่มีอะไรให้ปิดแล้ว: ปล่อยให้ย้อนต่อ (ออกจากแอป)
   });
 })();
+
+// ===== แถวที่แตะแล้วกาง (details) ในการ์ดงบและหน้ารายงาน: กาง/พับแบบนุ่ม เปิดได้ทีละแถว (ds81) =====
+(function(){
+  const ROWS = "details.v-brow-c, details.v-rcat";
+  const calm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function closedHeight(d){ d.open = false; const h = d.offsetHeight; d.open = true; return h; }
+  function animate(d, toOpen){
+    const from = d.getBoundingClientRect().height;
+    if(d._vAnim){ d._vAnim.cancel(); d._vAnim = null; }
+    d._vClosing = false;
+    if(calm()){ d.open = toOpen; return; }
+    let to;
+    if(toOpen){ d.open = true; to = d.offsetHeight; }
+    else{ if(!d.open) return; to = closedHeight(d); }
+    if(Math.abs(from - to) < 1){ d.open = toOpen; return; }
+    d.style.overflow = "hidden";
+    d._vClosing = !toOpen;
+    const a = d.animate([{ height: from + "px" }, { height: to + "px" }], { duration: 250, easing: "ease" });
+    d._vAnim = a;
+    a.onfinish = () => { d._vAnim = null; d._vClosing = false; d.style.overflow = ""; if(!toOpen) d.open = false; };
+    a.oncancel = () => { d.style.overflow = ""; };
+  }
+  document.addEventListener("click", e => {
+    const sum = e.target.closest && e.target.closest("summary"); if(!sum) return;
+    const d = sum.parentElement; if(!d || !d.matches(ROWS)) return;
+    e.preventDefault();
+    const willOpen = !d.open || d._vClosing;
+    const group = d.parentElement;
+    if(willOpen && group) group.querySelectorAll(":scope > details[open]").forEach(o => { if(o !== d && o.matches(ROWS)) animate(o, false); });
+    animate(d, willOpen);
+  }, true);
+})();

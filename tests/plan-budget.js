@@ -36,6 +36,11 @@ ok('big number reads เกิน ฿… when over total budget, never a minus s
   const withMore=pg.locator('#budgetDashboardRows details.v-brow-c:has(.v-brow-more)');
   if(await withMore.count()){ await withMore.first().locator('summary').click(); await pg.waitForTimeout(150);
     ok('tapping a budget row shows details', await withMore.first().locator('.v-brow-more').isVisible()); } }
+{ await pg.waitForTimeout(300);
+  const rows=pg.locator('#budgetDashboardRows details.v-brow-c'); const n=await rows.count();
+  if(n>=2){ const last=n-1; await rows.nth(last).locator('summary').click(); const hs=[]; for(let i=0;i<4;i++){ await pg.waitForTimeout(50); hs.push(await pg.evaluate(k=>Math.round(document.querySelectorAll('#budgetDashboardRows details.v-brow-c')[k].getBoundingClientRect().height),last)); } await pg.waitForTimeout(300);
+    const opens=await pg.evaluate(()=>[...document.querySelectorAll('#budgetDashboardRows details.v-brow-c')].filter(d=>d.open).length);
+    ok('budget rows: one open at a time, opening is smooth (heights '+hs.join(',')+')', opens===1 && new Set(hs).size>=2); } }
 await pg.click('.ux-bottom-item[data-page="plan"]');await pg.waitForTimeout(500);
 ok('emergency card visible (เงินของฉัน)', await pg.isVisible('#emergencyDashboardCard'));
 ok('duplicate spend card is gone from Plan', !(await pg.locator('#spendSummaryCard').count()));

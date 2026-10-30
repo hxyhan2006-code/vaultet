@@ -94,10 +94,13 @@ document.addEventListener("click",async e=>{
 renderTpl();
 const _sft=setFormType;setFormType=function(){const r=_sft.apply(this,arguments);renderTpl();return r;};
 /* ===== เป้าหมายเก็บเงิน (ระบบเดียวของแอป — AI อ่านจากที่นี่ด้วย) ===== */
+// แถวเป้าหมาย: แตะเพื่อกางปุ่ม เติมเงิน/ลบ เปิดได้ทีละแถว (จำแถวที่เปิดไว้ตอนวาดใหม่)
+let goalOpenId=null;
 function renderGoalsBox(){
   const card=document.getElementById("goalsCard");if(!card)return;
   if(!card.dataset.bound){
     card.dataset.bound="1";
+    card.addEventListener("keydown",ev=>{ const row=ev.target.closest&&ev.target.closest(".v-goal"); if(row&&ev.target===row&&(ev.key==="Enter"||ev.key===" ")){ ev.preventDefault(); toggleGoalRow(card,row); } });
     card.addEventListener("click",async ev=>{
       const g=jget(GK);
       if(ev.target.closest("#goalAdd")){
@@ -109,10 +112,12 @@ function renderGoalsBox(){
         ]});
         if(!gv)return;
         g.push({id:Date.now().toString(36),name:gv.name,target:gv.target,saved:gv.saved||0,deadline:gv.dl||""});jput(GK,g);renderGoalsBox();return;}
+      const row=ev.target.closest(".v-goal");
+      if(row && !ev.target.closest("button")){ toggleGoalRow(card,row); return; }
       const add=ev.target.closest("[data-gadd]"),del=ev.target.closest("[data-gdel]");
       if(add){const x=g.find(y=>y.id===add.dataset.gadd);if(!x)return;
         const accDef=lastUsedAccountId&&accounts.some(a=>a.id===lastUsedAccountId)?lastUsedAccountId:(accounts[0]?.id||UNASSIGNED_ACCOUNT_ID);
-        const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:"เงินจะออกจากบัญชีและขึ้นเป็นรายการออม ใส่ค่าติดลบถ้าจะเอาเงินออก"},
+        const gv=await vaultetForm({title:`"${x.name}"`,okText:"บันทึก",fields:[{key:"v",label:"เพิ่มเงินเก็บกี่บาท",type:"number",required:true,hint:(accounts.length>1?"เงินจะออกจากบัญชี":"เงินจะหักจากเงินพร้อมใช้")+"และขึ้นเป็นรายการออม ใส่ค่าติดลบถ้าจะเอาเงินออก"},
           ...(accounts.length>1?[{key:"acc",label:"บัญชี",type:"select",options:accountOptions(),value:accDef}]:[])]});
         const v=gv?Math.round(gv.v*100)/100:0;
         if(!v)return;
@@ -127,7 +132,7 @@ function renderGoalsBox(){
         saveEntries(); render(); renderGoalsBox();
       }else if(del){const x=g.find(y=>y.id===del.dataset.gdel);if(!x)return;
         const linked=goalLinkedSaved(x.id);
-        if(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`+(linked>0?` เงินที่เก็บไว้ ฿${num(linked)} ยังอยู่ในหมวดออม ถ้าจะใช้ ให้กด "+ เงิน" ใส่ค่าติดลบก่อนลบ`:""), true)){jput(GK,g.filter(y=>y.id!==x.id));render();renderGoalsBox();}}
+        if(await vaultetAsk("ลบ", `ลบเป้าหมาย "${x.name}"?`+(linked>0?` เงินที่เก็บไว้ ฿${num(linked)} ยังอยู่ในหมวดออม ถ้าจะใช้ ให้กด "เติมเงิน" ใส่ค่าติดลบก่อนลบ`:""), true)){jput(GK,g.filter(y=>y.id!==x.id));render();renderGoalsBox();}}
     });
   }
   const g=jget(GK),today=new Date();today.setHours(0,0,0,0);
@@ -136,8 +141,15 @@ function renderGoalsBox(){
     let info=left===0?"ครบเป้าแล้ว":"ขาดอีก ฿"+num(left);
     if(left>0&&x.deadline){const days=Math.ceil((new Date(x.deadline+"T00:00:00")-today)/86400000);
       info+=days<=0?" · เลยกำหนดแล้ว":` · เหลือ ${days} วัน ต้องเก็บวันละ ฿${num(left/days)}`+(days>=30?` (เดือนละ ฿${num(left/(days/30))})`:"");}
-    return `<div class="v-brow"><div class="v-brow-top"><span class="v-brow-name">${esc2(x.name)}</span><span class="v-brow-amt">฿${num(sv)}<small> / ฿${num(x.target)}</small></span></div><div class="v-bar v-bar-sm"><i style="width:${pct}%;background:${left===0?"var(--v-accent)":"var(--v-save)"}"></i></div><div class="v-brow-meta"><span>${pct}% · ${esc2(info)}</span><span class="v-goal-actions"><button type="button" class="v-link" data-gadd="${x.id}">+ เงิน</button><button type="button" class="v-link v-link-muted" data-gdel="${x.id}" aria-label="ลบเป้าหมาย">ลบ</button></span></div></div>`;}).join("");
-  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">เป้าหมายเก็บเงิน</h2><button type="button" id="goalAdd" class="v-iconbtn v-iconbtn-plus" aria-label="เพิ่มเป้าหมาย" title="เพิ่มเป้าหมาย"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>${items||'<div class="v-card-sub">ยังไม่มีเป้าหมาย กด "+ เพิ่ม" เพื่อตั้งเป้าแรก (เช่น ซื้อโน้ตบุ๊ก)</div>'}<div class="v-hint">กด "+ เงิน" แล้วเงินจะออกจากบัญชีไปอยู่ในเป้าหมาย ขึ้นเป็นรายการออม ยอดใช้ได้จริงลดตาม แต่สินทรัพย์รวมเท่าเดิม · AI เห็นเป้าหมายเหล่านี้ด้วย</div>`;
+    const open=x.id===goalOpenId;
+    return `<div class="v-brow v-goal" data-gid="${esc2(x.id)}" role="button" tabindex="0" aria-expanded="${open?"true":"false"}"><div class="v-brow-top"><span class="v-brow-name">${esc2(x.name)}</span><span class="v-brow-amt">฿${num(sv)}<small> / ฿${num(x.target)}</small></span></div><div class="v-bar v-bar-xs"><i style="width:${pct}%;background:${left===0?"var(--v-accent)":"var(--v-save)"}"></i></div><div class="v-goal-st">${pct}% · ${esc2(info)}</div><div class="v-goal-fold"><div><div class="v-goal-acts"><button type="button" class="v-goal-btn is-go" data-gadd="${esc2(x.id)}">เติมเงิน</button><button type="button" class="v-goal-btn is-del" data-gdel="${esc2(x.id)}">ลบ</button></div></div></div></div>`;}).join("");
+  card.innerHTML=`<div class="v-card-head"><h2 class="v-card-title">เป้าหมายเก็บเงิน</h2><button type="button" id="goalAdd" class="v-iconbtn v-iconbtn-plus" aria-label="เพิ่มเป้าหมาย" title="เพิ่มเป้าหมาย"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>${items||'<div class="v-card-sub">ยังไม่มีเป้าหมาย กด + เพื่อตั้งเป้าแรก (เช่น ซื้อโน้ตบุ๊ก)</div>'}${items?`<div class="v-goal-hint">แตะเป้าหมายเพื่อเติมเงิน · เติมแล้วจะหัก${accounts.length>1?"จากบัญชี":"จากเงินพร้อมใช้"} และบันทึกเป็นรายการออม</div>`:""}`;
+}
+function toggleGoalRow(card,row){
+  const open=row.getAttribute("aria-expanded")!=="true";
+  card.querySelectorAll(".v-goal").forEach(r=>r.setAttribute("aria-expanded","false"));
+  if(open) row.setAttribute("aria-expanded","true");
+  goalOpenId=open?row.dataset.gid:null;
 }
 const _rt=renderTrendCard;renderTrendCard=function(){_rt();renderGoalsBox();};
 // ยอดเป้าหมายมาจากรายการด้วย: แก้/ลบรายการที่ไหนก็ต้องวาดการ์ดใหม่

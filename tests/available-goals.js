@@ -32,7 +32,7 @@ await pg.screenshot({path:shots+'hero-available.png'});
 
 // ===== เป้าหมาย: + เงิน หักออกจากบัญชี มีรายการเอง สินทรัพย์รวมเท่าเดิม =====
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(400);
-await pg.click('[data-gadd="g1"]'); await T.dlgOK(pg,{v:'2000'}); await pg.waitForTimeout(300);
+await pg.evaluate(()=>{const r=document.querySelector('#goalsCard .v-goal');if(r&&r.getAttribute('aria-expanded')!=='true')r.click();}); await pg.waitForTimeout(300); await pg.click('[data-gadd="g1"]'); await T.dlgOK(pg,{v:'2000'}); await pg.waitForTimeout(300);
 const e=await pg.evaluate(()=>entries.find(x=>x.goalId==='g1'));
 ok('goal money creates a saving entry with its own note', !!e && e.type==='saving' && e.amount===2000 && e.note==='เป้าหมาย: คอม' && e.accountId==='a1');
 ok('goal money goes to its own category เป้าหมาย', e.category==='เป้าหมาย' && await pg.evaluate(()=>CATS_BY_TYPE.saving.includes('เป้าหมาย')));
@@ -45,7 +45,7 @@ ok('goal money is not counted as other savings', await pg.evaluate(()=>document.
 ok('AI sees saved 2,000 on the goal', await pg.evaluate(()=>buildFinancialSnapshot().goals[0].saved===2000));
 
 // เอาเงินออก
-await pg.click('[data-gadd="g1"]'); await T.dlgOK(pg,{v:'-500'}); await pg.waitForTimeout(300);
+await pg.evaluate(()=>{const r=document.querySelector('#goalsCard .v-goal');if(r&&r.getAttribute('aria-expanded')!=='true')r.click();}); await pg.waitForTimeout(300); await pg.click('[data-gadd="g1"]'); await T.dlgOK(pg,{v:'-500'}); await pg.waitForTimeout(300);
 ok('taking 500 out → goal ฿1,500, money back in the account', (await pg.evaluate(()=>goalSaved(readGoals()[0])))===1500 && (await txt('inAccountsNum')).trim()==='฿6,865');
 ok('withdrawal does not touch emergency savings', await pg.evaluate(()=>getEmergencySaved()===0));
 ok('total assets still unchanged', (await assets())===a0);

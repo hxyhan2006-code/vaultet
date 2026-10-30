@@ -523,3 +523,23 @@ html body .v-msec-head .v-iconbtn { margin-right: 6px; }
 /* ds79: รูปโปรไฟล์ในเมนู AI */
 html body .v-aimenu-avatar { overflow: hidden; }
 html body .v-aimenu-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ds81: การ์ดเป้าหมาย — แตะแถวเพื่อกางปุ่ม เติมเงิน/ลบ (เปิดได้ทีละแถว กางพับนุ่ม) */
+html body #goalsCard .v-goal { cursor: pointer; padding: 11px 0; -webkit-tap-highlight-color: transparent; }
+html body #goalsCard .v-card-head + .v-goal { border-top: 0; }
+html body #goalsCard .v-goal:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; border-radius: 8px; }
+html body #goalsCard .v-goal .v-bar-xs { height: 4px; margin: 8px 0 0; }
+html body .v-goal-st { margin-top: 5px; font-size: 12.5px; color: var(--v-muted); }
+html body .v-goal-fold { display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden; }
+html body .v-goal-fold > div { overflow: hidden; min-height: 0; }
+html body .v-goal[aria-expanded="true"] .v-goal-fold { grid-template-rows: 1fr; opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  html body .v-goal-fold { transition: grid-template-rows .25s ease, opacity .2s ease, visibility 0s linear .25s; }
+  html body .v-goal[aria-expanded="true"] .v-goal-fold { transition: grid-template-rows .25s ease, opacity .2s ease, visibility 0s; }
+}
+html body .v-goal-acts { display: flex; gap: 8px; padding-top: 10px; }
+html body .v-goal-btn { flex: 1; min-height: 40px; border-radius: 12px; border: 1px solid var(--v-line); background: var(--v-surface-2); color: var(--v-fg); font: inherit; font-size: 14px; cursor: pointer; }
+html body .v-goal-btn.is-go { color: var(--v-accent); border-color: rgba(29,185,84,.35); }
+html body .v-goal-btn.is-del { flex: none; padding: 0 18px; color: var(--v-out); }
+html body .v-goal-btn:focus-visible { outline: 2px solid var(--v-accent); outline-offset: 2px; }
+html body .v-goal-hint { margin-top: 10px; font-size: 12.5px; color: var(--v-muted); line-height: 1.55; }

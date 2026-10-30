@@ -39,6 +39,11 @@ ok('compare pill: 40% less than last month (green)', /รายจ่ายน�
 ok('category rows: กิน ฿500, คาเฟ่ ฿100', (await pg.locator('.v-rcat').count())===2 && (await tx('.v-rcat >> nth=0')).includes('฿500'));
 await pg.click('.v-rcat >> nth=0 >> summary'); await pg.waitForTimeout(150);
 ok('tapping a category lists its entries', (await pg.locator('.v-rcat[open] .v-rcat-item').count())===2);
+await pg.waitForTimeout(300);
+await pg.click('.v-rcat >> nth=1 >> summary'); await pg.waitForTimeout(400);
+ok('opening another category closes the first (one at a time, smooth)', await pg.evaluate(()=>[...document.querySelectorAll('.v-rcat')].map(d=>d.open).join(','))==='false,true');
+await pg.click('.v-rcat >> nth=1 >> summary'); await pg.waitForTimeout(400);
+ok('tapping the open category folds it', await pg.evaluate(()=>![...document.querySelectorAll('.v-rcat')].some(d=>d.open)));
 ok('6 trend bars, current month highlighted', (await pg.locator('#vRepBars .v-rbar').count())===6 && (await pg.locator('#vRepBars .v-rbar.is-on').count())===1 && await pg.evaluate(()=>[...document.querySelectorAll('#vRepBars .v-rbar')].pop().classList.contains('is-on')));
 const facts=await tx('#vRepFacts');
 ok('facts: carry-over 10,500 − last months spend, net cash flow, average per day', /ยกมาก่อนช่วงนี้\s*฿9,250/.test(facts) && facts.includes('คงเหลือสุทธิ') && facts.includes('จ่ายเฉลี่ยต่อวัน'));

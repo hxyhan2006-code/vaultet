@@ -88,6 +88,15 @@ ok('migration: old goal lists emptied, other profile data kept', prof.financialG
 ok('migration: done flag set', (await pg.evaluate(()=>localStorage.getItem('vaultet_goals_merged_v1')))==='1');
 await pg.evaluate(()=>vaultetGo('plan')); await pg.waitForTimeout(300);
 ok('plan tab shows all 3 goals', (await pg.locator('#goalsCard .v-brow').count())===3);
+// ds81: แถวเป้าหมายพับไว้ แตะเพื่อกางปุ่ม เปิดได้ทีละแถว กางแบบนุ่ม
+ok('goal rows start folded (buttons hidden)', !(await pg.isVisible('#goalsCard .v-goal >> nth=0 >> [data-gadd]')));
+await pg.click('#goalsCard .v-goal >> nth=0 >> .v-brow-name'); const gh=[]; for(let i=0;i<4;i++){ await pg.waitForTimeout(50); gh.push(await pg.evaluate(()=>Math.round(document.querySelector('#goalsCard .v-goal .v-goal-fold').getBoundingClientRect().height))); } await pg.waitForTimeout(300);
+ok('tapping a goal opens its buttons smoothly (heights '+gh.join(',')+')', await pg.isVisible('#goalsCard .v-goal >> nth=0 >> [data-gadd]') && new Set(gh).size>=2 && gh[0]<gh[gh.length-1]);
+await pg.click('#goalsCard .v-goal >> nth=1 >> .v-brow-name'); await pg.waitForTimeout(400);
+ok('opening another goal closes the first (one at a time)', await pg.evaluate(()=>[...document.querySelectorAll('#goalsCard .v-goal')].map(r=>r.getAttribute('aria-expanded')).join(','))==='false,true,false');
+await pg.click('#goalsCard .v-goal >> nth=1 >> .v-brow-name'); await pg.waitForTimeout(400);
+ok('tapping the open goal again folds it', await pg.evaluate(()=>![...document.querySelectorAll('#goalsCard .v-goal')].some(r=>r.getAttribute('aria-expanded')==='true')));
+ok('goal hint says เงินพร้อมใช้ (single account) and is one short line', await pg.evaluate(()=>{const h=document.querySelector('#goalsCard .v-goal-hint');return !!h&&h.textContent.includes('เงินพร้อมใช้')&&!document.querySelector('#goalsCard .v-hint');}));
 await pg.screenshot({path:shots+'goals-card.png'});
 const ai=await pg.evaluate(()=>({prof:loadAIProfile().financialGoals,snap:buildFinancialSnapshot().goals}));
 ok('AI profile goals now come from the plan (with saved amounts)', ai.prof.length===3 && ai.prof.find(g=>g.name==='โน้ตบุ๊ก').saved===7500);
