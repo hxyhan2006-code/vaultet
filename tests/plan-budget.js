@@ -10,7 +10,7 @@ const errs=[];pg.on('pageerror',e=>errs.push(e.message));pg.on('console',m=>{if(
 const T=require('./tlib.js');const native=T.watchNative(pg);
 await pg.route(/accounts\.google\.com|fonts\./,r=>r.abort());
 await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.setItem('__s','1');
- const d=n=>{const x=new Date();x.setDate(x.getDate()-n);return x.toISOString().slice(0,10)};
+ const d=n=>{const x=new Date();x.setDate(Math.max(1,x.getDate()-n));return x.toISOString().slice(0,10)};
  const mk=new Date().toISOString().slice(0,7);
  localStorage.setItem('finance_tracker_accounts_v1',JSON.stringify([{id:'a1',name:'กสิกร',openingBalance:20000}]));
  const E=(i,t,c,a,n,dd)=>({id:'e'+i,type:t,category:c,amount:a,note:n,date:d(dd),accountId:'a1'});
