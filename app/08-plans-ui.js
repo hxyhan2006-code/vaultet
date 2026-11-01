@@ -316,9 +316,8 @@ function renderBudgetDashboard(){
   const card=document.getElementById("budgetDashboardCard");if(!card)return;
   const s=computeBudgetSummary(), sv=computeBudgetSummary(monthKey(todayISO()),"saving"), bf=getBufferInfo();
   card.style.display="block";
-  const emptyBtn=document.getElementById("budgetEmptySetBtn"), bigRow=card.querySelector(".v-big-row"), bar=card.querySelector(":scope > .v-bar");
+  const bigRow=card.querySelector(".v-big-row"), bar=card.querySelector(":scope > .v-bar");
   const isEmpty=!s.budgetCount&&!sv.budgetCount&&!bf;
-  if(emptyBtn) emptyBtn.style.display=isEmpty?"":"none";
   if(bigRow) bigRow.style.display=isEmpty?"none":"";
   if(bar) bar.style.display=isEmpty?"none":"";
   if(isEmpty){ document.getElementById("budgetDashboardSub").textContent="ยังไม่ได้ตั้งงบเดือนนี้"; document.getElementById("budgetDashboardRows").innerHTML=""; return; }
@@ -367,7 +366,6 @@ function renderBudgetDashboard(){
   document.getElementById("budgetDashboardRows").innerHTML=html;
 }
 document.getElementById("budgetDashboardManageBtn")?.addEventListener("click",openBudgetManager);
-document.getElementById("budgetEmptySetBtn")?.addEventListener("click",openBudgetManager);
 document.getElementById("closeBudgetBtn")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
 document.getElementById("budgetOverlay")?.addEventListener("click",()=>document.getElementById("budgetOverlay").classList.remove("open"));
 document.getElementById("budgetMonthInput")?.addEventListener("change",()=>{budgetEditingId=null;document.getElementById("budgetAmountInput").value="";document.getElementById("saveBudgetBtn").textContent="เพิ่ม / อัปเดตงบ";renderBudgetManager();});

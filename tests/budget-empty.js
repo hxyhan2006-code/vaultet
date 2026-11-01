@@ -12,10 +12,10 @@ await pg.addInitScript(()=>{if(localStorage.getItem('__s'))return;localStorage.s
 await pg.goto('http://localhost:8139/index.html');await pg.waitForTimeout(1000);
 const ok=(n,c)=>console.log((c?'PASS ':'FAIL ')+n);
 ok('budget card shows even with no budget', await pg.isVisible('#ux-home #budgetDashboardCard'));
-ok('set-budget button visible', await pg.isVisible('#budgetEmptySetBtn'));
+ok('no button inside the empty card', !(await pg.locator('#budgetDashboardCard button:not(#budgetDashboardManageBtn)').count()));
 ok('says no budget yet', (await pg.textContent('#budgetDashboardSub')).includes('ยังไม่ได้ตั้งงบ'));
 ok('no fake zero amount shown', !(await pg.isVisible('#budgetDashboardRemaining')));
-await pg.click('#budgetEmptySetBtn');await pg.waitForTimeout(400);
-ok('button opens budget manager', await pg.evaluate(()=>document.getElementById('budgetOverlay').classList.contains('open')));
+await pg.click('#budgetDashboardCard .v-card-title');await pg.waitForTimeout(400);
+ok('tapping the card opens budget manager', await pg.evaluate(()=>document.getElementById('budgetOverlay').classList.contains('open')));
 console.log(errs.join('\n')||'no js errors');
 await b.close();srv.close()})();

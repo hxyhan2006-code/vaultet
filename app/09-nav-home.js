@@ -294,7 +294,7 @@
     };
     bCard.tabIndex=0; bCard.setAttribute('role','group');
     apply(open,false);
-    const toggle=()=>{ if(!bRows.innerHTML.trim()) return; apply(!open,true); try{ localStorage.setItem(K_BUDGET,open?'1':'0'); }catch(e){} };
+    const toggle=()=>{ if(!bRows.innerHTML.trim()){ if(typeof openBudgetManager==='function') openBudgetManager(); return; } apply(!open,true); try{ localStorage.setItem(K_BUDGET,open?'1':'0'); }catch(e){} };
     bCard.addEventListener('click',e=>{
       if(e.target.closest('#budgetDashboardManageBtn, .v-brow, a, button, input, select')) return;
       toggle();
