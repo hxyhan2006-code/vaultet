@@ -385,6 +385,11 @@ function accountNameForRow(accountId){
   if(accounts.length <= 1 || !accountId || accountId === UNASSIGNED_ACCOUNT_ID) return "";
   return accounts.find(a=>a.id===accountId)?.name || "";
 }
+// เงินให้ยืม (เก็บแยกจากรายการ) ดึงมาแสดงในหน้ารายการเท่านั้น ไม่นับเป็นรายจ่าย/ไม่อยู่ในข้อมูลรายการจริง
+function loanListRows(q){
+  return loans.filter(l => l.date && monthKey(l.date) === selectedMonth && (!q || (l.person||"").toLowerCase().includes(q) || (l.note||"").toLowerCase().includes(q)))
+    .map(l => ({ id:"loan:"+l.id, type:"loan", date:l.date, amount:l.amount, category:"ให้ยืม "+(l.person||""), note:l.note||"", accountId:l.accountId }));
+}
 function txListHtml(list){
   const txRow = (e, glyph, tone, title, sub, amount) => `<li class="v-tx" data-id="${e.id}">
       <span class="v-tx-ic v-tone-${tone}">${glyph}</span>
@@ -396,7 +401,11 @@ function txListHtml(list){
   list.forEach(e => {
     if(e.date !== lastDate){ lastDate = e.date; rows.push(`<li class="v-day">${dayHeading(e.date)}</li>`); }
     const note = e.note ? escapeHtml(e.note) : "";
-    if(e.type === "transfer"){
+    if(e.type === "loan"){
+      const accName = accountNameForRow(e.accountId);
+      const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ");
+      rows.push(txRow(e, "→", "xfer", escapeHtml(e.category) + ' <span class="v-tx-tag">ไม่นับเป็นรายจ่าย</span>', sub, "฿"+fmt(e.amount)));
+    }else if(e.type === "transfer"){
       const fromName = accounts.find(a=>a.id===e.fromAccountId)?.name || "บัญชีที่ถูกลบ";
       const toName = accounts.find(a=>a.id===e.toAccountId)?.name || "บัญชีที่ถูกลบ";
       rows.push(txRow(e, "⇄", "xfer", "โอนเงิน", `${escapeHtml(fromName)} → ${escapeHtml(toName)}${note ? " · "+note : ""}`, "฿"+fmt(e.amount)));
@@ -415,6 +424,7 @@ function txListHtml(list){
 function bindTxRows(container){
   container.querySelectorAll(".v-tx").forEach(li => {
     li.addEventListener("click", () => {
+      if(String(li.dataset.id).startsWith("loan:")){ document.getElementById("manageLoansBtn")?.click(); return; }
       const entry = entries.find(e => e.id === li.dataset.id);
       if(entry) openForm(entry);
     });

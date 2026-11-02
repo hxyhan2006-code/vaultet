@@ -77,11 +77,12 @@ function render(){
   const me = [...getMonthEntries()]
     .filter(e => typeFilter==="all" || e.type===typeFilter)
     .filter(e => !q || (e.category || "").toLowerCase().includes(q) || (e.note || "").toLowerCase().includes(q))
+    .concat(typeFilter==="all" ? loanListRows(q) : [])
     .sort((a,b) => b.date.localeCompare(a.date));
   document.getElementById("countLabel").textContent = me.length + " รายการ";
   const ss = document.getElementById("searchSummary"), sumG = {};
   const sumSrc = searchAllMonths ? entries.filter(e => (typeFilter==="all" || e.type===typeFilter) && ((e.category||"").toLowerCase().includes(q) || (e.note||"").toLowerCase().includes(q))) : me;
-  sumSrc.forEach(e => { if(e.type==="transfer") return; const g = sumG[e.type] = sumG[e.type] || {n:0,c:0}; g.n++; g.c += toCents(e.amount); });
+  sumSrc.forEach(e => { if(e.type==="transfer"||e.type==="loan") return; const g = sumG[e.type] = sumG[e.type] || {n:0,c:0}; g.n++; g.c += toCents(e.amount); });
   const sumNames = {income:"รายรับ", expense:"รายจ่าย", saving:"ออม"};
   if(q && Object.keys(sumG).length){ ss.innerHTML = "สรุป “" + escapeHtml(searchQuery.trim()) + "” " + (searchAllMonths ? "ทุกเดือน" : "เดือนนี้") + ` · <button id="sumToggle" style="background:none;border:none;color:var(--saving);font:inherit;padding:0;cursor:pointer">${searchAllMonths ? "ดูเฉพาะเดือนนี้" : "ดูทุกเดือน"}</button><br>` + Object.keys(sumG).map(k => `${sumNames[k]} <b>${sumG[k].n}</b> ครั้ง · <b class="mono">฿${fmt(sumG[k].c/100)}</b>`).join("<br>"); ss.style.display = "block"; }
   else ss.style.display = "none";
