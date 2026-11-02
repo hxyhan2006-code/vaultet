@@ -25,8 +25,16 @@ function render(){
   document.getElementById("heroLabel").textContent = showAvail ? "ใช้ได้จริง" : "คงเหลือเดือนนี้";
   document.getElementById("balanceNum").textContent = (heroNum<0?"-":"") + "฿" + fmt(Math.abs(heroNum));
   document.getElementById("balanceNum").style.color = heroNum<0 ? "var(--expense)" : "var(--ink)";
-  document.getElementById("carryNum").textContent = ""; // ยอดยกมาย้ายไปแท็บวิเคราะห์ (renderPeriodAnalysis)
-  document.getElementById("pillIncome").textContent = "฿"+fmt(totals.income);
+  // เงินคืนจากการยืม/ถอนเงินออม = เงินเดิมของเรา ไม่นับเป็น "เข้า" (ตรงกับหน้ารายงาน) แสดงเป็นบรรทัดแยกใต้ยอดแทน
+  const monthIn = getMonthEntries().filter(e => e.type === "income");
+  const repaidBack = monthIn.filter(e => isLoanRepaymentIncome(e)).reduce((t,e) => t + toCents(e.amount), 0) / 100;
+  const withdrawBack = monthIn.filter(e => !isLoanRepaymentIncome(e) && e.category === WITHDRAW_CAT).reduce((t,e) => t + toCents(e.amount), 0) / 100;
+  const realIncome = (toCents(totals.income) - toCents(repaidBack) - toCents(withdrawBack)) / 100;
+  const sub = [];
+  if(loanOut > 0) sub.push("ให้ยืมไป ฿" + fmt(loanOut));
+  if(repaidBack > 0) sub.push("รับคืนจากการยืม ฿" + fmt(repaidBack));
+  document.getElementById("carryNum").textContent = sub.join(" · ");
+  document.getElementById("pillIncome").textContent = "฿"+fmt(realIncome);
   document.getElementById("pillExpense").textContent = "฿"+fmt(totals.expense);
   document.getElementById("pillSaving").textContent = "฿"+fmt(totals.saving);
 
