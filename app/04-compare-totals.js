@@ -406,7 +406,8 @@ function txListHtml(list){
       const glyph = e.recurringId ? "↻" : e.type==="income" ? "↑" : e.type==="saving" ? "◆" : "↓";
       const accName = accountNameForRow(e.accountId);
       const sub = [accName ? escapeHtml(accName) : "", note].filter(Boolean).join(" · ");
-      rows.push(txRow(e, glyph, tone, escapeHtml(e.category), sub, `${sign}฿${fmt(e.amount)}`));
+      const noCount = isLoanRepaymentIncome(e) ? ' <span class="v-tx-tag">ไม่นับเป็นรายรับ</span>' : "";
+      rows.push(txRow(e, glyph, tone, escapeHtml(e.category) + noCount, sub, `${sign}฿${fmt(e.amount)}`));
     }
   });
   return `<ul class="v-txlist">${rows.join("")}</ul>`;
