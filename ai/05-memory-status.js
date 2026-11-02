@@ -277,8 +277,11 @@ function aiKeyStateText(i){
   return st.s === "full" ? "เต็ม " + aiStateTime(st.t) : st.s === "busy" ? "ไม่ว่าง " + aiStateTime(st.t) : st.s === "bad" ? "ตอบกลับผิดพลาด " + aiStateTime(st.t) : "ใช้ได้ " + aiStateTime(st.t);
 }
 function aiGeminiSummary(){
-  const n = getApiKeys().length; if(!n) return "ยังไม่ได้ตั้งค่า";
-  const o = loadAiKeyState(), sts = Array.from({ length:n }, (_, i) => o.keys[i]);
+  const all = getApiKeys(); if(!all.length) return "ยังไม่ได้ตั้งค่า";
+  const act = all.filter(isApiKeyOn).length;
+  if(!act) return "ปิดทุกคีย์ · " + (window.vaultetOR && window.vaultetOR.enabled() ? "ใช้ OpenRouter" : "AI ใช้ไม่ได้");
+  const o = loadAiKeyState(), sts = all.map((k, i) => isApiKeyOn(k) ? o.keys[i] : undefined).filter((x, i) => isApiKeyOn(all[i]));
+  const n = act;
   const tried = sts.filter(Boolean);
   if(!tried.length) return "ตั้งค่าแล้ว " + n + " คีย์";
   const full = sts.filter(x => x && x.s === "full"), okc = sts.filter(x => x && x.s === "ok"), bad = sts.filter(x => x && x.s === "bad");

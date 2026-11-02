@@ -51,7 +51,7 @@ function buildAISystemPrompt(context){
 const GEMINI_MODEL_DEFAULT = "gemini-3.8-flash", GEMINI_MODEL_FALLBACK = "gemini-3.6-flash", GEMINI_MODEL_KEY = "vaultet_gemini_model_v1";
 function aiModelId(){ try{ return localStorage.getItem(GEMINI_MODEL_KEY) || GEMINI_MODEL_DEFAULT; }catch(e){ return GEMINI_MODEL_DEFAULT; } }
 // มี AI ให้ใช้ไหม: คีย์ Gemini อย่างน้อย 1 อัน หรือ OpenRouter ตั้งค่าครบ (คีย์ + โมเดล)
-function aiAvailable(){ return getApiKeys().length > 0 || !!(window.vaultetOR && window.vaultetOR.enabled()); }
+function aiAvailable(){ return countActiveApiKeys() > 0 || !!(window.vaultetOR && window.vaultetOR.enabled()); }
 
 // ===== AI Layer (Milestone 1): Gemini call =====
 const AI_RESPONSE_SCHEMA = {
@@ -92,8 +92,15 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   }
   const retries = orOn ? 0 : maxRetriesPerKey;   // มีตัวสำรองแล้ว ไม่ต้องรอ retry นาน
   const keys = getApiKeys();
+  // ปิดทุกคีย์ไว้ → ข้าม Gemini ไป OpenRouter เลย
+  if(orOn && !keys.some(isApiKeyOn)){
+    aiRunEvent("ปิดคีย์ Gemini ทุกอัน ใช้ OpenRouter");
+    const r = await OR.call(options.body, { kind, stream, signal: options.signal });
+    if(r){ noteAiOR(); return r; }
+  }
   let res = null;
   for(let i = 0; i < keys.length; i++){
+    if(!isApiKeyOn(keys[i])) continue;   // คีย์ที่ปิดไว้ ข้าม
     let url = buildUrl(keys[i]);
     let attempt = 0;
     while(true){
@@ -111,7 +118,8 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
     noteAiKey(i, res.ok ? "ok" : res.status === 429 ? "full" : res.status === 503 ? "busy" : "bad");
     if(res.status !== 429 && res.status !== 503) return res; // สำเร็จ หรือ error อื่นที่ไม่ใช่โควต้าเต็ม → ไม่ต้องลองคีย์อื่น
     // คีย์นี้โควต้าเต็ม → ลองคีย์สำรองถัดไปทันที
-    if(i + 1 < keys.length) aiRunEvent(`คีย์ Gemini ที่ ${i + 1} โควต้าเต็ม ลองคีย์ที่ ${i + 2}`);
+    const nx = keys.findIndex((k, j) => j > i && isApiKeyOn(k));
+    if(nx >= 0) aiRunEvent(`คีย์ Gemini ที่ ${i + 1} โควต้าเต็ม ลองคีย์ที่ ${nx + 1}`);
   }
   if(orOn){
     aiRunEvent("คีย์ Gemini ฟรีเต็มทั้งหมด สลับไปใช้ OpenRouter");

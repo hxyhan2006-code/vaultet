@@ -21,6 +21,17 @@ function getApiKeys(){
   }
   return [];
 }
+// สวิตช์เปิด/ปิดคีย์เป็นรายตัว — เก็บเฉพาะเครื่องนี้ (ไม่เข้าไฟล์สำรอง) จำด้วย 8 ตัวท้ายของคีย์ ลบ/จัดลำดับใหม่แล้วไม่เพี้ยน
+const AI_KEYOFF_KEY = "vaultet_ai_keyoff_local";
+function aiKeyTag(k){ return String(k || "").slice(-8); }
+function loadApiKeyOff(){ try{ const a = JSON.parse(localStorage.getItem(AI_KEYOFF_KEY) || "[]"); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function isApiKeyOn(k){ return !loadApiKeyOff().includes(aiKeyTag(k)); }
+function setApiKeyOn(k, on){
+  const t = aiKeyTag(k), s = new Set(loadApiKeyOff());
+  if(on) s.delete(t); else s.add(t);
+  try{ localStorage.setItem(AI_KEYOFF_KEY, JSON.stringify([...s])); }catch(e){}
+}
+function countActiveApiKeys(){ return getApiKeys().filter(isApiKeyOn).length; }
 // สำคัญ: เก็บเฉพาะคีย์เหล่านี้ ห้ามนำไปรวมกับ payload ของ exportBtn เด็ดขาด (ดูคอมเมนต์ด้านบน)
 function saveApiKeys(arr){
   localStorage.setItem(AI_APIKEYS_KEY, JSON.stringify(arr));
@@ -68,21 +79,35 @@ function renderApiKeyList(){
   if(!keys.length){
     el.innerHTML = "";
   }else{
-    el.innerHTML = keys.map((k, i) => `
-      <div class="memory-row">
-        <div>
+    el.innerHTML = keys.map((k, i) => {
+      const on = isApiKeyOn(k);
+      return `
+      <div class="memory-row" style="align-items:center;gap:12px">
+        <div style="flex:1;min-width:0;${on ? "" : "opacity:.55"}">
           <div class="memory-row-text">คีย์ที่ ${i+1}${i === 0 ? " (หลัก)" : " (สำรอง)"}</div>
-          <div class="memory-row-meta">${escapeHtml(maskApiKey(k))}${aiKeyStateText(i) ? " · " + escapeHtml(aiKeyStateText(i)) : ""}</div>
+          <div class="memory-row-meta">${escapeHtml(maskApiKey(k))}${on ? (aiKeyStateText(i) ? " · " + escapeHtml(aiKeyStateText(i)) : "") : " · ปิดอยู่"}</div>
         </div>
+        <input type="checkbox" class="v-switch api-key-switch" data-index="${i}" role="switch" aria-label="เปิดใช้คีย์ที่ ${i+1}"${on ? " checked" : ""}>
         <button class="icon-btn delete-api-key-btn" data-index="${i}" aria-label="ลบคีย์นี้">${ICON_TRASH}</button>
-      </div>
-    `).join("");
+      </div>`;
+    }).join("");
+    el.querySelectorAll(".api-key-switch").forEach(sw => {
+      sw.addEventListener("change", () => {
+        const k = getApiKeys()[parseInt(sw.dataset.index, 10)];
+        if(!k) return;
+        setApiKeyOn(k, sw.checked);
+        refreshApiKeyStatus();
+        const left = countActiveApiKeys();
+        showToast(sw.checked ? "เปิดคีย์แล้ว" : left ? "ปิดคีย์แล้ว" : (window.vaultetOR && window.vaultetOR.enabled() ? "ปิดทุกคีย์ ใช้ OpenRouter" : "ปิดทุกคีย์ — AI ใช้ไม่ได้ (ยังไม่ได้ตั้ง OpenRouter)"));
+      });
+    });
     el.querySelectorAll(".delete-api-key-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const idx = parseInt(btn.dataset.index, 10);
         const cur = getApiKeys();
-        cur.splice(idx, 1);
+        const gone = cur.splice(idx, 1)[0];
         saveApiKeys(cur);
+        if(gone) setApiKeyOn(gone, true);   // เคลียร์สถานะปิดของคีย์ที่ลบ
         refreshApiKeyStatus();
         showToast("ลบ API Key แล้ว");
       });
@@ -97,8 +122,9 @@ function refreshApiKeyStatus(){
   const keys = getApiKeys();
   const has = keys.length > 0;
   const statusEl = document.getElementById("apiKeyStatus");
-  statusEl.textContent = has ? `ตั้งค่าแล้ว ${keys.length} คีย์` : "ยังไม่ได้ตั้งค่า";
-  statusEl.style.color = has ? "var(--income)" : "var(--faint)";
+  const act = countActiveApiKeys();
+  statusEl.textContent = !has ? "ยังไม่ได้ตั้งค่า" : act === keys.length ? `ตั้งค่าแล้ว ${keys.length} คีย์` : `เปิด ${act} จาก ${keys.length} คีย์`;
+  statusEl.style.color = has && act ? "var(--income)" : "var(--faint)";
   renderApiKeyList();
 }
 
