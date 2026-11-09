@@ -56,6 +56,22 @@ await pg.evaluate(()=>{const s=document.querySelectorAll('#apiKeyList .api-key-s
 ok('เปิดคีย์ 2 ผ่านสวิตช์ ใช้ได้จริง',await pg.evaluate(()=>isApiKeyOn('KEY-BBBB2222')&&!isApiKeyOn('KEY-AAAA1111')));
 r=await call(); ok('เปิดคีย์ 2 แล้วยิง Gemini คีย์ 2',r.calls.join()==='KEY-BBBB2222');
 ok('หัวข้อบอก เปิด 1 จาก 3',await pg.evaluate(()=>/เปิด 1 จาก 3 คีย์/.test(document.getElementById('apiKeyStatus').textContent)));
+// สวิตช์ "ใช้ Gemini กับแชทด้วย": ปิด = แชทไป OR ตรงๆ, งานเล็กยังใช้ Gemini
+await pg.evaluate(()=>{['KEY-AAAA1111','KEY-BBBB2222','KEY-CCCC3333'].forEach(k=>setApiKeyOn(k,true));});
+const callK=(kind)=>pg.evaluate(async(kind)=>{window.__calls=[];const r=await fetchGeminiWithRetry(k=>'https://generativelanguage.googleapis.com/v1beta/models/m:generateContent?key='+k,{method:'POST',body:'{}'},0,{kind});return {calls:window.__calls.slice(),status:r.status};},kind);
+ok('ค่าเริ่มต้นสวิตช์แชทเปิด',await pg.evaluate(()=>aiChatGeminiOn()));
+r=await callK('chat'); ok('สวิตช์เปิด แชทใช้ Gemini ก่อน',r.calls.join()!=='OR'&&/KEY-/.test(r.calls[0]));
+await pg.evaluate(()=>{setAiChatGeminiOn(false);});
+r=await callK('chat'); ok('สวิตช์ปิด แชทไป OR ตรงๆ ไม่ยิง Gemini',r.calls.join()==='OR');
+r=await callK('small'); ok('สวิตช์ปิด งานเล็กยังใช้ Gemini',/KEY-/.test(r.calls[0])&&!r.calls.includes('OR'));
+await pg.evaluate(()=>{vaultetOR.setKey('');});
+r=await callK('chat'); ok('สวิตช์ปิดแต่ไม่มี OR แชทถอยไป Gemini',/KEY-/.test(r.calls[0]));
+await pg.evaluate(()=>{vaultetOR.setKey('or-test');renderApiKeyList();});
+ok('สวิตช์ในหน้าตั้งค่าแสดงสถานะปิด',await pg.evaluate(()=>document.getElementById('aiChatGeminiSwitch').checked===false));
+await pg.evaluate(()=>{const s=document.getElementById('aiChatGeminiSwitch');s.checked=true;s.dispatchEvent(new Event('change',{bubbles:true}));});
+ok('เปิดสวิตช์ผ่านหน้าตั้งค่า',await pg.evaluate(()=>aiChatGeminiOn()));
+ok('สถานะสวิตช์แชทไม่เข้าไฟล์สำรอง',await pg.evaluate(()=>!shouldBackupLocalStorageKey('vaultet_ai_chat_gemini_local')));
+await pg.evaluate(()=>{setApiKeyOn('KEY-AAAA1111',false);setApiKeyOn('KEY-CCCC3333',false);});
 // ลบคีย์ → เคลียร์สถานะปิดของคีย์นั้น
 await pg.evaluate(()=>{document.querySelectorAll('#apiKeyList .delete-api-key-btn')[0].click();});
 ok('ลบคีย์ที่ปิดอยู่ แล้วสถานะปิดของมันหาย',await pg.evaluate(()=>!loadApiKeyOff().includes('AAAA1111'.slice(-8))&&getApiKeys().length===2));

@@ -32,6 +32,10 @@ function setApiKeyOn(k, on){
   try{ localStorage.setItem(AI_KEYOFF_KEY, JSON.stringify([...s])); }catch(e){}
 }
 function countActiveApiKeys(){ return getApiKeys().filter(isApiKeyOn).length; }
+// สวิตช์ "ใช้ Gemini กับแชทด้วย" — ปิดแล้วแชท/สรุปรายสัปดาห์ไป OpenRouter ตรงๆ (งานเล็กยังใช้ Gemini ก่อน) เก็บเฉพาะเครื่องนี้ ค่าเริ่มต้น = เปิด
+const AI_CHAT_GEMINI_KEY = "vaultet_ai_chat_gemini_local";
+function aiChatGeminiOn(){ try{ return localStorage.getItem(AI_CHAT_GEMINI_KEY) !== "0"; }catch(e){ return true; } }
+function setAiChatGeminiOn(on){ try{ localStorage.setItem(AI_CHAT_GEMINI_KEY, on ? "1" : "0"); }catch(e){} }
 // สำคัญ: เก็บเฉพาะคีย์เหล่านี้ ห้ามนำไปรวมกับ payload ของ exportBtn เด็ดขาด (ดูคอมเมนต์ด้านบน)
 function saveApiKeys(arr){
   localStorage.setItem(AI_APIKEYS_KEY, JSON.stringify(arr));
@@ -73,6 +77,18 @@ function maskApiKey(key){
   return "•".repeat(Math.min(hidden, 24)) + tail;
 }
 function renderApiKeyList(){
+  const chatSw = document.getElementById("aiChatGeminiSwitch");
+  if(chatSw){
+    chatSw.checked = aiChatGeminiOn();
+    if(!chatSw.dataset.bound){
+      chatSw.dataset.bound = "1";
+      chatSw.addEventListener("change", () => {
+        setAiChatGeminiOn(chatSw.checked);
+        const orOn = !!(window.vaultetOR && window.vaultetOR.enabled());
+        showToast(chatSw.checked ? "แชทใช้ Gemini ก่อน" : orOn ? "แชทใช้ OpenRouter ตรงๆ" : "ปิดไว้ แต่ยังไม่ได้ตั้ง OpenRouter แชทจึงใช้ Gemini ไปก่อน");
+      });
+    }
+  }
   const el = document.getElementById("apiKeyList");
   const keys = getApiKeys();
   const input = document.getElementById("apiKeyInput");

@@ -89,7 +89,7 @@ const VAULTET_BACKUP_SCHEMA_VERSION = 3;
 const VAULTET_TWIN_SNAPSHOT_KEY = "vaultet_twin_snapshot_v1";
 const VAULTET_BACKUP_EXCLUDED_KEYS = new Set([
   AI_APIKEY_KEY, AI_APIKEYS_KEY, VAULTET_TWIN_SNAPSHOT_KEY,
-  "vaultet_ai_keystate_local", "vaultet_ai_keyoff_local",
+  "vaultet_ai_keystate_local", "vaultet_ai_keyoff_local", "vaultet_ai_chat_gemini_local",
   GDRIVE_CLIENT_ID_KEY, GDRIVE_FILE_ID_KEY, GDRIVE_LAST_SYNC_KEY, GDRIVE_AUTOSYNC_KEY,
   BACKUP_KEY
 ]);

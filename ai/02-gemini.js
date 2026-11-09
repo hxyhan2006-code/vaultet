@@ -85,7 +85,15 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   const OR = window.vaultetOR, kind = meta.kind || "small";
   const stream = /streamGenerateContent/.test(buildUrl("x"));
   const orOn = !!(OR && OR.enabled());
-  if(orOn && Date.now() < geminiCooldownUntil){
+  // แชท/สรุปรายสัปดาห์ + ปิดสวิตช์ "ใช้ Gemini กับแชทด้วย" → ไป OpenRouter ตรงๆ (ใช้ไม่ได้ค่อยถอยกลับไป Gemini ตามปกติ)
+  let orTried = false;
+  if(orOn && kind === "chat" && !aiChatGeminiOn()){
+    orTried = true;
+    aiRunEvent("แชทใช้ OpenRouter ตรงๆ");
+    const r = await OR.call(options.body, { kind, stream, signal: options.signal });
+    if(r){ noteAiOR(); return r; }
+  }
+  if(orOn && !orTried && Date.now() < geminiCooldownUntil){
     aiRunEvent("ใช้ OpenRouter (Gemini ฟรีเพิ่งเต็ม พักไว้ชั่วคราว)");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r){ noteAiOR(); return r; }
@@ -93,7 +101,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
   const retries = orOn ? 0 : maxRetriesPerKey;   // มีตัวสำรองแล้ว ไม่ต้องรอ retry นาน
   const keys = getApiKeys();
   // ปิดทุกคีย์ไว้ → ข้าม Gemini ไป OpenRouter เลย
-  if(orOn && !keys.some(isApiKeyOn)){
+  if(orOn && !orTried && !keys.some(isApiKeyOn)){
     aiRunEvent("ปิดคีย์ Gemini ทุกอัน ใช้ OpenRouter");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r){ noteAiOR(); return r; }
@@ -121,7 +129,7 @@ async function fetchGeminiWithRetry(buildUrl, options, maxRetriesPerKey = 2, met
     const nx = keys.findIndex((k, j) => j > i && isApiKeyOn(k));
     if(nx >= 0) aiRunEvent(`คีย์ Gemini ที่ ${i + 1} โควต้าเต็ม ลองคีย์ที่ ${nx + 1}`);
   }
-  if(orOn){
+  if(orOn && !orTried){
     aiRunEvent("คีย์ Gemini ฟรีเต็มทั้งหมด สลับไปใช้ OpenRouter");
     const r = await OR.call(options.body, { kind, stream, signal: options.signal });
     if(r){ geminiCooldownUntil = Date.now() + 90000; noteAiOR(); return r; }
