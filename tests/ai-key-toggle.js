@@ -72,6 +72,15 @@ await pg.evaluate(()=>{const s=document.getElementById('aiChatGeminiSwitch');s.c
 ok('เปิดสวิตช์ผ่านหน้าตั้งค่า',await pg.evaluate(()=>aiChatGeminiOn()));
 ok('สถานะสวิตช์แชทไม่เข้าไฟล์สำรอง',await pg.evaluate(()=>!shouldBackupLocalStorageKey('vaultet_ai_chat_gemini_local')));
 await pg.evaluate(()=>{setApiKeyOn('KEY-AAAA1111',false);setApiKeyOn('KEY-CCCC3333',false);});
+// หน้าตาสวิตช์แชทเป็นสวิตช์ 50x30 เหมือนสวิตช์คีย์ (ไม่ใช่จุดเล็ก)
+ok('สวิตช์แชทขนาด 50x30',await pg.evaluate(()=>{const c=getComputedStyle(document.getElementById('aiChatGeminiSwitch'));return c.width==='50px'&&c.height==='30px'}));
+// ปัดเศษสตางค์ในคำตอบ AI เมื่อปิด "แสดงเศษสตางค์"
+ok('ปัดเศษ: -2,490.44 บาท → -2,490',await pg.evaluate(()=>{localStorage.setItem(SHOW_DECIMALS_KEY,'0');return aiRoundMoneyText('ติดลบ **-2,490.44 บาท** นะ')==='ติดลบ **-2,490 บาท** นะ'}));
+ok('ปัดเศษ: ฿1,250.60 → ฿1,251 และ **1,000.50** บาท',await pg.evaluate(()=>aiRoundMoneyText('฿1,250.60 และ **1,000.50** บาท')==='฿1,251 และ **1,001** บาท'));
+ok('ไม่แตะเลขที่ไม่ใช่เงิน (2.5 เดือน, 15.5%)',await pg.evaluate(()=>aiRoundMoneyText('สำรอง 2.5 เดือน ออม 15.5%')==='สำรอง 2.5 เดือน ออม 15.5%'));
+ok('เปิดแสดงเศษสตางค์ → ไม่ปัด',await pg.evaluate(()=>{localStorage.setItem(SHOW_DECIMALS_KEY,'1');const r=aiRoundMoneyText('-2,490.44 บาท')==='-2,490.44 บาท';localStorage.setItem(SHOW_DECIMALS_KEY,'0');return r}));
+ok('แชทแสดงผลปัดแล้ว',await pg.evaluate(()=>simpleMarkdownToHtml('**-2,490.44 บาท**').includes('-2,490 บาท')&&!simpleMarkdownToHtml('**-2,490.44 บาท**').includes('.44')));
+ok('prompt แชทสั่งให้ปัดบาทเต็ม',await pg.evaluate(()=>buildFinancialAnalystSystemPrompt(buildFinancialSnapshot(),{}).includes('ปัดเป็นบาทเต็มจำนวน')));
 // ลบคีย์ → เคลียร์สถานะปิดของคีย์นั้น
 await pg.evaluate(()=>{document.querySelectorAll('#apiKeyList .delete-api-key-btn')[0].click();});
 ok('ลบคีย์ที่ปิดอยู่ แล้วสถานะปิดของมันหาย',await pg.evaluate(()=>!loadApiKeyOff().includes('AAAA1111'.slice(-8))&&getApiKeys().length===2));

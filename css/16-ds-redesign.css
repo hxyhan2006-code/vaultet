@@ -568,3 +568,8 @@ html body #settingsOverlay input[type="checkbox"].api-key-switch:checked::after 
 
 /* ป้ายเล็กในรายการ: เงินคืนจากการยืมไม่นับเป็นรายรับ */
 html body .v-tx-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 500; color: var(--v-muted) !important; background: rgba(255,255,255,.06); vertical-align: 1px; white-space: nowrap; }
+/* ds90: สวิตช์ "ใช้ Gemini กับแชทด้วย" หน้าตาเดียวกับสวิตช์คีย์ (ทับกฎช่องติ๊กใน #settingsOverlay) */
+html body #settingsOverlay input[type="checkbox"]#aiChatGeminiSwitch { position: relative; display: block !important; width: 50px !important; height: 30px !important; border: 0 !important; border-radius: 15px !important; background: #2a2e34 !important; flex: none; }
+html body #settingsOverlay input[type="checkbox"]#aiChatGeminiSwitch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px !important; height: 24px !important; border: 0 !important; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4); transform: none; transition: transform .22s cubic-bezier(.3,.7,.2,1); }
+html body #settingsOverlay input[type="checkbox"]#aiChatGeminiSwitch:checked { background: var(--v-accent) !important; }
+html body #settingsOverlay input[type="checkbox"]#aiChatGeminiSwitch:checked::after { transform: translateX(20px); border: 0 !important; }

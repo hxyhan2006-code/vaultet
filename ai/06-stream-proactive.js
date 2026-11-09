@@ -152,8 +152,17 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
 }
 
 // แปลง Markdown พื้นฐาน (**ตัวหนา** และขึ้นบรรทัดใหม่) เป็น HTML อย่างปลอดภัย — escapeHtml() ก่อนเสมอ กัน XSS จากคำตอบ AI
+// ปิด "แสดงเศษสตางค์" อยู่ → ตัวเลขเงินในคำตอบ AI (มี ฿ นำหน้า หรือ "บาท" ตามหลัง) ปัดเป็นบาทเต็ม ให้ตรงกับที่เหลือในแอป (ตัวเลขอื่น เช่น 2.5 เดือน 15.5% ไม่แตะ)
+function aiRoundMoneyText(text){
+  const s = String(text == null ? "" : text);
+  if(getShowDecimals()) return s;
+  const rnd = (sign, num) => { const n = Math.round(parseFloat(String(num).replace(/,/g, ""))); return (sign && n !== 0 ? "-" : "") + fmt(Math.abs(n)); };
+  return s
+    .replace(/(฿\s?)([-−]?)(\d[\d,]*)\.(\d{1,2})(?!\d)/g, (m, pre, sg, num, dec) => pre + rnd(sg, num + "." + dec))
+    .replace(/([-−]?)(\d[\d,]*)\.(\d{1,2})(?!\d)(?=(?:\*\*)?\s*บาท)/g, (m, sg, num, dec) => rnd(sg, num + "." + dec));
+}
 function simpleMarkdownToHtml(text){
-  const escaped = escapeHtml(text);
+  const escaped = escapeHtml(aiRoundMoneyText(text));
   return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--accent1)">$1</strong>')
     .replace(/\n/g, "<br>");
@@ -220,6 +229,7 @@ function buildProactiveSystemPrompt(evalResult, snapshot, profile){
     "ถ้าต้องแนะนำ ให้พูดสิ่งที่ควรทำต่อแบบ practical ไม่สั่งสอน ไม่ตื่นตูม; ถ้าไม่มีอะไรสำคัญ ให้บอกสั้นๆ ว่าทุกอย่างยังโอเค",
     "ใช้ **ตัวหนา** ล้อมรอบตัวเลขเงินหรือหมวดหมู่/รายการที่สำคัญที่สุดที่ต้องการเน้น",
     "อ้างอิงเฉพาะตัวเลขจาก Findings/Snapshot ด้านล่างเท่านั้น ห้ามคำนวณหรือสร้างตัวเลขขึ้นมาเอง",
+    ...(getShowDecimals() ? [] : ["ตัวเลขเงินให้ปัดเป็นบาทเต็มจำนวน ไม่ใช้ทศนิยม/สตางค์ (ผู้ใช้ปิดการแสดงเศษสตางค์ไว้)"]),
     `เรื่องที่สำคัญที่สุดตอนนี้คือ: ${proactiveRuleLabel(evalResult.topRuleId)} (severity: ${evalResult.severity})`,
     evalResult.severity === "positive"
       ? "ไม่มีความเสี่ยงเร่งด่วน — ให้ชมเชยสั้นๆ หรือสรุปความคืบหน้าไปเป้าหมาย/สถานะการเงินโดยรวมในเชิงบวก"
