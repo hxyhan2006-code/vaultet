@@ -76,6 +76,6 @@ const url='http://localhost:8137/index.html';
 // 8) เลขเวอร์ชันบอกเวลาเปิดแอปจริง
 {const {ctx,pg}=await mk();await pg.goto(url);await pg.waitForTimeout(1200);
  const t=await pg.evaluate(()=>document.querySelector('.v-version').textContent);
- ok('เลขเวอร์ชัน ds91 + เวลาเปิดแอป: '+t,/ds91 · เปิดแอป \d+\.\d วินาที/.test(t));await ctx.close();}
+ ok('เลขเวอร์ชัน ds92 + เวลาเปิดแอป: '+t,/ds92 · เปิดแอป \d+\.\d วินาที/.test(t));await ctx.close();}
 console.log('no js errors');
 await b.close();srv.close();})().catch(e=>{console.log('FAIL exception '+e.message);process.exit(1)});

@@ -52,12 +52,13 @@
   }
 })();
 
+// ย้ายปุ่มหัวแชท (ตั้งค่า AI / ประวัติ / ล้าง) ขึ้นไปอยู่แถบบน — ชุดเดียว ไม่มีตัวจับเวลา
 (function(){
+  const IDS=['aiAdvisorSettingsBtn','aiChatHistoryBtn','clearAiChatBtn'];
   function moveAiHeaderActions(){
     const topbar=document.querySelector('.ux-topbar');
-    const aiPanel=document.querySelector('#aiAnalystOverlay .sheet-modal');
-    if(!topbar || !aiPanel) return false;
-
+    const panel=document.querySelector('.ux-chat-panel, #ux-chat .sheet-modal, #aiAnalystOverlay .sheet-modal');
+    if(!topbar || !panel) return false;
     let host=document.getElementById('uxChatTopActions');
     if(!host){
       host=document.createElement('div');
@@ -65,55 +66,47 @@
       host.className='ux-chat-top-actions';
       host.setAttribute('aria-label','เครื่องมือแชท AI');
       topbar.appendChild(host);
+    }else if(host.parentElement!==topbar){
+      topbar.appendChild(host);
     }
-
-    /* Move the actual existing buttons (not clones), so their original listeners/IDs remain valid. */
-    ['aiAdvisorSettingsBtn','aiChatHistoryBtn','clearAiChatBtn'].forEach(id=>{
-      const btn=document.getElementById(id);
-      if(btn && !host.contains(btn)) host.appendChild(btn);
-    });
-
-    /* Remove the old title/actions wrapper after its real buttons have been relocated. */
-    const oldHeader=aiPanel.querySelector('.modal-header');
-    if(oldHeader && !oldHeader.contains(host)) oldHeader.remove();
-
-    return ['aiAdvisorSettingsBtn','aiChatHistoryBtn','clearAiChatBtn'].every(id=>!!document.getElementById(id)?.closest('#uxChatTopActions'));
+    /* ย้ายปุ่มจริง (ไม่ใช่สำเนา) ตัวจัดการและ id เดิมจึงยังใช้ได้ */
+    IDS.forEach(id=>{ const btn=document.getElementById(id); if(btn && btn.parentElement!==host) host.appendChild(btn); });
+    const oldHeader=panel.querySelector('.modal-header');
+    if(oldHeader) oldHeader.remove();
+    return IDS.every(id=>!!document.getElementById(id)?.closest('#uxChatTopActions'));
   }
-
-  function refreshChatPage(){
-    moveAiHeaderActions();
-    if(typeof renderAiChatBubbles==='function') renderAiChatBubbles();
-    if(typeof syncAiChatSendBtnVisibility==='function') syncAiChatSendBtnVisibility();
-    if(typeof aiRequestState!=='undefined' && aiRequestState?.status==='pending' && typeof setAiChatSendBtnState==='function') setAiChatSendBtnState(true);
+  function ensureFirstTypedMessageArrow(){
+    const btn=document.getElementById('aiChatSendBtn'), input=document.getElementById('aiChatInput');
+    if(!btn || !input) return;
+    if(input.value.trim().length>0 && !(typeof aiChatBusy!=='undefined' && aiChatBusy)){
+      if(typeof setAiChatSendBtnState==='function') setAiChatSendBtnState(false);
+      btn.classList.remove('is-composer-empty');
+    }
   }
-
   function patchChatEntry(){
     if(typeof window.bancheeOpenChatPage==='function' && !window.__vaultetAiChatEntryPatched){
       const original=window.bancheeOpenChatPage;
-      window.bancheeOpenChatPage=function(){
-        const result=original.apply(this,arguments);
-        moveAiHeaderActions();
-        return result;
-      };
+      window.bancheeOpenChatPage=function(){ const r=original.apply(this,arguments); moveAiHeaderActions(); return r; };
       window.__vaultetAiChatEntryPatched=true;
     }
   }
-
   function init(){
     moveAiHeaderActions();
     patchChatEntry();
     if(location.hash==='#chat'){
-      refreshChatPage();
+      if(typeof renderAiChatBubbles==='function') renderAiChatBubbles();
+      if(typeof syncAiChatSendBtnVisibility==='function') syncAiChatSendBtnVisibility();
+      if(typeof aiRequestState!=='undefined' && aiRequestState?.status==='pending' && typeof setAiChatSendBtnState==='function') setAiChatSendBtnState(true);
     }
-    const observer=new MutationObserver(()=>{
-      moveAiHeaderActions();
-      patchChatEntry();
-    });
+    const input=document.getElementById('aiChatInput');
+    if(input) input.addEventListener('input',()=>{ moveAiHeaderActions(); ensureFirstTypedMessageArrow(); },{capture:true});
+    window.addEventListener('hashchange',()=>{ moveAiHeaderActions(); ensureFirstTypedMessageArrow(); },{passive:true});
+    // แถบบนมีอะไรถูกเพิ่ม/ถอด → เช็กอีกรอบ (ไม่ดูข้างในลูก จึงไม่วนซ้ำตอนย้ายปุ่ม)
     const top=document.querySelector('.ux-topbar');
-    if(top) observer.observe(top,{childList:true,subtree:true});
-    document.addEventListener('click',()=>{moveAiHeaderActions();patchChatEntry();},{capture:true,passive:true});
+    if(top) new MutationObserver(()=>{ moveAiHeaderActions(); patchChatEntry(); }).observe(top,{childList:true});
+    // เข้าหน้าแชท (body เปลี่ยน class) → จัดปุ่มให้เรียบร้อย
+    new MutationObserver(()=>{ if(document.body.classList.contains('ux-chat-active')) moveAiHeaderActions(); }).observe(document.body,{attributes:true,attributeFilter:['class']});
   }
-
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 
@@ -135,68 +128,6 @@
   const input=document.getElementById('aiChatInput');
   if(input) input.addEventListener('input',ensureSendArrow,{capture:true});
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ensureSendArrow); else ensureSendArrow();
-})();
-
-(function(){
-  function moveAiHeaderActionsFinal(){
-    const topbar=document.querySelector('body.ux-chat-active .ux-topbar, .ux-topbar');
-    const panel=document.querySelector('.ux-chat-panel, #ux-chat .sheet-modal, #aiAnalystOverlay .sheet-modal');
-    if(!topbar || !panel) return false;
-
-    let host=document.getElementById('uxChatTopActions');
-    if(!host){
-      host=document.createElement('div');
-      host.id='uxChatTopActions';
-      host.className='ux-chat-top-actions';
-      host.setAttribute('aria-label','เครื่องมือแชท AI');
-      topbar.appendChild(host);
-    }else if(host.parentElement!==topbar){
-      topbar.appendChild(host);
-    }
-
-    ['aiAdvisorSettingsBtn','aiChatHistoryBtn','clearAiChatBtn'].forEach(function(id){
-      const btn=document.getElementById(id);
-      if(btn && btn.parentElement!==host) host.appendChild(btn);
-    });
-
-    const oldHeader=panel.querySelector('.modal-header');
-    if(oldHeader) oldHeader.remove();
-    return true;
-  }
-
-  function ensureFirstTypedMessageArrow(){
-    const btn=document.getElementById('aiChatSendBtn');
-    const input=document.getElementById('aiChatInput');
-    if(!btn || !input) return;
-    const hasText=input.value.trim().length>0;
-    if(hasText && !(typeof aiChatBusy!=='undefined' && aiChatBusy)){
-      if(typeof setAiChatSendBtnState==='function') setAiChatSendBtnState(false);
-      btn.classList.remove('is-composer-empty');
-    }
-  }
-
-  function syncFinal(){
-    moveAiHeaderActionsFinal();
-    ensureFirstTypedMessageArrow();
-  }
-
-  function init(){
-    syncFinal();
-    const input=document.getElementById('aiChatInput');
-    if(input) input.addEventListener('input',function(){
-      moveAiHeaderActionsFinal();
-      ensureFirstTypedMessageArrow();
-    },{capture:true});
-    window.addEventListener('hashchange',syncFinal,{passive:true});
-    const observer=new MutationObserver(function(){
-      if(document.body.classList.contains('ux-chat-active')) moveAiHeaderActionsFinal();
-    });
-    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-    setInterval(function(){
-      if(document.body.classList.contains('ux-chat-active')) syncFinal();
-    },300);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 
 (function(){
