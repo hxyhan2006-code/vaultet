@@ -190,7 +190,7 @@
   api.statusText = function(){
     if(!api.hasKey()) return "ยังไม่ได้ตั้งค่า";
     if(!api.model()) return "ใส่คีย์แล้ว · ยังไม่ได้เลือกโมเดล";
-    return "พร้อมสำรอง ✓ · " + api.model();
+    return "พร้อมสำรอง · " + api.model();
   };
   const usd = n => "$" + (Number(n) || 0).toFixed(2);
   function baht(n){ const fx = api.fxRate(); return fx ? " ≈ " + Math.round(n * fx).toLocaleString("en-US") + " บาท" : ""; }
@@ -218,7 +218,7 @@
       if(!v){ if(typeof showToast === "function") showToast("วางคีย์ก่อน"); return; }
       api.setKey(v); $("orKeyInput").value = "";
       const u = await api.refreshUsage(true);
-      if(typeof showToast === "function") showToast(u && !u.error ? "บันทึกคีย์แล้ว ✓" : "บันทึกแล้ว แต่ตรวจคีย์ไม่ผ่าน — เช็กว่าวางถูกไหม");
+      if(typeof showToast === "function") showToast(u && !u.error ? "บันทึกคีย์แล้ว" : "บันทึกแล้ว แต่ตรวจคีย์ไม่ผ่าน — เช็กว่าวางถูกไหม");
       renderOR();
     });
     $("orKeyDel").addEventListener("click", async () => {

@@ -439,6 +439,11 @@ async function deleteEntryById(id){
     if(!result.ok && result.error !== "cancelled") showToast("ลบเงินคืนไม่สำเร็จ");
     return;
   }
+  // รายการ "ขายหุ้น": ลบรายการแล้วต้องลบบันทึกการขายในพอร์ตด้วย ไม่งั้นพอร์ตยังนับว่าขายไปแล้ว
+  try{
+    const sells = JSON.parse(localStorage.getItem("vaultet_portfolio_sells_v1") || "[]");
+    if(Array.isArray(sells) && sells.some(x => x.entryId === id)) localStorage.setItem("vaultet_portfolio_sells_v1", JSON.stringify(sells.filter(x => x.entryId !== id)));
+  }catch(e){}
   syncStudentLoanEntry(target, {...target, type:"__deleted__", category:""});
   entries = entries.filter(e => e.id !== id);
   saveEntries();

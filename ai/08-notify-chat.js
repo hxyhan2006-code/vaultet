@@ -80,7 +80,7 @@ function addVaultetNotification(f,states){
   if(prev && prev.state===identity.state && !prev.resolvedAt)return false;
   if(prev?.resolvedAt && prev.state===identity.state && !escalated) { /* resolved → re-entered: allow one new notification */ }
   const h=new Date().getHours();
-  if(s.quiet&&h>=23&&h<7){states[key]={state:identity.state,severity:f.severity,lastSeen:todayISO(),resolvedAt:null};return false;}
+  if(s.quiet&&(h>=23||h<7)){states[key]={state:identity.state,severity:f.severity,lastSeen:todayISO(),resolvedAt:null};return false;}
   const a=loadVaultetNotifications(),m=notificationFromFinding(f);
   a.unshift({id:makeId(),day:todayISO(),createdAt:new Date().toISOString(),fingerprint:key+"|"+identity.state,type:f.id,severity:f.severity,title:m.title,body:m.body,icon:m.icon,read:false,priority:f.priorityScore||f.severity});
   saveVaultetNotifications(a);
@@ -215,6 +215,16 @@ async function refreshProactiveCard(force){
   const fingerprint = getProactiveDataFingerprint(snapshot) + '|' + JSON.stringify(evalResult.intelligence?.topPriorities||[]);
 
   const cache = loadProactiveCache();
+  // วันละครั้ง: ถ้าวันนี้มีสรุปแล้ว ใช้ของเดิมเสมอ (ไม่เรียก AI เองทุกครั้งที่บันทึกรายการ) ยกเว้นกดรีเฟรชเอง
+  if(!force && cache && cache.generatedAt === todayISO() && cache.text){
+    renderProactiveCard(evalResult.severity, cache.text);
+    return;
+  }
+  // ครั้งก่อนเพิ่งพลาด → ไม่ลองซ้ำเองภายใน 10 นาที
+  if(!force && Date.now() - (window.__proactiveTryAt || 0) < 600000){
+    renderProactiveCard(evalResult.severity, cache ? cache.text : null);
+    return;
+  }
   // Milestone 4 fix: ต้องเช็ควันที่ด้วยเสมอ — ข้ามวันใหม่ต้องประเมิน/ดึง Insight ใหม่ทุกครั้ง แม้ fingerprint จะเหมือนเดิม
   const cacheValid = !!cache && cache.generatedAt === todayISO() && cache.fingerprint === fingerprint
     && cache.topRuleId === evalResult.topRuleId && cache.severity === evalResult.severity;
@@ -230,6 +240,7 @@ async function refreshProactiveCard(force){
   }
 
   proactiveCardBusy = true;
+  window.__proactiveTryAt = Date.now();
   renderProactiveCard(evalResult.severity, null, "loading");
 
   const result = await generateProactiveInsight(evalResult, snapshot, profile);

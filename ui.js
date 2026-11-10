@@ -1,7 +1,7 @@
 // Vaultet — ui.js: พฤติกรรมเล็กๆ ของ UI ใหม่ (ซ่อนตัวเลข, ปุ่มเพิ่มเติม, พับ/กางสินทรัพย์, เลขเวอร์ชัน)
 // ไม่แตะข้อมูลหรือโลจิกการเงิน — อ่าน/เขียนเฉพาะ localStorage ที่ขึ้นต้นด้วย vaultet_ui_
 (function(){
-  const UI_VERSION = "ds90";
+  const UI_VERSION = "ds91";
   const K_HIDE = "vaultet_ui_hide_numbers_v1", K_ASSETS = "vaultet_ui_assets_open_v1";
   const get = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
   const set = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
@@ -535,5 +535,16 @@
     const v = document.createElement("div");
     v.className = "v-version"; v.textContent = "Vaultet UI " + UI_VERSION;
     moreView.append(v);
+    // เวลาเปิดแอปจริงของเครื่องนี้ (วัดจริงจากเบราว์เซอร์ ไม่ใช่ตัวเลขสมมติ)
+    const showLoad = () => { try{ const n = performance.getEntriesByType("navigation")[0]; if(n && n.loadEventEnd > 0) v.textContent = "Vaultet UI " + UI_VERSION + " · เปิดแอป " + (n.loadEventEnd / 1000).toFixed(1) + " วินาที"; }catch(e){} };
+    if(document.readyState === "complete") setTimeout(showLoad, 0); else window.addEventListener("load", () => setTimeout(showLoad, 0));
+    // เช็กรุ่นใหม่เงียบๆ หลังเปิดแอป (ตัวแอปใช้ไฟล์ในเครื่อง จึงบอกให้โหลดรุ่นใหม่เมื่อมี)
+    setTimeout(async () => {
+      try{
+        const t = await (await fetch("index.html?chk=" + Date.now(), { cache: "no-store" })).text();
+        const m = t.match(/\?v=(ds\d+)/);
+        if(m && m[1] !== UI_VERSION && typeof vaultetSnack === "function") vaultetSnack("มีรุ่นใหม่ " + m[1], { action: "โหลดรุ่นใหม่", duration: 12000, onAction: () => location.reload() });
+      }catch(e){}
+    }, 6000);
   }
 })();

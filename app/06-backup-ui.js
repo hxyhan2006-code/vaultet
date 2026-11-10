@@ -155,7 +155,18 @@ function applyImportedBackup(data){
   if(storedState && typeof storedState === 'object'){
     try{
       Object.entries(storedState).forEach(([key,value]) => {
-        if(shouldBackupLocalStorageKey(key) && typeof value === 'string') localStorage.setItem(key,value);
+        if(!shouldBackupLocalStorageKey(key) || typeof value !== 'string') return;
+        // รวม ไม่ทับ: ของที่ยังไม่มีในเครื่อง = ใส่เพิ่ม, รายการที่มี id (เป้าหมาย เทมเพลต ฯลฯ) = รวมตาม id, อย่างอื่นคงของในเครื่องไว้
+        const cur = localStorage.getItem(key);
+        if(cur === null){ localStorage.setItem(key,value); return; }
+        try{
+          const a = JSON.parse(cur), b = JSON.parse(value);
+          if(Array.isArray(a) && Array.isArray(b) && b.every(x => x && typeof x === 'object' && x.id != null)){
+            const ids = new Set(a.map(x => x && x.id));
+            const add = b.filter(x => !ids.has(x.id));
+            if(add.length) localStorage.setItem(key, JSON.stringify([...a, ...add]));
+          }
+        }catch(e){}
       });
     }catch(e){}
   }
@@ -220,7 +231,7 @@ function promptRestore(data,label){
   const canReplace=!!stored&&typeof stored==="object"&&ver.status!=="mismatch";
   const c=a=>Array.isArray(a)?a.length:0;
   const rows=[["รายการเงิน",c(source.entries),entries.length],["บัญชี",c(source.accounts),accounts.length],["งบประมาณ",c(source.budgets),budgets.length],["หนี้",c(source.debts),debts.length],["เงินให้ยืม",c(source.loans),loans.length],["รายจ่ายประจำ",c(source.recurringExpenses),recurringExpenses.length],["เงินที่กันไว้",c(source.reservedItems),reservedItems.length]];
-  const vtxt=ver.status==="ok"?`<span style="color:#52b788">ผ่านการตรวจความถูกต้อง (รหัส ${escapeHtml(ver.hash.slice(0,8))})</span>`:ver.status==="mismatch"?`<span style="color:#ef5350">✗ ไฟล์ไม่ตรงกับรหัสตรวจ — อาจเสียหายหรือถูกแก้ไข จึงปิดโหมดแทนที่</span>`:`<span style="color:#e9c46a">ไฟล์รุ่นเก่า ไม่มีรหัสตรวจ (ตรวจความถูกต้องไม่ได้)</span>`;
+  const vtxt=ver.status==="ok"?`<span style="color:#52b788">ผ่านการตรวจความถูกต้อง (รหัส ${escapeHtml(ver.hash.slice(0,8))})</span>`:ver.status==="mismatch"?`<span style="color:#ef5350">ไฟล์ไม่ตรงกับรหัสตรวจ — อาจเสียหายหรือถูกแก้ไข จึงปิดโหมดแทนที่</span>`:`<span style="color:#e9c46a">ไฟล์รุ่นเก่า ไม่มีรหัสตรวจ (ตรวจความถูกต้องไม่ได้)</span>`;
   const when=data.exportedAt?new Date(data.exportedAt).toLocaleString("th-TH"):"ไม่ทราบ";
   const ov=document.createElement("div");
   ov.style.cssText="position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;";

@@ -205,12 +205,13 @@ const H=(s,salt)=>{let a=0xdeadbeef,b=0x41c6ce57;const t=salt+"|"+s;for(let i=0;
 const get=()=>{try{return JSON.parse(localStorage.getItem(K))}catch(e){return null}};
 const put=v=>{try{localStorage.setItem(K,JSON.stringify(v))}catch(e){}};
 const ov=document.createElement("div");
-ov.style.cssText="position:fixed;inset:0;z-index:99999;background:#0a0a0c;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;color:#fff";
+ov.style.cssText="visibility:visible;position:fixed;inset:0;z-index:99999;background:#0a0a0c;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;color:#fff";
 ov.innerHTML='<div style="color:var(--v-muted)"><svg class="v-ic" style="width:42px;height:42px" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></div><div style="font-size:18px;font-weight:700">Vaultet</div><input id="lockPin" type="password" inputmode="numeric" maxlength="6" placeholder="รหัส 6 หลัก" autocomplete="off" style="width:200px;text-align:center;font-size:24px;letter-spacing:8px;padding:10px;border-radius:12px;border:1px solid #333;background:#151518;color:#fff"><div id="lockMsg" style="color:#ef5350;min-height:18px;font-size:13px"></div><button id="lockForgot" style="background:none;border:0;color:#9aa;font-size:14px;text-decoration:underline">ลืมรหัส?</button>';
 document.body.appendChild(ov);
 const pin=ov.querySelector("#lockPin"),msg=ov.querySelector("#lockMsg");
 const show=()=>{const c=get();if(!c||!c.on)return;ov.style.display="flex";pin.value="";msg.textContent="";setTimeout(()=>pin.focus(),50);};
-const hide=()=>{ov.style.display="none";};
+const unboot=()=>{const b=document.getElementById("vBootLock");if(b)b.remove();};
+const hide=()=>{ov.style.display="none";unboot();};
 pin.addEventListener("input",()=>{const c=get();if(pin.value.length<6)return;if(c&&H(pin.value,c.salt)===c.pin)hide();else{msg.textContent="รหัสไม่ถูกต้อง";pin.value="";}});
 const pinField=(key,label)=>({key,label,type:"password",inputmode:"numeric",maxlength:6,required:true,pattern:"^\\d{6}$",patternMessage:"ต้องเป็นตัวเลข 6 หลักเท่านั้น"});
 const newPin=async()=>{
@@ -258,4 +259,5 @@ const addLockBtn=()=>{const more=document.getElementById("ux-more");if(!more||do
 if(!addLockBtn()){let n=0;const iv=setInterval(()=>{if(addLockBtn()||++n>40)clearInterval(iv);},250);}
 let t0=0;document.addEventListener("visibilitychange",()=>{if(document.hidden)t0=Date.now();else if(t0&&Date.now()-t0>60000)show();});
 show();
+if(!(get()&&get().on))unboot();
 })();
