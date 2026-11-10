@@ -1,74 +1,4 @@
 /* Vaultet — css/04-old-foundation-4.css : ชั้นพื้นฐาน ตอน 4 (แยกจาก style.css เดิม — ลำดับโหลดสำคัญ ห้ามสลับ) */
-.budget-total-track {
-  height: 7px;
-  margin-top: 10px;
-}
-
-.budget-mini-track {
-  height: 5px;
-  margin-top: 6px;
-}
-
-.budget-total-fill,
-.budget-mini-fill {
-  height: 100%;
-  border-radius: 999px;
-}
-
-.budget-row {
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
-}
-
-.budget-row-top,
-.budget-row-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.budget-row-top {
-  font-size: 12.5px;
-}
-
-.budget-row-meta {
-  margin-top: 3px;
-  font-size: 11px;
-  color: var(--faint);
-}
-
-.budget-status {
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: 7px;
-  padding: 2px 6px;
-  white-space: nowrap;
-}
-
-.budget-status.safe {
-  color: var(--income);
-  background: var(--income-soft);
-}
-
-.budget-status.watch {
-  color: #b77900;
-  background: rgba(255,193,7,.12);
-}
-
-.budget-status.over {
-  color: var(--expense);
-  background: var(--expense-soft);
-}
-
-.budget-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.budget-actions button {
-  flex: 1;
-}
 
 .budget-manage-list {
   margin-top: 10px;
@@ -79,84 +9,6 @@
   color: var(--faint);
   font-size: 12.5px;
   text-align: center;
-}
-
-.budget-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-@media(max-width:430px) {
-  .budget-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.management-grid .manage-accounts-btn {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-@media (max-width:380px) {
-  .management-grid {
-    gap: 6px;
-  }
-  .management-grid .manage-accounts-btn {
-    font-size: 10.5px;
-    padding: 7px 4px;
-  }
-}
-
-.emergency-dashboard-card {
-  margin: 14px 20px 0;
-  padding: 14px 16px;
-}
-
-.emergency-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.emergency-title {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.emergency-sub {
-  margin-top: 4px;
-  font-size: 11.5px;
-  color: var(--faint);
-  line-height: 1.5;
-}
-
-.emergency-number {
-  font-size: 17px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.emergency-track {
-  height: 8px;
-  background: var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 11px;
-}
-
-.emergency-fill {
-  height: 100%;
-  border-radius: 999px;
-}
-
-.emergency-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
 }
 
 .emergency-stat {
@@ -177,25 +29,6 @@
   margin-top: 3px;
 }
 
-.emergency-status {
-  display: inline-flex;
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: 7px;
-  padding: 3px 7px;
-  margin-top: 8px;
-}
-
-.emergency-status.critical {
-  color: var(--expense);
-  background: var(--expense-soft);
-}
-
-.emergency-status.watch {
-  color: #b77900;
-  background: rgba(255,193,7,.12);
-}
-
 .essential-category-grid {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
@@ -203,32 +36,11 @@
   margin-top: 8px;
 }
 
-.essential-cat {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px 9px;
-  font-size: 11.5px;
-  color: var(--ink);
-}
-
-.essential-cat input {
-  accent-color: var(--income);
-}
-
 @media(max-width:430px) {
-  .emergency-stats {
-    grid-template-columns: 1fr;
-  }
+
   .essential-category-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.notification-dashboard-card {
-  margin: 14px 20px 0;
 }
 
 .notification-top {
@@ -236,11 +48,6 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
-}
-
-.notification-title {
-  font-size: 14px;
-  font-weight: 800;
 }
 
 .notification-sub {
@@ -270,36 +77,9 @@
   margin-top: 10px;
 }
 
-.notification-item {
-  display: flex;
-  gap: 9px;
-  align-items: flex-start;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: rgba(255,255,255,.025);
-  cursor: pointer;
-}
-
-.notification-item.unread {
-  border-color: rgba(124,92,255,.35);
-  background: rgba(124,92,255,.07);
-}
-
 .notification-icon {
   font-size: 17px;
   line-height: 1.25;
-}
-
-.notification-content {
-  min-width: 0;
-  flex: 1;
-}
-
-.notification-item-title {
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 1.35;
 }
 
 .notification-item-body {
@@ -316,50 +96,6 @@
   white-space: nowrap;
 }
 
-.notification-settings-grid {
-  display: grid;
-  grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 8px;
-}
-
-.notification-setting {
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: rgba(255,255,255,.02);
-}
-
-.notification-setting label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.notification-setting small {
-  display: block;
-  color: var(--faint);
-  font-size: 9.5px;
-  line-height: 1.4;
-  margin-top: 4px;
-}
-
-.notification-severity-row {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.notification-severity-row label {
-  font-size: 10px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-}
-
 .notification-empty {
   padding: 12px;
   text-align: center;
@@ -367,38 +103,8 @@
   font-size: 11px;
 }
 
-.notification-permission {
-  margin-top: 9px;
-  padding: 9px 10px;
-  border-radius: 10px;
-  background: rgba(79,168,255,.08);
-  border: 1px solid rgba(79,168,255,.2);
-  font-size: 10.5px;
-  line-height: 1.45;
-  color: var(--ink);
-}
-
-@media(max-width:380px) {
-  .notification-settings-grid {
-    grid-template-columns: 1fr;
-  }
-  .notification-item-body {
-    font-size: 10.5px;
-  }
-}
-
 .ux-shell {
   padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
-}
-
-.ux-topbar {
-  display: flex;
-  align-items: center;
-}
-
-.ux-brand-page {
-  font-size: 10.5px;
-  margin-top: 1px;
 }
 
 .ux-month {
@@ -475,10 +181,6 @@
 
 .ux-management-grid button {
   min-height: 52px !important;
-}
-
-.ux-bottom-nav {
-  display: none;
 }
 
 .fab {
@@ -558,10 +260,6 @@
   margin-top: 0;
 }
 
-.page>header .header-top #monthSelect {
-  display: none;
-}
-
 @media(max-width:600px) {
   .ux-month {
     min-width: 152px;
@@ -592,22 +290,13 @@
     color: var(--ink);
     font-weight: 800;
   }
-  .page {
-    padding-bottom: 88px;
-  }
+
 }
 
 body,
 .sheet-modal,
 #aiAnalystBody {
   overflow-x: hidden;
-}
-
-#aiChatInput,
-.ai-chat-input-row input,
-.ai-textarea,
-input.text-input {
-  font-size: 16px !important;
 }
 
 #aiAnalystOverlay .ai-analyst-body,

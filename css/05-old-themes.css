@@ -3,10 +3,6 @@
    02. UI fixes  (source: unnamed block)
    ====================================================================== */
 
-.ux-shell {
-  box-shadow: 0 4px 18px rgba(0,0,0,.14);
-}
-
 .ux-month {
   border-color: rgba(255,255,255,.08);
 }
@@ -14,19 +10,6 @@
 .ux-view-title,
 .ux-view-sub {
   display: none;
-}
-
-#ux-home {
-  padding-top: 0;
-}
-
-#ux-home>header .balance-row {
-  margin-bottom: 14px;
-  gap: 5px;
-}
-
-#ux-home>header .pill-row {
-  margin: 0;
 }
 
 #ux-home>header .pill {
@@ -55,22 +38,8 @@
   display: none;
 }
 
-.networth-card,
-.ux-section-card,
-.financial-brain-card,
-.emergency-dashboard-card,
-.notification-dashboard-card {
-  border-color: rgba(255,255,255,.075);
-}
-
 @media(max-width:600px) {
-  .ux-bottom-nav {
-    background: rgba(18,24,21,.96);
-    border-color: rgba(255,255,255,.08);
-  }
-  .ux-bottom-item {
-    font-size: 9.5px;
-  }
+
   #ux-home>.hero-cards>.networth-card:first-child {
     margin-left: 0;
     margin-right: 0;
@@ -114,11 +83,6 @@ body,
   color: var(--ink);
 }
 
-.mono {
-  font-family: 'SFMono-Regular','Roboto Mono',Consolas,monospace;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
 .ux-shell {
   background: rgba(10,10,12,.94) !important;
   backdrop-filter: blur(22px);
@@ -140,15 +104,7 @@ body,
   letter-spacing: -.7px !important;
 }
 
-.ux-brand-page {
-  color: #77777F !important;
-}
-
 #monthSelect {
-  display: none !important;
-}
-
-#ux-home>header .header-top {
   display: none !important;
 }
 
@@ -159,39 +115,11 @@ body,
   box-shadow: none !important;
 }
 
-#ux-home>header .balance-row {
-  display: block !important;
-  margin: 0 !important;
-}
-
-#ux-home>header .balance-label {
-  display: block;
-  font-size: 12px !important;
-  color: #85858D !important;
-  margin-bottom: 7px;
-}
-
-#ux-home>header .balance-num {
-  display: block;
-  font-size: 40px !important;
-  line-height: 1 !important;
-  font-weight: 850 !important;
-  letter-spacing: -1.8px !important;
-  color: #F5F5F7 !important;
-}
-
 #ux-home>header #netWorthNum {
   display: block !important;
   font-size: 12px !important;
   color: #77777F !important;
   margin-top: 9px;
-}
-
-#ux-home>header .pill-row {
-  display: grid !important;
-  grid-template-columns: repeat(3,1fr);
-  gap: 8px !important;
-  margin-top: 22px !important;
 }
 
 #ux-home>header .pill {
@@ -253,8 +181,6 @@ body,
 
 .networth-card,
 .ux-section-card,
-.financial-brain-card,
-.emergency-dashboard-card,
 .notification-dashboard-card,
 .stat-box,
 .analysis-section,
@@ -269,7 +195,6 @@ body,
 }
 
 button.primary,
-.primary-btn,
 #aiConfirmSubmitBtn,
 .mark-paid-btn {
   background: var(--accent1) !important;
@@ -278,61 +203,23 @@ button.primary,
   border-radius: 9999px !important;
 }
 
-button.primary:hover,
-.primary-btn:hover {
+button.primary:hover {
   background: #1ED760 !important;
 }
 
-.manage-accounts-btn,
-.accounts-toggle,
-.quick-amount-btn,
-.type-btn,
-.cat-chip,
-.close-btn {
-  box-shadow: none !important;
-}
-
 .manage-accounts-btn {
   border-radius: 9999px !important;
 }
 
-.quick-amount-btn,
-.cat-chip {
+.quick-amount-btn {
   border-radius: 9999px !important;
 }
 
-.type-toggle {
-  border-radius: 9999px !important;
-  background: #1A1A1D !important;
-  border: 1px solid #27272A !important;
-}
-
-.type-btn {
-  border-radius: 9999px !important;
-}
-
-.accounts-toggle,
 .manage-accounts-btn {
   color: #1DB954 !important;
-}
-
-.brain-status.healthy,
-.emergency-status.healthy {
-  color: #1DB954 !important;
-  background: rgba(29,185,84,.10) !important;
-}
-
-.brain-fill {
-  background: #1DB954 !important;
-}
-
-.brain-status.critical {
-  color: #FF453A !important;
-  background: rgba(255,69,58,.10) !important;
 }
 
 .fab,
-.ai-fab,
 #fabBtn,
 #aiFabBtn {
   background: #1DB954 !important;
@@ -341,40 +228,8 @@ button.primary:hover,
   border: 0 !important;
 }
 
-.ux-bottom-nav {
-  border: 1px solid #27272A !important;
-  border-radius: 22px !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.ux-bottom-item {
-  color: #77777F !important;
-  border-radius: 16px !important;
-}
-
-#ux-home>#upcomingCard,
-#ux-home>#aiProactiveCard {
-  margin-left: 16px !important;
-  margin-right: 16px !important;
-}
-
 #ux-home .section-label {
   color: #77777F !important;
-}
-
-header,
-.hero,
-.hero-card,
-.balance-card {
-  background-image: none !important;
-}
-
-input,
-select,
-textarea {
-  border-color: #27272A !important;
 }
 
 input:focus,
@@ -383,20 +238,11 @@ textarea:focus {
   border-color: #1DB954 !important;
 }
 
-.overlay .sheet,
-.sheet-modal {
-  background: #141416 !important;
-  border: 1px solid #27272A !important;
-  border-radius: 24px 24px 0 0 !important;
-}
-
 @media(max-width:600px) {
   .ux-month {
     max-width: 118px !important;
   }
-  #ux-home>header .balance-num {
-    font-size: 38px !important;
-  }
+
   #ux-home>header .pill {
     padding: 11px 9px !important;
   }
@@ -428,10 +274,6 @@ body {
   color: #F5F5F5 !important;
 }
 
-body {
-  font-family: Inter,system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Noto Sans Thai",sans-serif !important;
-}
-
 * {
   box-shadow: none !important;
 }
@@ -440,24 +282,13 @@ body {
   border-bottom: 1px solid rgba(255,255,255,.08) !important;
 }
 
-.ux-shell .brand,
-.ux-shell .brand-name,
-#uxPageName {
-  color: #F5F5F5 !important;
-}
-
 button,
-.btn,
-.action-btn {
+.btn {
   border-color: rgba(255,255,255,.08) !important;
 }
 
 button.primary,
-.btn-primary,
-.cta,
 .fab,
-.quick-add,
-.add-btn,
 [class*="primary"] {
   background: #1DB954 !important;
   color: #061108 !important;
@@ -465,23 +296,15 @@ button.primary,
 }
 
 button.primary:hover,
-.btn-primary:hover,
-.cta:hover,
-.fab:hover,
-.quick-add:hover,
-.add-btn:hover {
+.fab:hover {
   background: #1ED760 !important;
 }
 
 .card,
 .hero,
 .panel,
-.section-card,
 .ux-section-card,
-.stat-card,
-.modal,
-.sheet,
-.overlay-card {
+.sheet {
   background: #141416 !important;
   border: 1px solid rgba(255,255,255,.08) !important;
 }
@@ -499,7 +322,6 @@ textarea {
 .balance,
 .income,
 .positive,
-.success,
 [class*="income"],
 [class*="positive"] {
   color: #1DB954 !important;
@@ -513,32 +335,16 @@ textarea {
   color: #FF453A !important;
 }
 
-.progress-fill,
-.progress-bar .fill,
-.meter-fill {
-  background: #1DB954 !important;
-}
-
-.badge,
-.pill-accent {
+.badge {
   background: rgba(29,185,84,.14) !important;
   color: #1ED760 !important;
   border-color: rgba(29,185,84,.35) !important;
 }
 
-.bottom-nav button.active,
-.bottom-nav .active,
-.ux-bottom-nav .active {
-  background: #1DB954 !important;
-  color: #061108 !important;
-}
-
-.notification-dot,
 #uxBellDot {
   background: #1DB954 !important;
 }
 
-.month-select,
 .ux-month-select {
   background: #141416 !important;
   border: 1px solid rgba(255,255,255,.08) !important;
@@ -547,9 +353,7 @@ textarea {
 
 .number,
 .numeric,
-[data-number],
-.money-value,
-.amount-value {
+[data-number] {
   font-variant-numeric: tabular-nums lining-nums !important;
   font-feature-settings: "tnum" 1,"lnum" 1 !important;
 }
@@ -558,7 +362,6 @@ h1,
 h2,
 h3,
 h4,
-.title,
-.brand-name {
+.title {
   letter-spacing: -.02em;
 }

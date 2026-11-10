@@ -235,9 +235,7 @@ select,
   .ux-topbar {
     grid-template-columns: 48px minmax(0,1fr) 152px 48px !important;
   }
-  .ux-brand {
-    min-width: 0 !important;
-  }
+
   .ux-brand-name,
   .ux-brand-page {
     white-space: nowrap;
@@ -250,109 +248,11 @@ select,
    11. AI  (source: finance-tools-ai-customization)
    ====================================================================== */
 
-.management-tools-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 18px 0 8px;
-  padding: 0 2px;
-}
-
-.management-tools-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--ink);
-  letter-spacing: .01em;
-}
-
-.management-tools-sub {
-  font-size: 11px;
-  color: var(--faint);
-  margin-top: 2px;
-}
-
-.management-tools-badge {
-  font-size: 11px;
-  font-weight: 800;
-  color: #061108;
-  background: #1DB954;
-  border-radius: 999px;
-  padding: 5px 9px;
-}
-
-.management-grid .manage-accounts-btn {
-  background: rgba(255,255,255,.045) !important;
-  border: 1px solid rgba(255,255,255,.11) !important;
-  color: #F5F5F7 !important;
-}
-
-.management-grid .manage-accounts-btn:active {
-  transform: scale(.985);
-  background: rgba(29,185,84,.13) !important;
-  border-color: rgba(29,185,84,.45) !important;
-}
-
-.ai-advisor-settings-panel {
-  display: none;
-  margin: 8px 0 10px;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 16px;
-  background: #111114;
-}
-
-.ai-advisor-settings-panel.is-open {
-  display: block;
-}
-
-.ai-advisor-settings-title {
-  font-weight: 800;
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: #F5F5F7;
-}
-
 .ai-advisor-settings-help {
   font-size: 12px;
   line-height: 1.5;
   color: #8E8E93;
   margin-bottom: 10px;
-}
-
-#aiAdvisorInstruction {
-  width: 100%;
-  min-height: 82px;
-  resize: vertical;
-  box-sizing: border-box;
-  background: #18181B;
-  border: 1px solid #2B2B30;
-  border-radius: 12px;
-  color: #F5F5F7;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 16px !important;
-  line-height: 1.5;
-  outline: none;
-}
-
-.ai-advisor-settings-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 9px;
-}
-
-.ai-advisor-settings-actions button {
-  flex: 1;
-  border-radius: 10px;
-  padding: 9px 10px;
-  font-weight: 700;
-}
-
-.ai-advisor-settings-status {
-  font-size: 11px;
-  color: #8E8E93;
-  margin-top: 8px;
-  min-height: 14px;
 }
 
 .ai-chat-latency {
@@ -370,11 +270,6 @@ select,
   margin-bottom: 14px !important;
 }
 
-#ux-home > #upcomingCard,
-#ux-home > #aiProactiveCard {
-  margin-top: 14px !important;
-}
-
 #ux-home > #upcomingCard + #aiProactiveCard {
   margin-top: 12px !important;
 }
@@ -383,20 +278,11 @@ select,
   margin-bottom: 0 !important;
 }
 
-#ux-home > #upcomingCard {
-  margin-left: 16px !important;
-  margin-right: 16px !important;
-  border-radius: 20px !important;
-}
-
 @media (max-width:600px) {
   #ux-home > .hero-cards {
     margin-bottom: 18px !important;
   }
-  #ux-home > #upcomingCard,
-  #ux-home > #aiProactiveCard {
-    margin-top: 18px !important;
-  }
+
 }
 
 /* ======================================================================
@@ -409,10 +295,6 @@ select,
 
 body.ux-more-active .ux-user-context {
   display: flex !important;
-}
-
-.ux-profile-trigger {
-  display: none !important;
 }
 
 .ux-profile-manage-entry {
@@ -464,15 +346,6 @@ body.ux-more-active .ux-user-context {
   color: var(--faint);
 }
 
-.ux-bottom-nav {
-  background: var(--surface) !important;
-}
-
-.ux-bottom-item.active {
-  color: var(--accent1) !important;
-  background: rgba(29,185,84,.13) !important;
-}
-
 body.ux-nonhome:not(.ux-chat-active) .page {
   padding-bottom: calc(var(--ux-bottom-nav-space) + env(safe-area-inset-bottom)) !important;
 }
@@ -493,26 +366,11 @@ body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row {
    14. UI fixes  (source: unnamed block)
    ====================================================================== */
 
-.ai-chat-msg [data-aiact] {
-  pointer-events: auto !important;
-  touch-action: manipulation;
-  position: relative;
-  z-index: 3;
-}
-
 #aiAnalystBody {
   padding-bottom: 28px !important;
-}
-
-#budgetDashboardRows {
-  max-height: none !important;
-  overflow: visible !important;
 }
 
 #budgetManageList {
   padding-bottom: 24px;
 }
 
-#budgetOverlay .sheet-modal {
-  padding-bottom: calc(32px + env(safe-area-inset-bottom));
-}

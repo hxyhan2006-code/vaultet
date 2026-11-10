@@ -4,31 +4,11 @@
    ====================================================================== */
 
 @media (max-width:600px) {
-  .ux-bottom-nav {
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    height: 68px !important;
-    padding: 6px 7px calc(6px + env(safe-area-inset-bottom)) !important;
-    border-radius: 20px 20px 0 0 !important;
-    border-left: 0 !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-    box-shadow: 0 -6px 22px rgba(0,0,0,.24) !important;
-    z-index: 200 !important;
-  }
+
   .ux-bottom-item {
     min-height: 54px !important;
   }
-  .page {
-    padding-bottom: calc(78px + env(safe-area-inset-bottom)) !important;
-  }
-}
 
-.page-anchor.fab-hidden,
-.page-anchor.fab-hidden .fab,
-.page-anchor.fab-hidden .fab-ai {
-  display: none !important;
 }
 
 @media (max-width:600px) {
@@ -160,11 +140,6 @@
   margin-top: 8px !important;
 }
 
-#notificationOverlay .notification-setting {
-  background: #1A1A1D !important;
-  border: 1px solid #27272A !important;
-}
-
 #notificationOverlay .notification-setting label {
   font-weight: 650 !important;
 }
@@ -178,11 +153,6 @@
   border-radius: 13px !important;
   background: #1A1A1D !important;
   border: 1px solid #27272A !important;
-}
-
-#notificationOverlay .notification-item.unread {
-  background: rgba(29,185,84,.065) !important;
-  border-color: rgba(29,185,84,.24) !important;
 }
 
 #notificationOverlay .notification-icon {
@@ -204,29 +174,9 @@
   font-size: 9px !important;
 }
 
-@media (max-width:380px) {
-  #notificationOverlay>.sheet {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-  }
-  #notificationOverlay .notification-settings-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
 /* ======================================================================
    06. Notifications  (source: vaultet-notification-mobile-accordion)
    ====================================================================== */
-
-#notificationOverlay .notification-sheet {
-  width: min(520px,100%);
-  max-height: min(92dvh,760px);
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
-}
 
 #notificationOverlay .notification-modal-head {
   flex: 0 0 auto;
@@ -240,28 +190,6 @@
   display: flex;
   flex-direction: column;
   margin-top: 10px;
-}
-
-#notificationOverlay .notification-section-head {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 8px;
-}
-
-#notificationOverlay .notification-section-head h3 {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.25;
-}
-
-#notificationOverlay .notification-section-head p {
-  margin: 3px 0 0;
-  color: var(--faint);
-  font-size: 10px;
-  line-height: 1.35;
 }
 
 #notificationOverlay .notification-count {
@@ -371,20 +299,12 @@
   transition: transform .18s ease;
 }
 
-#notificationOverlay .notification-settings-toggle[aria-expanded="true"] .notification-settings-chevron {
-  transform: rotate(180deg);
-}
-
 #notificationOverlay .notification-settings-panel {
   padding-top: 8px;
   max-height: 46vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-}
-
-#notificationOverlay .notification-settings-panel[hidden] {
-  display: none !important;
 }
 
 #notificationOverlay .notification-permission {
@@ -430,48 +350,24 @@
   line-height: 1.35 !important;
 }
 
-#notificationOverlay .notification-privacy {
-  flex: 0 0 auto;
-  margin-top: 8px;
-  padding: 7px 2px 0;
-  color: var(--faint);
-  font-size: 8.5px;
-  line-height: 1.4;
-}
-
 @media (min-width:601px) {
-  #notificationOverlay .notification-sheet {
-    padding: 18px 18px 20px;
-  }
-  #notificationOverlay .notification-history-section {
-    min-height: 280px;
-  }
+
   #notificationOverlay .notification-list {
     max-height: 390px;
   }
-  #notificationOverlay .notification-settings-panel {
-    max-height: 360px;
-  }
+
 }
 
 @media (max-width:380px) {
-  #notificationOverlay .notification-sheet {
-    max-height: 94dvh;
-    padding-left: 11px;
-    padding-right: 11px;
-  }
+
   #notificationOverlay .notification-settings-grid {
     grid-template-columns: 1fr;
   }
-  #notificationOverlay .notification-actions {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
+
   #notificationOverlay .notification-setting {
     padding: 7px 8px !important;
   }
-  #notificationOverlay .notification-privacy {
-    display: none;
-  }
+
 }
 
 /* ======================================================================

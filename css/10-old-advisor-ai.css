@@ -120,17 +120,6 @@
   background: rgba(255,255,255,.06);
 }
 
-.ai-completion-icon {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  background: rgba(29,185,84,.12);
-  color: var(--income);
-}
-
 .ai-completion-icon svg {
   width: 16px;
   height: 16px;
@@ -176,17 +165,7 @@
 }
 
 @media(max-width:600px) {
-  body.ux-chat-active .ux-shell {
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-  }
-  body.ux-chat-active #ux-chat {
-    padding-top: 0 !important;
-  }
-  body.ux-chat-active .ai-chat-input-row {
-    padding-bottom: 4px !important;
-  }
+
   body.ux-chat-active #aiChatInput {
     min-width: 0 !important;
   }
@@ -208,20 +187,7 @@
    ====================================================================== */
 
 @media(max-width:600px) {
-  body.ux-chat-active .ux-shell {
-    position: relative !important;
-    display: block !important;
-    z-index: 100 !important;
-  }
-  body.ux-chat-active .ux-topbar {
-    display: grid !important;
-  }
-  body.ux-chat-active .ux-brand-page {
-    display: block !important;
-  }
-  body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel {
-    padding-bottom: calc(var(--ux-bottom-nav-space) + env(safe-area-inset-bottom)) !important;
-  }
+
   body.ux-chat-active:not(.ux-keyboard-open) .ux-chat-panel .ai-chat-input-row {
     margin-bottom: 0 !important;
   }
@@ -232,38 +198,7 @@
     overflow: hidden !important;
     overscroll-behavior: none !important;
   }
-  body.ux-chat-active .page {
-    height: var(--ux-vv-height,100dvh) !important;
-    max-height: var(--ux-vv-height,100dvh) !important;
-    overflow: hidden !important;
-  }
-  body.ux-chat-active #ux-chat {
-    height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
-    max-height: calc(var(--ux-vv-height,100dvh) - var(--ux-topbar-space)) !important;
-    overflow: hidden !important;
-  }
-  body.ux-chat-active .ux-chat-panel {
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-  body.ux-chat-active .ux-chat-panel .ai-analyst-body {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain !important;
-  }
-  body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
-    flex: 0 0 auto !important;
-    position: relative !important;
-    z-index: 3 !important;
-  }
-  body.ux-chat-active.ux-keyboard-open .ux-bottom-nav {
-    display: none !important;
-  }
-  body.ux-chat-active.ux-keyboard-open .ux-chat-panel {
-    padding-bottom: 8px !important;
-  }
+
 }
 
 /* ======================================================================
@@ -336,34 +271,6 @@
   pointer-events: none !important;
 }
 
-#typeToggle .type-btn.active-expense::before {
-  background: var(--expense) !important;
-}
-
-#typeToggle .type-btn.active-income::before {
-  background: var(--income) !important;
-}
-
-#typeToggle .type-btn.active-saving::before {
-  background: var(--saving) !important;
-}
-
-#typeToggle .type-btn.active-transfer::before {
-  background: var(--transfer) !important;
-}
-
-#typeToggle .type-btn.active-expense,
-#typeToggle .type-btn.active-income,
-#typeToggle .type-btn.active-saving {
-  color: #fff !important;
-  background: transparent !important;
-}
-
-#typeToggle .type-btn.active-transfer {
-  color: #101018 !important;
-  background: transparent !important;
-}
-
 #typeToggle .type-btn-label {
   position: relative !important;
   z-index: 1 !important;
@@ -417,20 +324,7 @@
     border: none !important;
     touch-action: manipulation !important;
   }
-  #aiChatSendBtn svg {
-    width: 18px !important;
-    height: 18px !important;
-    display: block !important;
-    fill: none !important;
-    stroke: currentColor !important;
-    stroke-width: 2 !important;
-    stroke-linecap: round !important;
-    stroke-linejoin: round !important;
-  }
-  #aiChatSendBtn.stop-btn svg rect {
-    fill: currentColor !important;
-    stroke: none !important;
-  }
+
   #aiAnalystOverlay .ai-chat-input-row button::after,
   #aiChatSendBtn::after {
     content: none !important;
@@ -485,39 +379,6 @@ body.ux-chat-active .ux-bell {
   display: none !important;
 }
 
-body.ux-chat-active .ux-chat-top-actions {
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: relative !important;
-  z-index: 300 !important;
-  flex: 0 0 auto !important;
-}
-
-body.ux-chat-active .ux-chat-top-actions .ai-icon-btn {
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  border-radius: 11px !important;
-  background: transparent !important;
-  border: 0 !important;
-  color: #92929A !important;
-  display: grid !important;
-  place-items: center !important;
-  padding: 0 !important;
-}
-
-body.ux-chat-active .ux-chat-top-actions .ai-icon-btn svg {
-  width: 18px !important;
-  height: 18px !important;
-  display: block !important;
-  fill: none !important;
-  stroke: currentColor !important;
-  stroke-width: 1.8 !important;
-  stroke-linecap: round !important;
-  stroke-linejoin: round !important;
-}
-
 body.ux-chat-active .ux-chat-top-actions .ai-icon-btn:active {
   background: rgba(255,255,255,.07) !important;
   transform: scale(.96);
@@ -555,10 +416,7 @@ body.ux-chat-active #aiChatSendBtn.is-composer-empty {
     font-size: 0 !important;
     line-height: 0 !important;
   }
-  body.ux-chat-active #aiChatSendBtn {
-    background: #1A73E8 !important;
-    color: #fff !important;
-  }
+
   body.ux-chat-active #aiChatSendBtn.stop-btn {
     background: #303134 !important;
     color: #fff !important;
@@ -636,8 +494,3 @@ body.ux-chat-active .ux-brand {
   flex: 1 1 auto !important;
 }
 
-body.ux-chat-active .ux-brand-page {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}

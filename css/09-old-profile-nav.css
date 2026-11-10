@@ -35,10 +35,6 @@ body.ux-profile-trigger-never {
   flex: 0 0 30px;
 }
 
-.ux-profile-mini {
-  min-width: 0;
-}
-
 .ux-profile-mini strong {
   display: block;
   font-size: 12px;
@@ -64,10 +60,6 @@ body.ux-profile-trigger-never {
   display: none;
   align-items: flex-end;
   justify-content: center;
-}
-
-.profile-overlay.open {
-  display: flex;
 }
 
 .profile-sheet {
@@ -162,7 +154,6 @@ body.ux-profile-trigger-never {
 }
 
 .profile-input,
-.profile-select,
 .profile-textarea {
   width: 100%;
   box-sizing: border-box;
@@ -179,23 +170,6 @@ body.ux-profile-trigger-never {
 .profile-textarea {
   min-height: 78px;
   resize: vertical;
-}
-
-.profile-checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.profile-check {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 9px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  font-size: 10px;
-  background: var(--surface);
 }
 
 .profile-check input {
@@ -232,10 +206,6 @@ body.ux-profile-trigger-never {
   position: relative;
   flex: 0 0 42px;
   cursor: pointer;
-}
-
-.profile-switch:checked {
-  background: var(--income);
 }
 
 .profile-switch:before {
@@ -310,10 +280,6 @@ body .ux-profile-trigger {
   display: none !important;
 }
 
-body.ux-nonhome .ux-shell {
-  display: block !important;
-}
-
 body.ux-nonhome .ux-month,
 body.ux-nonhome .ux-bell {
   display: none !important;
@@ -321,14 +287,6 @@ body.ux-nonhome .ux-bell {
 
 body.ux-nonhome .ux-topbar {
   grid-template-columns: minmax(0,1fr) !important;
-}
-
-body.ux-nonhome .ux-brand {
-  min-width: 0 !important;
-}
-
-body.ux-nonhome .ux-brand-page {
-  display: block !important;
 }
 
 .ux-user-context {
@@ -433,33 +391,12 @@ body:has(.profile-overlay.open) {
     backdrop-filter: blur(18px) !important;
     -webkit-backdrop-filter: blur(18px) !important;
   }
-  .ux-bottom-item {
-    border-radius: 0 !important;
-  }
-  .ux-bottom-item.active {
-    border-radius: 0 !important;
-    background: rgba(29,185,84,.09) !important;
-  }
+
 }
 
 body:not(.ux-chat-active) {
   overflow-x: hidden !important;
   overflow-y: auto !important;
-}
-
-body:not(.ux-chat-active) .page {
-  overflow: visible !important;
-  height: auto !important;
-  min-height: 100vh !important;
-}
-
-body:not(.ux-chat-active) .ux-view.active {
-  overflow: visible !important;
-  min-height: 0 !important;
-}
-
-body.ux-nonhome .page-anchor {
-  display: none !important;
 }
 
 body.ux-home-active .page-anchor {
@@ -469,21 +406,6 @@ body.ux-home-active .page-anchor {
 /* ======================================================================
    20. UI fixes  (source: vaultet-production-audit-fixes)
    ====================================================================== */
-
-html.app-modal-open,
-body.app-modal-open {
-  overscroll-behavior: none;
-}
-
-body.app-modal-open {
-  overflow: hidden !important;
-  touch-action: none;
-}
-
-body.app-modal-open .overlay.open .sheet-modal,
-body.app-modal-open .profile-overlay.open .profile-sheet {
-  touch-action: auto;
-}
 
 .overlay.open {
   overscroll-behavior: contain;
@@ -496,12 +418,6 @@ body.app-modal-open .profile-overlay.open .profile-sheet {
   overscroll-behavior: contain;
 }
 
-.type-toggle {
-  display: flex !important;
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .type-btn {
   flex: 1 1 0 !important;
   min-width: 0 !important;
@@ -510,10 +426,6 @@ body.app-modal-open .profile-overlay.open .profile-sheet {
   text-overflow: ellipsis !important;
   position: relative !important;
   z-index: 1 !important;
-}
-
-.type-btn[class*="active-"] {
-  z-index: 2 !important;
 }
 
 body.ux-chat-active {
@@ -546,13 +458,6 @@ body.ux-chat-active .ux-chat-panel {
   overflow: hidden !important;
 }
 
-body.ux-chat-active .ux-chat-panel .ai-analyst-body {
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain !important;
-}
-
 body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
   flex: 0 0 auto !important;
   position: relative !important;
@@ -568,21 +473,9 @@ body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
   text-overflow: clip !important;
 }
 
-@media(max-width:380px) {
-  #typeToggle .type-btn {
-    font-size: 11.5px !important;
-    padding: 0 3px !important;
-  }
-}
-
 /* ======================================================================
    21. Navigation / Tabs  (source: vaultet-round11-mobile-tabs-final)
    ====================================================================== */
-
-#typeToggle {
-  width: 100% !important;
-  padding: 4px !important;
-}
 
 #typeToggle .type-btn {
   height: 44px !important;
@@ -601,10 +494,7 @@ body.ux-chat-active .ux-chat-panel .ai-chat-input-row {
 }
 
 @media(max-width:390px) {
-  #typeToggle {
-    gap: 3px !important;
-    padding: 3px !important;
-  }
+
   #typeToggle .type-btn {
     height: 42px !important;
     min-height: 42px !important;

@@ -179,6 +179,3 @@ body:has(#pfOverlay.open) {
   touch-action: none !important;
 }
 
-body:has(#pfOverlay.open) #pfOverlay {
-  touch-action: auto !important;
-}
