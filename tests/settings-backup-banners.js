@@ -50,18 +50,17 @@ ok('decimals switch is saved and changes fmt()', (await pg.evaluate(()=>localSto
 await gotoPage(pg,'more');
 ok('lock row present (ds53: row instead of card button)', await pg.isVisible('#vSetLock') && !(await pg.isVisible('#lockSettingsBtn')));
 // banners: only one at a time, only on home
-await pg.evaluate(()=>{document.getElementById('backupBanner').classList.add('show');document.getElementById('debtBumpBanner').classList.add('show');document.getElementById('driveDirtyBanner').classList.add('show')});
+await pg.evaluate(()=>{document.getElementById('backupBanner').classList.add('show');document.getElementById('driveDirtyBanner').classList.add('show')});
 await pg.click('.ux-bottom-item[data-page="home"]'); await pg.waitForTimeout(200);
-const vis=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
-ok('only the debt banner shows when all three are on (got '+vis.join(',')+')', vis.length===1&&vis[0]==='debtBumpBanner');
-await pg.evaluate(()=>document.getElementById('debtBumpBanner').classList.remove('show'));
-const vis2=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
+const vis=await pg.evaluate(()=>['backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
+ok('backup banner never shows on home (moved into the bell, ds54) → only the Drive banner (got '+vis.join(',')+')', vis.length===1&&vis[0]==='driveDirtyBanner');
+const vis2=await pg.evaluate(()=>['backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
 ok('backup banner never shows on home (moved into the bell, ds54) → Drive banner next (got '+vis2.join(',')+')', vis2.length===1&&vis2[0]==='driveDirtyBanner');
 await pg.evaluate(()=>document.getElementById('backupBanner').classList.remove('show'));
-const vis3=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
+const vis3=await pg.evaluate(()=>['backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
 ok('then only the Drive banner (got '+vis3.join(',')+')', vis3.length===1&&vis3[0]==='driveDirtyBanner');
 await pg.click('.ux-bottom-item[data-page="plan"]'); await pg.waitForTimeout(200);
-const vis4=await pg.evaluate(()=>['debtBumpBanner','backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
+const vis4=await pg.evaluate(()=>['backupBanner','driveDirtyBanner'].filter(i=>getComputedStyle(document.getElementById(i)).display!=='none'));
 ok('banners hidden on other tabs', vis4.length===0);
 ok('no native browser dialogs ('+native.msgs.join(' | ')+')', native.n===0);
 console.log(errs.join('\n')||'no js errors');

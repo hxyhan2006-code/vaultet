@@ -357,28 +357,6 @@ document.getElementById("debtNewSubmitBtn").addEventListener("click", () => {
   showToast("เพิ่มหนี้ใหม่แล้ว");
 });
 
-// ===== Milestone 5: แจ้งเตือนเสนอเพิ่มยอดหนี้อัตโนมัติ เมื่อบันทึกรายรับหมวด "กยศ." =====
-let pendingDebtBump = null; // { debtId, amount }
-function showDebtBumpBanner(debt, amount){
-  if(!debt) return;
-  pendingDebtBump = { debtId: debt.id, amount };
-  document.getElementById("debtBumpText").textContent =
-    `บันทึกรายรับ "กยศ." ฿${fmt(amount)} — เพิ่มยอดหนี้ ${debt.name} ตามนี้ด้วยไหม?`;
-  document.getElementById("debtBumpBanner").classList.add("show");
-}
-function hideDebtBumpBanner(){
-  pendingDebtBump = null;
-  document.getElementById("debtBumpBanner").classList.remove("show");
-}
-document.getElementById("debtBumpConfirmBtn").addEventListener("click", () => {
-  if(!pendingDebtBump) return;
-  addDebtHistory(pendingDebtBump.debtId, "increase", pendingDebtBump.amount, "จากรายรับ กยศ. อัตโนมัติ");
-  hideDebtBumpBanner();
-  render();
-  showToast("เพิ่มยอดหนี้แล้ว");
-});
-document.getElementById("debtBumpDismissBtn").addEventListener("click", hideDebtBumpBanner);
-
 // ===== Phase 4: Recurring Expenses + Upcoming Payments — UI =====
 
 const FREQ_OPTIONS = [

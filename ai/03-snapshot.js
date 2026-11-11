@@ -262,7 +262,6 @@ function advisorFinding(id,severity,urgency,impact,confidence,evidence,action,st
   const score=Math.round((severity*urgency*impact*confidence)*100)/100;
   return {id,severity,urgency,impact,confidence,evidence,action,stateKey,state,priorityScore:score,...extra};
 }
-function advisorSeverity(n){return n>=4?'critical':n>=3?'important':n>=2?'watch':'info';}
 
 function buildAdvisorFindings(snapshot,profile){
   const out=[]; const b=snapshot.behaviorSummary||{}, c=snapshot.cash||{}, fc=snapshot.forecastToMonthEnd||{}, base=snapshot.advisorContext?.baseline||{};

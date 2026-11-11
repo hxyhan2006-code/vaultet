@@ -58,21 +58,6 @@ function buildFinancialBrainContext(snapshot,profile){
   const advisor=getAdvisorIntelligence(snapshot,profile||{});
   return {financialBrain:snapshot.financialBrain,advisorIntelligence:advisor,cash:snapshot.cash,incomeContext:snapshot.incomeContext,behaviorSummary:snapshot.behaviorSummary,budgetSummary:snapshot.budgetSummary,emergencyFund:snapshot.emergencyFund,forecastToMonthEnd:snapshot.forecastToMonthEnd,forecast30d:snapshot.forecast30d,recurring:snapshot.recurringExpenses||snapshot.upcoming,debts:snapshot.debts,netWorth:snapshot.netWorth,goals:typeof goals!=='undefined'?goals:[],profile:profile||{},memory:loadAIMemory().slice(-40)};
 }
-function financialBrainRuleFindings(snapshot){
-  const f=[],b=snapshot.behaviorSummary||{};
-  if(snapshot.thisMonth.netCashFlow<0)f.push({id:'CASHFLOW_NEGATIVE',severity:'critical',data:{netCashFlow:snapshot.thisMonth.netCashFlow}});
-  if(snapshot.forecastToMonthEnd.forecastAvailable<0)f.push({id:'FORECAST_NEGATIVE',severity:'critical',data:{forecastAvailable:snapshot.forecastToMonthEnd.forecastAvailable}});
-  if(snapshot.budgetSummary.overCount>0)f.push({id:'BUDGET_OVER',severity:'warning',data:snapshot.budgetSummary});
-  if(snapshot.budgetSummary.watchCount>0&&snapshot.budgetSummary.overCount===0)f.push({id:'BUDGET_PACE_HIGH',severity:'warning',data:snapshot.budgetSummary});
-  if(snapshot.emergencyFund.recommendedEmergencyFund>0&&snapshot.emergencyFund.currentAvailableReserve<snapshot.emergencyFund.recommendedEmergencyFund*.5)f.push({id:'EMERGENCY_LOW',severity:'critical',data:snapshot.emergencyFund});
-  if(snapshot.emergencyFund.recommendedEmergencyFund>0&&snapshot.emergencyFund.currentAvailableReserve>=snapshot.emergencyFund.recommendedEmergencyFund)f.push({id:'EMERGENCY_HEALTHY',severity:'positive',data:snapshot.emergencyFund});
-  if(b.discretionaryRatio>60)f.push({id:'HIGH_DISCRETIONARY_SPENDING',severity:'warning',data:{discretionaryRatio:b.discretionaryRatio}});
-  if(Number(b.spendingTrend?.pctChange||0)>=30&&Number(b.spendingTrend?.change||0)>=500)f.push({id:'SPENDING_SPIKE',severity:'warning',data:b.spendingTrend});
-  if(Number(b.incomeTrend?.pctChange||0)<=-20&&Number(b.incomeTrend?.change||0)<0)f.push({id:'INCOME_DROP',severity:'warning',data:b.incomeTrend});
-  if(b.savingsRate<getBrainTargets().savingsRatePct/2&&Number(snapshot.thisMonth.income||0)>0&&!getSavingsTimingState(snapshot,snapshot.financialBrain?.benchmark?.baseIncome).waiting)f.push({id:'SAVINGS_RATE_LOW',severity:'warning',data:{savingsRate:b.savingsRate}});
-  if(!f.length)f.push({id:'FINANCIAL_STRENGTH',severity:'positive',data:{score:snapshot.financialBrain?.score}});
-  const rank={critical:4,warning:3,info:2,positive:1};return f.sort((a,z)=>(rank[z.severity]||0)-(rank[a.severity]||0));
-}
 
 function extractAdvisorAmount(text){
   const q=String(text||'');

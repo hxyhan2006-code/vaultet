@@ -12,25 +12,6 @@ function ensureStudentLoanDebt(){
   d={id:makeId(),name:"กยศ.",type:"student_loan",outstandingBalance:0,gracePeriod:true,note:"",history:[]};
   debts.push(d); saveDebts(); return d;
 }
-function applyStudentLoanImpact(entry, delta){
-  if(!entry || entry.type!=="income" || entry.category!=="กยศ.") return;
-  const cents=toCents(delta); if(!cents) return;
-  const d=entry.debtId ? debts.find(x=>x.id===entry.debtId) : findStudentLoanDebt();
-  const debt=d || ensureStudentLoanDebt();
-  debt.outstandingBalance=Math.max(0,(toCents(debt.outstandingBalance)+cents)/100);
-  debt.history.unshift({id:makeId(),type:cents>0?"increase":"adjustment",amount:cents/100,date:entry.date||todayISO(),note:"เชื่อมกับรายการ กยศ. #"+entry.id.slice(0,8),entryId:entry.id});
-  entry.debtId=debt.id; entry.debtPrincipalImpact=cents/100;
-  saveDebts();
-}
-function reverseStudentLoanImpact(entry){
-  if(!entry || !entry.debtId || !entry.debtPrincipalImpact) return;
-  const d=debts.find(x=>x.id===entry.debtId); if(!d) return;
-  const cents=toCents(entry.debtPrincipalImpact);
-  d.outstandingBalance=Math.max(0,(toCents(d.outstandingBalance)-cents)/100);
-  d.history.unshift({id:makeId(),type:"adjustment",amount:-entry.debtPrincipalImpact,date:todayISO(),note:"ย้อนผลจากการแก้ไข/ลบรายการ กยศ.",entryId:entry.id});
-  saveDebts();
-  entry.debtId=null; entry.debtPrincipalImpact=0;
-}
 function syncStudentLoanEntry(oldEntry, newEntry){
   const oldImpact=oldEntry?.debtPrincipalImpact || 0;
   if(oldEntry?.debtId && oldImpact){

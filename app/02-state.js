@@ -310,9 +310,6 @@ function loadBudgets(){
   }catch(e){ budgets=[]; }
 }
 function saveBudgets(){ try{ localStorage.setItem(BUDGETS_KEY, JSON.stringify(budgets)); }catch(e){} }
-function getMonthExpenseByCategory(month, category){
-  return entries.filter(e=>e.type==="expense" && monthKey(e.date)===month && e.category===category).reduce((s,e)=>s+toCents(e.amount),0)/100;
-}
 function getDaysInMonth(month){ const [y,m]=month.split("-").map(Number); return new Date(y,m,0).getDate(); }
 function getBudgetElapsedDays(month){ const today=todayISO(), cur=monthKey(today); if(month<cur) return getDaysInMonth(month); if(month>cur) return 0; return new Date().getDate(); }
 function getBudgetRemainingDays(month){ const cur=monthKey(todayISO()); if(month<cur) return 0; if(month>cur) return getDaysInMonth(month); return Math.max(0,getDaysInMonth(month)-new Date().getDate()); }
