@@ -27,7 +27,7 @@ await pg.addInitScript(()=>{
   return Promise.resolve(new Response(JSON.stringify({candidates:[{content:{parts:[{text:p.text}]}}]}),{status:200,headers:{'content-type':'application/json'}}));
  };
  // เสียงอ่านจำลอง
- const stub={getVoices:()=>window.__v.voices,cancel(){window.__v.cancels++;this._q=[];},speak(u){ if(window.__v.mute) return; window.__v.spoken.push({text:u.text,lang:u.lang}); this._q=(this._q||[]).concat(u); if(this._q.length===1) setTimeout(()=>u.onstart&&u.onstart({}),10); },
+ const stub={getVoices:()=>window.__v.voices,cancel(){window.__v.cancels++;this._q=[];},speak(u){ if(window.__v.mute) return; window.__v.spoken.push({text:u.text,lang:u.lang,rate:u.rate}); this._q=(this._q||[]).concat(u); if(this._q.length===1) setTimeout(()=>u.onstart&&u.onstart({}),10); },
   finish(){const q=this._q||[];this._q=[];const l=q[q.length-1];l&&l.onend&&l.onend({});},_q:[]};
  try{Object.defineProperty(window,'speechSynthesis',{value:stub,configurable:true});}catch(e){}
  if(localStorage.getItem('__s'))return;localStorage.setItem('__s','1');
@@ -105,12 +105,35 @@ await pg.evaluate(()=>{navigator.mediaDevices.getUserMedia=window.__gum});
 await pg.evaluate(()=>{ saveAIChatHistory([{role:'user',text:'หนี้เท่าไหร่'},{role:'model',text:'* **ส่องตัวเลขจริง**: ตอนนี้หนี้ กยศ. อยู่ที่ **฿133,600** ต้องเก็บอีก ฿120000+\n\n## ต่อไป\n1. ดันเงินสำรองให้แตะ ฿30000'},{role:'user',text:'โอเค'},{role:'model',text:'ได้เลย'}]); renderAiChatBubbles(); });
 await pg.waitForTimeout(300);
 ok('every AI answer gets a อ่าน button (my own messages do not)', (await pg.locator('.role-model [data-action="speak"]').count())===2 && (await pg.locator('.role-user [data-action="speak"]').count())===0);
-ok('buttons under the last answer fit on one line', await pg.evaluate(()=>{const bs=[...document.querySelectorAll('.ai-chat-msg:last-child .ai-chat-actions button')];const ys=bs.map(b=>Math.round(b.getBoundingClientRect().top));return bs.length===3&&new Set(ys).size===1&&bs[2].getBoundingClientRect().right<=380}));
+ok('buttons under the last answer fit on one line', await pg.evaluate(()=>{const bs=[...document.querySelectorAll('.ai-chat-msg:last-child .ai-chat-actions button')];const ys=bs.map(b=>Math.round(b.getBoundingClientRect().top));return bs.length===4&&new Set(ys).size===1&&bs[3].getBoundingClientRect().right<=368}));   // คัดลอก ตอบใหม่ อ่าน ความเร็ว
 await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speak"]'); await pg.waitForTimeout(200);
 const sp=await pg.evaluate(()=>window.__v.spoken.slice());
 ok('reads the answer in Thai without markdown symbols, ฿ spoken as บาท', sp.length===3 && sp.every(s=>s.lang==='th-TH'&&!/[*#฿]/.test(s.text)) && sp[0].text==='ส่องตัวเลขจริง: ตอนนี้หนี้ กยศ. อยู่ที่ 133600 บาท ต้องเก็บอีก 120000 บาทขึ้นไป' && sp[1].text==='ต่อไป' && sp[2].text==='ดันเงินสำรองให้แตะ 30000 บาท');
 ok('button turns into หยุดอ่าน while reading (only that one)', (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speak"]')).trim()==='หยุดอ่าน' && (await pg.textContent('.ai-chat-msg[data-idx="3"] [data-action="speak"]')).trim()==='อ่าน');
+ok('reads faster than the phone default: starts at ×1.25 (เร็ว)', sp.every(s=>s.rate===1.25) && (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speed"]')).trim()==='เร็ว');
 await pg.screenshot({path:shots+'voice-speaking.png'});
+// ปุ่มสลับความเร็ว: ปกติ → เร็ว → เร็วมาก → เร็วสุด → วนกลับ; ระหว่างอ่านอยู่ = เริ่มอ่านใหม่ด้วยความเร็วใหม่
+await pg.evaluate(()=>{window.__v.spoken=[]});
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speed"]'); await pg.waitForTimeout(250);
+const sp2=await pg.evaluate(()=>window.__v.spoken.slice());
+ok('tapping speed while reading restarts at the new speed (×1.5, เร็วมาก)', sp2.length===3 && sp2.every(s=>s.rate===1.5) && (await pg.textContent('.ai-chat-msg[data-idx="3"] [data-action="speed"]')).trim()==='เร็วมาก' && (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speak"]')).trim()==='หยุดอ่าน');
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speed"]'); await pg.waitForTimeout(150);
+ok('next level is เร็วสุด ×2, then wraps to ปกติ ×1', (await pg.evaluate(()=>window.__v.spoken[window.__v.spoken.length-1].rate))===2 && (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speed"]')).trim()==='เร็วสุด');
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speed"]'); await pg.waitForTimeout(150);
+ok('wraps around to ปกติ ×1', (await pg.evaluate(()=>window.__v.spoken[window.__v.spoken.length-1].rate))===1 && (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speed"]')).trim()==='ปกติ');
+ok('speed is remembered on this device and kept out of backups', (await pg.evaluate(()=>localStorage.getItem('vaultet_ai_speak_rate_local')))==='1' && await pg.evaluate(()=>!shouldBackupLocalStorageKey('vaultet_ai_speak_rate_local')));
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speak"]'); await pg.waitForTimeout(150);   // หยุดอ่าน
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speed"]'); await pg.waitForTimeout(150);
+ok('changing speed while NOT reading only changes the setting (reads nothing)', (await pg.evaluate(()=>window.__v.spoken.length))>=0 && !(await pg.evaluate(()=>!!document.querySelector('[data-action="speak"].is-speaking'))));
+await pg.reload(); await pg.waitForTimeout(1200); await pg.click('.ux-bottom-item[data-page="chat"]'); await pg.waitForTimeout(500);
+await pg.evaluate(()=>{ saveAIChatHistory([{role:'user',text:'ก'},{role:'model',text:'ข้อความทดสอบหลังรีโหลดแอป'}]); renderAiChatBubbles(); }); await pg.waitForTimeout(250);
+ok('speed survives a reload (ปกติ→เร็ว after one more tap = ×1.25)', (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speed"]')).trim()==='เร็ว');
+await pg.evaluate(()=>{window.__v.spoken=[]}); await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speak"]'); await pg.waitForTimeout(150);
+ok('after reload it reads at the saved speed', (await pg.evaluate(()=>window.__v.spoken.length>0&&window.__v.spoken.every(s=>s.rate===1.25))));
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speak"]'); await pg.waitForTimeout(100);
+await pg.evaluate(()=>{ saveAIChatHistory([{role:'user',text:'หนี้เท่าไหร่'},{role:'model',text:'* **ส่องตัวเลขจริง**: ตอนนี้หนี้ กยศ. อยู่ที่ **฿133,600** ต้องเก็บอีก ฿120000+\n\n## ต่อไป\n1. ดันเงินสำรองให้แตะ ฿30000'},{role:'user',text:'โอเค'},{role:'model',text:'ได้เลย'}]); renderAiChatBubbles(); }); await pg.waitForTimeout(250);
+await pg.click('.ai-chat-msg[data-idx="1"] [data-action="speak"]'); await pg.waitForTimeout(150);
+
 await pg.evaluate(()=>renderAiChatBubbles()); await pg.waitForTimeout(100);
 ok('state survives a redraw of the chat', (await pg.textContent('.ai-chat-msg[data-idx="1"] [data-action="speak"]')).trim()==='หยุดอ่าน');
 const cz=await pg.evaluate(()=>window.__v.cancels);
@@ -130,7 +153,7 @@ ok('no Thai voice on the device → says so, reads nothing', (await pg.evaluate(
 ok('copy and regenerate still there', (await pg.locator('.ai-chat-msg[data-idx="3"] [data-action="copy"]').count())===1 && (await pg.locator('.ai-chat-msg[data-idx="3"] [data-action="regenerate"]').count())===1);
 
 ok('no check marks or emoji icons in the chat', !/[✓✔✗🎤🔊]/.test(await pg.evaluate(()=>document.getElementById('ux-chat').innerText)));
-ok('no new saved keys from voice (nothing extra for backups)', await pg.evaluate(()=>!Object.keys(localStorage).some(k=>/voice|speak|mic/i.test(k))));
+ok('the only saved key from voice is the speed, and it stays out of backups', await pg.evaluate(()=>Object.keys(localStorage).filter(k=>/voice|speak|mic/i.test(k)).every(k=>k==='vaultet_ai_speak_rate_local'&&!shouldBackupLocalStorageKey(k))));
 ok('no native dialogs', native.n===0);
 ok('no js errors', errs.length===0); if(errs.length) console.log('- '+errs.join(' | ').slice(0,300));
 await b.close(); srv.close();

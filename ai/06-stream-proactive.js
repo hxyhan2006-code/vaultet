@@ -35,7 +35,8 @@ function createAiStreamUI(chatId){
   }
   const kick = () => { if(!raf) raf = requestAnimationFrame(paint); };
   return {
-    push(text){ target = String(text || ""); if(!target) shown = 0; kick(); },
+    // ข้อความใหม่ไม่ได้ต่อจากของเดิม (เช่น ถามรอบสองหลังรอบแรกใช้ไม่ได้) → เริ่มพิมพ์ใหม่จากต้น แต่ไม่ล้างจอระหว่างรอ
+    push(text){ const nt = String(text || ""); if(!nt || (shown > 0 && nt.slice(0, shown) !== target.slice(0, shown))) shown = 0; target = nt; kick(); },
     // รอให้ตัวหนังสือที่ค้างอยู่ค่อยๆ ขึ้นจนครบก่อน (สูงสุด 1.5 วิ) แล้วค่อยแทนด้วยข้อความจริง
     drain(){ return new Promise(res => { if(shown >= aiStreamDisplayText(target).length){ res(); return; } drainers.push(res); setTimeout(res, 1500); kick(); }); },
     remove(){ if(raf) cancelAnimationFrame(raf); raf = 0; if(el) el.remove(); el = null; }
@@ -71,7 +72,7 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
           body: JSON.stringify({
             contents,
             systemInstruction: { parts: [{ text: baseSystemPrompt + (extraInstruction ? "\n\n" + extraInstruction : "") }] },
-            generationConfig: { temperature: 0.25, maxOutputTokens: 4096 }
+            generationConfig: { temperature: 0.25, maxOutputTokens: 8192 }
           }),
           signal
         },
@@ -139,16 +140,29 @@ async function generateChatReply(priorHistory, userText, snapshot, profile, sign
     return r;
   }
 
+  // คำตอบที่ "ถูกตัด" (ชนเพดานความยาว หรือท้ายประโยคค้าง ** [ ( ) แต่มีเนื้อหามากพอ → เก็บไว้แสดงเลย ไม่ลบทิ้งแล้วถามใหม่ (ถามใหม่ = รอเพิ่มอีกเท่าตัว)
+  // ใช้ไม่ได้จริง (ว่าง สั้นเกิน เป็นเศษข้อมูลดิบ) → ถามใหม่ครั้งเดียว
+  function acceptOrKeep(r){
+    if(isUsableAiChatReply(r.text, r.data)) return { ok:true, text:r.text };
+    const t = String(r.text || "").trim(), cut = r.data?.candidates?.[0]?.finishReason === "MAX_TOKENS" || /(?:\*\*|\[|\()\s*$/.test(t);
+    if(cut && t.length >= 40 && !/^[\s]*(?:[-*•]\s*)?(?:Debt|Asset|Income|Expense)\s*:/i.test(t)){
+      if(aiRun){ aiRun.truncated = true; aiRunEvent("คำตอบถูกตัดที่เพดานความยาว เก็บข้อความที่ได้ไว้ (กด ตอบใหม่ ได้)"); }
+      return { ok:true, text: t.replace(/\s*(?:\*\*|\[|\()\s*$/, "").trim() };
+    }
+    return null;
+  }
   let result=await requestReply("");
   if(!result.ok) return result;
-  if(isUsableAiChatReply(result.text,result.data)) return { ok:true, text:result.text };
+  let kept = acceptOrKeep(result);
+  if(kept) return kept;
 
-  // ถ้ารอบแรกถูกตัดหรือคืนเศษข้อมูล ให้ลองใหม่ครั้งเดียวด้วยกติกาที่เข้มขึ้น
-  if(typeof onPartial === "function") { try{ onPartial(""); }catch(e){} }
+  // รอบแรกใช้ไม่ได้จริง: ถามใหม่ครั้งเดียวด้วยกติกาที่เข้มขึ้น — ไม่ล้างข้อความบนจอระหว่างรอ (บอกไว้ในแถบสถานะ)
+  if(aiRun) aiRun.retried = true;
+  aiRunEvent("คำตอบรอบแรกใช้ไม่ได้ ถามใหม่อีกรอบ (จะนานขึ้น)");
   result=await requestReply("คำตอบรอบก่อนมีความเสี่ยงเป็นเศษข้อความหรือถูกตัด ให้ตอบคำถามล่าสุดใหม่ทั้งหมดเป็นภาษาไทยแบบสมบูรณ์ ห้ามอ้างชื่อฟิลด์ภายใน และต้องจบคำตอบอย่างเป็นธรรมชาติ.");
   if(!result.ok) return result;
-  if(!isUsableAiChatReply(result.text,result.data)) return { ok:false, error:"invalid_ai_response" };
-  return { ok:true, text:result.text };
+  kept = acceptOrKeep(result);
+  return kept || { ok:false, error:"invalid_ai_response" };
 }
 
 // แปลง Markdown พื้นฐาน (**ตัวหนา** และขึ้นบรรทัดใหม่) เป็น HTML อย่างปลอดภัย — escapeHtml() ก่อนเสมอ กัน XSS จากคำตอบ AI

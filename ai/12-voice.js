@@ -154,6 +154,10 @@
   const synth = window.speechSynthesis;
   const canSpeak = !!(synth && window.SpeechSynthesisUtterance);
   let speaking = null;   // { idx, chatId, watch, leave }
+  // ความเร็วเสียงอ่าน: ค่าเริ่มต้นของมือถือช้าไปสำหรับ Han จึงตั้งเองได้ 4 ระดับ (จำไว้เฉพาะเครื่องนี้ ไม่เข้าไฟล์สำรอง)
+  const RATES = [{ v: 1, n: "ปกติ" }, { v: 1.25, n: "เร็ว" }, { v: 1.5, n: "เร็วมาก" }, { v: 2, n: "เร็วสุด" }], RATE_KEY = "vaultet_ai_speak_rate_local";
+  function rateIdx(){ let v = 1.25; try{ const s = parseFloat(localStorage.getItem(RATE_KEY)); if(RATES.some(r => r.v === s)) v = s; }catch(e){} return Math.max(0, RATES.findIndex(r => r.v === v)); }
+  function saveRateIdx(i){ try{ localStorage.setItem(RATE_KEY, String(RATES[i].v)); }catch(e){} }
 
   function speechText(md){
     return String(md || "")
@@ -197,7 +201,7 @@
     const me = speaking = { idx, chatId: loadAllChats().activeId, watch: 0, leave: 0, started: false };
     list.forEach((t, i) => {
       const u = new SpeechSynthesisUtterance(t);
-      u.lang = "th-TH"; if(tv.voice){ try{ u.voice = tv.voice; }catch(e){} }
+      u.lang = "th-TH"; u.rate = RATES[rateIdx()].v; if(tv.voice){ try{ u.voice = tv.voice; }catch(e){} }
       u.onstart = () => { me.started = true; clearTimeout(me.watch); };
       u.onerror = e => { if(speaking !== me) return; const c = e && e.error; stopSpeak(); if(c !== "canceled" && c !== "interrupted") say("อ่านออกเสียงไม่ได้บนเบราว์เซอร์นี้"); };
       if(i === list.length - 1) u.onend = () => { if(speaking === me) stopSpeak(); };
@@ -216,6 +220,7 @@
       b.classList.toggle("is-speaking", on);
       b.innerHTML = (on ? IC_STOP : IC_SPEAK) + "<span>" + (on ? "หยุดอ่าน" : "อ่าน") + "</span>";
     });
+    body.querySelectorAll('.ai-chat-actions [data-action="speed"]').forEach(b => { const r = RATES[rateIdx()]; b.innerHTML = "<span>" + r.n + "</span>"; b.title = b.ariaLabel = "ความเร็วเสียงอ่าน: " + r.n + " (แตะเพื่อเปลี่ยน)"; });
   }
   function addSpeakButtons(){
     const body = document.getElementById("aiAnalystBody"); if(!body) return;
@@ -223,6 +228,8 @@
       const bar = m.querySelector(".ai-chat-actions"); if(!bar || bar.querySelector('[data-action="speak"]')) return;
       const b = document.createElement("button"); b.type = "button"; b.dataset.action = "speak"; b.dataset.idx = m.dataset.idx;
       bar.append(b);
+      const sp = document.createElement("button"); sp.type = "button"; sp.dataset.action = "speed"; sp.dataset.idx = m.dataset.idx;
+      bar.append(sp);
     });
     paintSpeak();
   }
@@ -232,6 +239,12 @@
     renderAiChatBubbles = function(){ const out = _r.apply(this, arguments); try{ addSpeakButtons(); }catch(e){ console.error(e); } return out; };
     const body = document.getElementById("aiAnalystBody");
     if(body) body.addEventListener("click", e => {
+      const sb = e.target.closest('[data-action="speed"]');
+      if(sb){
+        const i = (rateIdx() + 1) % RATES.length; saveRateIdx(i); paintSpeak(); say("ความเร็วเสียงอ่าน: " + RATES[i].n);
+        if(speaking){ const at = speaking.idx; stopSpeak(); startSpeak(at); }   // กำลังอ่านอยู่ → เริ่มอ่านใหม่ด้วยความเร็วใหม่
+        return;
+      }
       const b = e.target.closest('[data-action="speak"]'); if(!b) return;
       const idx = parseInt(b.dataset.idx, 10);
       if(speaking && speaking.idx === idx){ stopSpeak(); return; }

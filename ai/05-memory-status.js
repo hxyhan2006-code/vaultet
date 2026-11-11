@@ -316,6 +316,8 @@ function aiRunSummary(){
   if(!aiRun || !aiRun.end) return "";
   const f = ((aiRun.first || aiRun.end) - aiRun.t0) / 1000, tot = (aiRun.end - aiRun.t0) / 1000;
   const parts = ["เริ่มตอบหลัง " + f.toFixed(1) + " วิ", "พิมพ์ " + Math.max(0, tot - f).toFixed(1) + " วิ", "รวม " + tot.toFixed(1) + " วิ"];
+  if(aiRun.retried) parts.push("ถามใหม่ 1 รอบ เพราะคำตอบแรกใช้ไม่ได้");
+  if(aiRun.truncated) parts.push("ถูกตัดที่เพดานความยาว กด ตอบใหม่ ได้");
   return parts.join(" · ");
 }
 function showAiChatTyping(){
